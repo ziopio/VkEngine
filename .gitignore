@@ -1,0 +1,21 @@
+
+
+# File to be ignored when checking for changes
+#
+#
+
+*.aps
+*.exe
+*.idb
+*.ipch
+*.lastbuildstate
+*.log: build log
+
+*.obj
+*.pch
+*.pdb
+*.res
+*.sdf
+*.suo: solution user options
+*.tlog
+*.user: debug settings. Do preserve if just one dev or custom debug settings
