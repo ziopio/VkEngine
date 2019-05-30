@@ -17,6 +17,7 @@ class WindowManager
 public:
 	class Window;
 	static void init();
+	static const char** getRequiredInstanceExtensions4Vulkan(unsigned int *extension_count);
 	static void setDebugCallBack(void(*func)(int error, const char* description));
 	static WindowManager::Window* createWindow( unsigned int width, unsigned int height, const char* title);
 	static void destroyWindow(Window* window);

@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\demo">
-      <UniqueIdentifier>{950533f2-3b58-4b7d-a4c3-c4844158b00a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\ApiCore">
       <UniqueIdentifier>{8dbdc484-04ad-4b63-86a5-da8803a3601c}</UniqueIdentifier>
     </Filter>
@@ -39,9 +36,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Demo.cpp">
-      <Filter>Source Files\demo</Filter>
-    </ClCompile>
     <ClCompile Include="Object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -2,6 +2,11 @@
 #include <vector>
 #include "MessageManager.h"
 
+typedef struct{
+	unsigned int instance_extension_count;
+	const char** instanceExtensions;
+
+} VkEngineInitInfo;
 
 class Object;
 class LightSource;
@@ -14,7 +19,7 @@ class VkEngine : MsgReceiver
 {
 public:
 	VkEngine();
-	void initialize();
+	void initialize(VkEngineInitInfo info);
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
 	void setLights(std::vector<LightSource*> lights);

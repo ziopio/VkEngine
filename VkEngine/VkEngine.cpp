@@ -24,17 +24,16 @@ VkEngine::VkEngine()
 	msgManager->registerListener(this);
 }
 
-VkEngine::~VkEngine()
-{
-}
-
-
-void VkEngine::initialize()
+void VkEngine::initialize(VkEngineInitInfo info)
 {
 	initVulkan();
 	//InputControl::init(msgManager, window);
-	Direction::initialize(HEIGHT,WIDTH);
-	Direction::addCamera(glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	Direction::initialize(HEIGHT, WIDTH);
+	Direction::addCamera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+VkEngine::~VkEngine()
+{
 }
 
 void VkEngine::loadMesh(std::string mesh_file)

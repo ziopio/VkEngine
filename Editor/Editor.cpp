@@ -13,7 +13,10 @@ Editor::Editor()
 	this->window->activateMouseButtonCallback();
 	this->window->activateCursorPosCallback();
 	this->window->activateScrollCallback();
-
+	this->renderingEngine.validation = true;
+	VkEngineInitInfo info = {};
+	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
+	this->renderingEngine.initialize(info);
 }
 
 void Editor::execute()

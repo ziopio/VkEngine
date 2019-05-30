@@ -28,6 +28,11 @@ void WindowManager::init()
 	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
 }
 
+const char ** WindowManager::getRequiredInstanceExtensions4Vulkan(unsigned int *extension_count)
+{
+	return glfwGetRequiredInstanceExtensions(extension_count);
+}
+
 void WindowManager::setDebugCallBack(void(*func)(int error, const char *description))
 {
 	glfwSetErrorCallback(func);

@@ -129,7 +129,7 @@ std::vector<const char*> Instance::getRequiredExtensions() {
 
 	// Cerco tutte le estensioni richieste da GLFW
 	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions= nullptr;// = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	const char** glfwExtensions = nullptr;// glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	std::cout << glfwExtensionCount << " required vulkan extensions for GLFW:" << std::endl;
 	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 	for (const auto& extension : extensions) {
