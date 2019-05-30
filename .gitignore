@@ -38,6 +38,8 @@ project.assets.json
 *.lastbuildstate
 *.log
 
+*.spv
+
 *.obj
 *.pch
 *.pdb
