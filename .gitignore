@@ -3,7 +3,9 @@
 # File to be ignored when checking for changes
 #
 #
-
+.vs/*
+x64/*
+x86/*
 **/Models/*
 **/Textures/*
 
