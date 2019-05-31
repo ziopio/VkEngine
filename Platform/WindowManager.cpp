@@ -98,9 +98,9 @@ bool WindowManager::Window::windowShouldClose()
 	return glfwWindowShouldClose(this->pimpl->window);
 }
 
-void WindowManager::Window::createWindowSurface(SurfaceCreationInfo *info)
+void WindowManager::Window::createWindowSurface(void* instance, void *surface)
 {
-	if (glfwCreateWindowSurface(info->instance, this->pimpl->window, nullptr, info->surface)) {
+	if (glfwCreateWindowSurface(static_cast<VkInstance>(instance), this->pimpl->window, nullptr, static_cast<VkSurfaceKHR*>(surface))) {
 		throw std::runtime_error("failed to create window surface!");
 	}
 }

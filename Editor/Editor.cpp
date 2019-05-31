@@ -16,7 +16,11 @@ Editor::Editor()
 	this->renderingEngine.validation = true;
 	VkEngineInitInfo info = {};
 	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
-	this->renderingEngine.initialize(info);
+	void* instance = renderingEngine.createInstance(info);
+	void* surface = nullptr;
+	this->window->createWindowSurface(instance, &surface);
+	this->renderingEngine.setSurfacePointer(surface);
+	this->renderingEngine.init();
 }
 
 void Editor::execute()

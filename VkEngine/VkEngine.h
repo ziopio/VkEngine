@@ -5,8 +5,8 @@
 typedef struct{
 	unsigned int instance_extension_count;
 	const char** instanceExtensions;
-
 } VkEngineInitInfo;
+
 
 class Object;
 class LightSource;
@@ -19,7 +19,9 @@ class VkEngine : MsgReceiver
 {
 public:
 	VkEngine();
-	void initialize(VkEngineInitInfo info);
+	void* createInstance(VkEngineInitInfo info);
+	void setSurfacePointer(void * surface);
+	void init();
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
 	void setLights(std::vector<LightSource*> lights);

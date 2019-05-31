@@ -17,6 +17,7 @@
 #include "Direction.h"
 #include "LightSource.h"
 
+VkSurfaceKHR test_surface = nullptr;
 
 VkEngine::VkEngine()
 {
@@ -24,12 +25,24 @@ VkEngine::VkEngine()
 	msgManager->registerListener(this);
 }
 
-void VkEngine::initialize(VkEngineInitInfo info)
+void* VkEngine::createInstance(VkEngineInitInfo info)
 {
-	initVulkan();
+	//initVulkan();
 	//InputControl::init(msgManager, window);
-	Direction::initialize(HEIGHT, WIDTH);
-	Direction::addCamera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	//Direction::initialize(HEIGHT, WIDTH);
+	//Direction::addCamera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	Instance::setRequiredExtensions(info.instanceExtensions,info.instance_extension_count);
+	return Instance::get();
+}
+
+void VkEngine::setSurfacePointer(void * surface)
+{
+	test_surface = static_cast<VkSurfaceKHR>(surface);
+}
+
+void VkEngine::init()
+{
+	std::cout << "ciao" << std::endl;
 }
 
 VkEngine::~VkEngine()

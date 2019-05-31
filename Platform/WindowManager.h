@@ -37,7 +37,7 @@ public:
 	public:
 		void registerEventHandler(WindowEventHandler* handler);
 		bool windowShouldClose();
-		void createWindowSurface(SurfaceCreationInfo* info);
+		void createWindowSurface(void* instance, void *surface);
 		void getFrameBufferSize(int *width, int *height);
 		void getCursorPos(double * xpos, double * ypos);
 		void getMouseButton(int button);

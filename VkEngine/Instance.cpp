@@ -4,6 +4,8 @@
 
 std::string  Instance::appName = "...";
 std::string Instance::EngineName = "...";
+const char ** Instance::surfaceExtensions;
+unsigned int Instance::surfaceExtCount;
 VkInstance Instance::instance;
 VkDebugUtilsMessengerEXT Instance::messangerExtension;
 bool Instance::validation;
@@ -21,6 +23,12 @@ void Instance::setEngineName(std::string engineName)
 {
 	if (ready) return;
 	Instance::EngineName = engineName;
+}
+
+void Instance::setRequiredExtensions(const char ** instanceExtensions, unsigned int instance_extension_count)
+{
+	Instance::surfaceExtensions = instanceExtensions;
+	Instance::surfaceExtCount = instance_extension_count;
 }
 
 void Instance::enableValidationLayers()
@@ -128,10 +136,9 @@ std::vector<const char*> Instance::getRequiredExtensions() {
 	}
 
 	// Cerco tutte le estensioni richieste da GLFW
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions = nullptr;// glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-	std::cout << glfwExtensionCount << " required vulkan extensions for GLFW:" << std::endl;
-	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+	const char** surfaceRequiredExtensions = surfaceExtensions;
+	std::cout << surfaceExtCount << " required vulkan extensions for GLFW:" << std::endl;
+	std::vector<const char*> extensions(surfaceRequiredExtensions, surfaceRequiredExtensions + surfaceExtCount);
 	for (const auto& extension : extensions) {
 		std::cout << "\t" << extension << std::endl;
 	}
