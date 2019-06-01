@@ -1,13 +1,15 @@
 #pragma once
 
+#include "VkEngine.h"
+
 class Instance
 {
 public:
 	static void setAppName(std::string appName);
 	static void setEngineName(std::string engineName);
-	static void setRequiredExtensions(const char** instanceExtensions, unsigned int instance_extension_count);
-	static void enableValidationLayers();
+	static void setRequiredExtensions(VulkanInstanceInitInfo info);
 	static VkInstance get();
+	static bool hasValidation();
 	static void destroyInstance();
 private:
 	static void createInstance();

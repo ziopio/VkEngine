@@ -2,11 +2,11 @@
 #include <vector>
 #include "MessageManager.h"
 
-typedef struct{
+typedef struct {
 	unsigned int instance_extension_count;
 	const char** instanceExtensions;
-} VkEngineInitInfo;
-
+	bool enableValidation;
+} VulkanInstanceInitInfo;
 
 class Object;
 class LightSource;
@@ -19,19 +19,16 @@ class VkEngine : MsgReceiver
 {
 public:
 	VkEngine();
-	void* createInstance(VkEngineInitInfo info);
-	void setSurfacePointer(void * surface);
+	void* createInstance(VulkanInstanceInitInfo info);
+	void setSurface(void * surface);
 	void init();
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
 	void setLights(std::vector<LightSource*> lights);
 	void setObjects(std::vector<Object*> objects);
 	void renderFrame();
-	void cleanUp();
 	~VkEngine();
-	bool validation;
 private:
-	void initVulkan();
 	void recreateSwapChain();
 	void drawFrame();
 	void cleanupSwapChain();
@@ -39,7 +36,6 @@ private:
 	MessageManager* msgManager;
 	std::vector<Object*> objects;
 	std::vector<LightSource*> lights;
-	Surface* surface;
 	SwapChain* swapChain;
 	RenderPass* renderPass;
 	Renderer* renderer;

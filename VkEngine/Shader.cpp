@@ -21,7 +21,8 @@ static std::vector<char> readFile(const std::string& filename) {
 
 Shader::Shader(std::string spirv_Path)
 {
-	createShaderModule(readFile(spirv_Path));
+	auto code = readFile(spirv_Path);
+	createShaderModule(code);
 }
 
 VkShaderModule Shader::get()

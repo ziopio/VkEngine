@@ -60,9 +60,11 @@ void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize
 
 	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate buffer memory!");
-	} // NOTA: vkAllocateMemory ha un numero limitato di utilizzi
+	}
+	// NOTA: vkAllocateMemory ha un numero limitato di utilizzi
 	// Per molte allocazioni conviene usare un Allocator 
-	//che carichi tutto in memoria in un colpo solo con degli offset
+	//che allochi tutta la memoria in un colpo solo 
+	//ed effettui sotto-allocazioni con degli offset
 
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }

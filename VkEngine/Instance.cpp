@@ -25,15 +25,11 @@ void Instance::setEngineName(std::string engineName)
 	Instance::EngineName = engineName;
 }
 
-void Instance::setRequiredExtensions(const char ** instanceExtensions, unsigned int instance_extension_count)
+void Instance::setRequiredExtensions(VulkanInstanceInitInfo info)
 {
-	Instance::surfaceExtensions = instanceExtensions;
-	Instance::surfaceExtCount = instance_extension_count;
-}
-
-void Instance::enableValidationLayers()
-{
-	validation = true;
+	Instance::surfaceExtensions = info.instanceExtensions;
+	Instance::surfaceExtCount = info.instance_extension_count;
+	Instance::validation = info.enableValidation;
 }
 
 VkInstance Instance::get()
@@ -46,6 +42,11 @@ VkInstance Instance::get()
 		}
 	}
 	return instance;
+}
+
+bool Instance::hasValidation()
+{
+	return validation;
 }
 
 void Instance::destroyInstance()

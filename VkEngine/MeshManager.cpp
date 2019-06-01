@@ -4,6 +4,11 @@
 std::vector<Mesh*> MeshManager::meshes;
 
 
+void MeshManager::init()
+{
+	MeshManager::addMesh("VkEngine/Meshes/cube.obj");
+}
+
 void MeshManager::addMesh(std::string mesh_path)
 {
 	meshes.push_back(new Mesh(mesh_path));

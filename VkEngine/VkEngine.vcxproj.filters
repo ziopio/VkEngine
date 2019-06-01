@@ -90,9 +90,6 @@
     <ClCompile Include="Shader.cpp">
       <Filter>Source Files\AssetsManagement</Filter>
     </ClCompile>
-    <ClCompile Include="Surface.cpp">
-      <Filter>Source Files\ApiCore</Filter>
-    </ClCompile>
     <ClCompile Include="SwapChain.cpp">
       <Filter>Source Files\ApiCore</Filter>
     </ClCompile>
@@ -161,9 +158,6 @@
     <ClInclude Include="Instance.h">
       <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
-    <ClInclude Include="Surface.h">
-      <Filter>Header Files\ApiCore</Filter>
-    </ClInclude>
     <ClInclude Include="Shader.h">
       <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
@@ -200,5 +194,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Shaders\phong_multi_light\phong.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\phong_multi_light\phong.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\sample\shader.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\sample\shader.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -14,14 +14,14 @@ layout(location = 3) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
-layout(location = 2)flat out int outTextureIndex;
+layout(location = 2) flat out int outTextureIndex;
 
-layout(location = 3)out vec3 Position_worldspace;
-layout(location = 4)out vec3 Normal_cameraspace;
-layout(location = 5)out vec3 EyeDirection_cameraspace;
-layout(location = 6)out vec3 LightDirection_cameraspace[10];
+layout(location = 3) out vec3 Position_worldspace;
+layout(location = 4) out vec3 Normal_cameraspace;
+layout(location = 5) out vec3 EyeDirection_cameraspace;
+layout(location = 6) out vec3 LightDirection_cameraspace[10];
 
-layout(set = 0, binding = 1) uniform uniBlock{
+layout(set = 1, binding = 0) uniform uniBlock{
     mat4 P_matrix;
     mat4 V_matrix;
     Light lights[10];

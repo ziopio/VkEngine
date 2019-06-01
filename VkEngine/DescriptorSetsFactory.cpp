@@ -13,17 +13,17 @@ std::vector<Object*> DescriptorSetsFactory::objects;
 std::multimap<MaterialType, Object*> DescriptorSetsFactory::material2obj_map;
 VkDescriptorPool DescriptorSetsFactory::descriptorPool;
 std::vector<VkDescriptorSet> DescriptorSetsFactory::descriptorSets;
-void* DescriptorSetsFactory::mappedUniformMemory;
-VkBuffer DescriptorSetsFactory::uniformBuffer;
-VkDeviceMemory DescriptorSetsFactory::uniformBuffersMemory;
+std::vector<void *>DescriptorSetsFactory::mappedUniformMemory;
+std::vector<VkBuffer> DescriptorSetsFactory::uniformBuffers;
+std::vector<VkDeviceMemory> DescriptorSetsFactory::uniformBuffersMemory;
 bool DescriptorSetsFactory::ready;
 
 void DescriptorSetsFactory::init(SwapChain* swapChain, std::vector<Object*> objects)
 {
 	DescriptorSetsFactory::swapChain = swapChain;
 	DescriptorSetsFactory::objects = objects;
-	mapMaterialsToObjects();
-	createUniformBuffer();
+	//mapMaterialsToObjects();
+	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
 	ready = true;
@@ -37,16 +37,18 @@ VkDescriptorSet* DescriptorSetsFactory::getDescriptorSet(MaterialType material)
 	return &descriptorSets[material];
 }
 
-void DescriptorSetsFactory::updateUniformBuffer(uniBlock uniforms)
+void DescriptorSetsFactory::updateUniformBuffer(uniBlock uniforms, int imageIndex)
 {
-	memcpy(mappedUniformMemory, &uniforms, sizeof(uniforms));
+	memcpy(mappedUniformMemory[imageIndex], &uniforms, sizeof(uniforms));
 }
 
 void DescriptorSetsFactory::cleanUp()
 {
-	vkUnmapMemory(Device::get(), uniformBuffersMemory);
-	vkDestroyBuffer(Device::get(),uniformBuffer,nullptr);
-	vkFreeMemory(Device::get(),uniformBuffersMemory,nullptr);
+	for (int i = 0; i < swapChain->getImageViews().size();i++) {
+		vkUnmapMemory(Device::get(), uniformBuffersMemory[i]);
+		vkDestroyBuffer(Device::get(), uniformBuffers[i], nullptr);
+		vkFreeMemory(Device::get(), uniformBuffersMemory[i], nullptr);
+	}
 	vkDestroyDescriptorPool(Device::get(), descriptorPool, nullptr);
 }
 
@@ -61,17 +63,18 @@ void DescriptorSetsFactory::createDescriptorSets()
 {
 	std::vector<VkDescriptorSetLayout> layouts;
 	for ( int i = 0; i < MaterialType::LAST; i++) {
-		layouts.push_back(MaterialManager::getMaterial((MaterialType)i)->getDescriptorSetLayout());
+		layouts.push_back(MaterialManager::getMaterial((MaterialType)i)->getDescriptorSetLayouts());
 	}
 	
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = MaterialType::LAST;
+	allocInfo.descriptorSetCount = 2;//static_cast<uint32_t>(swapChain->getImageViews().size());
 	allocInfo.pSetLayouts = layouts.data(); // same size of descriptorSet array
 
 	descriptorSets.resize(MaterialType::LAST);
-	if (vkAllocateDescriptorSets(Device::get(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+	VkResult result = vkAllocateDescriptorSets(Device::get(), &allocInfo, descriptorSets.data());
+	if( result != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
@@ -118,31 +121,41 @@ void DescriptorSetsFactory::createDescriptorSets()
 
 void DescriptorSetsFactory::createDescriptorPool()
 {
-	//First select which types of descriptors the pool handles and how many descriptors per type
-	std::array<VkDescriptorPoolSize, 1> poolSizes = {};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[0].descriptorCount = MAX_TEXTURE_COUNT;
+	// First: select which types of descriptors the pool handles and how many descriptors per type
+	// I need 1 descriptor for each type, for each swapchain image
+	std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+	// here i need 1 uniform descriptor for each frame in flight
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChain->getImageViews().size());
+	// here i need as many samplers as the size of the texture2D array in the shader
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[1].descriptorCount = MAX_TEXTURE_COUNT;
 
-	//Second select how many sets ca be allocated
+	//Second: select how many sets can be allocated
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = MaterialType::LAST;// one set for each material
+	poolInfo.maxSets = static_cast<uint32_t>(swapChain->getImageViews().size()) + 1;
 
-
-	if (vkCreateDescriptorPool(Device::get(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+	VkResult result = vkCreateDescriptorPool(Device::get(), &poolInfo, nullptr, &descriptorPool);
+	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
 }
 
-void DescriptorSetsFactory::createUniformBuffer()
+void DescriptorSetsFactory::createUniformBuffers()
 {
 	VkDeviceSize bufferSize = sizeof(uniform_sample);
 
-	createBuffer(PhysicalDevice::get(),Device::get(),bufferSize, 
-		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-		uniformBuffer, uniformBuffersMemory);
+	uniformBuffers.resize(swapChain->getImageViews().size());
+	uniformBuffersMemory.resize(swapChain->getImageViews().size());
 
-	vkMapMemory(Device::get(), uniformBuffersMemory, 0, sizeof(uniform_sample), 0, &mappedUniformMemory);
+	for (size_t i = 0; i < swapChain->getImageViews().size(); i++) {
+		createBuffer(PhysicalDevice::get(), Device::get(), bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			uniformBuffers[i], uniformBuffersMemory[i]);
+
+		vkMapMemory(Device::get(), uniformBuffersMemory[i], 0, sizeof(uniform_sample), 0, &mappedUniformMemory[i]);
+	}
 }

@@ -17,7 +17,7 @@ int main(int argc, char* argv) {
 	editor_thread.join();
 
 	std::cout << "Press enter to return from main()..." << std::endl;
-	//while (getchar() != 10);
+	while (getchar() != 10);
 
 	return 0;
 }

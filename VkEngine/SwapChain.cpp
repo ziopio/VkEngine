@@ -6,13 +6,7 @@
 #include "VkEngine.h"
 
 
-SwapChain::SwapChain(Surface* surface)
-{
-	this->surface = surface;
-	this->initialize();
-}
-
-void SwapChain::initialize()
+SwapChain::SwapChain()
 {
 	this->createSwapChain();
 	this->createImageViews();
@@ -44,7 +38,7 @@ bool SwapChain::presentImage(uint32_t imageIndex, VkSemaphore* semaphores)
 	presentInfo.pResults = nullptr; // Optional
 
 	VkResult result = vkQueuePresentKHR(Device::getPresentQueue(), &presentInfo);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || surface->framebufferResized) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 		return false;
 	}
 	else if (result != VK_SUCCESS) {
@@ -56,11 +50,6 @@ bool SwapChain::presentImage(uint32_t imageIndex, VkSemaphore* semaphores)
 VkSwapchainKHR SwapChain::get()
 {
 	return this->swapChain;
-}
-
-Surface * SwapChain::getSurface()
-{
-	return this->surface;
 }
 
 std::vector<VkImageView> SwapChain::getImageViews()
@@ -78,7 +67,7 @@ VkExtent2D SwapChain::getExtent()
 	return  this->swapChainExtent;
 }
 
-void SwapChain::destroy()
+SwapChain::~SwapChain()
 {
 	for (auto imageView : swapImageViews) {
 		vkDestroyImageView(Device::get(), imageView, nullptr);
@@ -102,7 +91,7 @@ void SwapChain::createSwapChain()
 	}
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface;// = this->surface->get();
+	createInfo.surface = PhysicalDevice::getSurface();
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;

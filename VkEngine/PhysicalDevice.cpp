@@ -15,6 +15,11 @@ void PhysicalDevice::setSurface(VkSurfaceKHR surface)
 	PhysicalDevice::surface = surface;
 }
 
+VkSurfaceKHR PhysicalDevice::getSurface()
+{
+	return surface;
+}
+
 VkPhysicalDevice PhysicalDevice::get()
 {
 	if (!ready) {

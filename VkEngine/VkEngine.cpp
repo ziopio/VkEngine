@@ -10,14 +10,11 @@
 #include "TextureManager.h"
 #include "DescriptorSetsFactory.h"
 #include "Object.h"
-#include "Surface.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
 #include "Renderer.h"
 #include "Direction.h"
 #include "LightSource.h"
-
-VkSurfaceKHR test_surface = nullptr;
 
 VkEngine::VkEngine()
 {
@@ -25,28 +22,49 @@ VkEngine::VkEngine()
 	msgManager->registerListener(this);
 }
 
-void* VkEngine::createInstance(VkEngineInitInfo info)
+void* VkEngine::createInstance(VulkanInstanceInitInfo info)
 {
-	//initVulkan();
 	//InputControl::init(msgManager, window);
 	//Direction::initialize(HEIGHT, WIDTH);
 	//Direction::addCamera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	Instance::setRequiredExtensions(info.instanceExtensions,info.instance_extension_count);
+	Instance::setAppName("Demo");
+	Instance::setEngineName("VkEngine");
+	Instance::setRequiredExtensions(info);
 	return Instance::get();
 }
 
-void VkEngine::setSurfacePointer(void * surface)
+void VkEngine::setSurface(void * surface)
 {
-	test_surface = static_cast<VkSurfaceKHR>(surface);
+	PhysicalDevice::setSurface(static_cast<VkSurfaceKHR>(surface));
 }
 
 void VkEngine::init()
 {
-	std::cout << "ciao" << std::endl;
+	PhysicalDevice::get();
+	if (Instance::hasValidation()) Device::enableDeviceValidation();
+	Device::get();
+	swapChain = new SwapChain();
+	renderPass = new RenderPass(swapChain);
+	MaterialManager::init(swapChain, renderPass);
+	MeshManager::init();
+	TextureManager::init();
+	DescriptorSetsFactory::init(swapChain,objects);
+	renderer = new Renderer(renderPass, swapChain);
+
 }
 
 VkEngine::~VkEngine()
 {
+	Direction::cleanUp();
+	cleanupSwapChain();
+	DescriptorSetsFactory::cleanUp();
+	TextureManager::cleanUp();
+	MeshManager::cleanUp();
+	for (auto obj : objects) {
+		delete obj;
+	}
+	Device::destroy();
+	Instance::destroyInstance();
 }
 
 void VkEngine::loadMesh(std::string mesh_file)
@@ -77,7 +95,6 @@ void VkEngine::setObjects(std::vector<Object*> objects)
 
 void VkEngine::renderFrame()
 {
-
 	//InputControl::processInput();
 	this->msgManager->dispatchMessages();
 
@@ -94,7 +111,7 @@ void VkEngine::recreateSwapChain() { // TODO: comporre la nuova swapchain riagga
 	cleanupSwapChain();
 
 	Direction::updateScreenSizes();
-	swapChain->initialize();
+	swapChain = new SwapChain();
 	renderPass = new RenderPass(swapChain);
 	MaterialManager::init(swapChain, renderPass);
 	renderer = new Renderer(renderPass, swapChain);
@@ -112,54 +129,7 @@ void VkEngine::cleanupSwapChain()
 
 	delete renderPass;
 
-	swapChain->destroy();
-}
-
-
-void VkEngine::cleanUp()
-{
-
-	Direction::cleanUp();
-
-	cleanupSwapChain();
-
-	DescriptorSetsFactory::cleanUp();
-	TextureManager::cleanUp();
-	MeshManager::cleanUp();
-
-
-	for (auto obj : objects) {
-		delete obj;
-	}
-
-	Device::destroy();
-
-	delete surface;
-
-	Instance::destroyInstance();
-}
-
-void VkEngine::initVulkan()
-{
-	Instance::setAppName("Demo");
-	Instance::setEngineName("VkEngine");
-	if( validation )Instance::enableValidationLayers();
-	Instance::get();
-
-	surface = new Surface();
-	//PhysicalDevice::setSurface(surface->get());
-	PhysicalDevice::get();
-
-	if (validation) Device::enableDeviceValidation();
-	Device::get();
-
-	swapChain = new SwapChain(surface);
-	
-	renderPass = new RenderPass(swapChain);
-
-	MaterialManager::init(swapChain, renderPass);	
-
-	renderer = new Renderer(renderPass,swapChain);
+	delete swapChain;
 }
 
 void VkEngine::drawFrame()
@@ -168,8 +138,6 @@ void VkEngine::drawFrame()
 		this->recreateSwapChain();
 	}
 }
-
-
 
 void VkEngine::receiveMessage(Message msg)
 {

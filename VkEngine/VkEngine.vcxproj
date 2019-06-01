@@ -169,7 +169,6 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Surface.cpp" />
     <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
@@ -200,7 +199,6 @@
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Surface.h" />
     <ClInclude Include="SwapChain.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
@@ -208,6 +206,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Shaders\phong_multi_light\phong.frag" />
+    <None Include="Shaders\phong_multi_light\phong.vert" />
+    <None Include="Shaders\sample\shader.frag" />
+    <None Include="Shaders\sample\shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

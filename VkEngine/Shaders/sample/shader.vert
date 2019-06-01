@@ -16,7 +16,7 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 layout(location = 2)flat out int textureIndex;
 
-layout(set = 0, binding = 1) uniform uniBlock{
+layout(set = 1, binding = 0) uniform uniBlock{
     mat4 P_matrix;
     mat4 V_matrix;
     int light_count;

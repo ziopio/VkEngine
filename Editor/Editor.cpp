@@ -4,7 +4,7 @@
 #define W_WIDTH 500
 #define W_HEIGHT 500
 
-Editor::Editor()
+Editor::Editor() 
 {
 	WindowManager::init();
 	this->window = WindowManager::createWindow( W_WIDTH, W_WIDTH, "Editor!!!");
@@ -13,13 +13,13 @@ Editor::Editor()
 	this->window->activateMouseButtonCallback();
 	this->window->activateCursorPosCallback();
 	this->window->activateScrollCallback();
-	this->renderingEngine.validation = true;
-	VkEngineInitInfo info = {};
+	VulkanInstanceInitInfo info = {};
 	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
+	info.enableValidation = true;
 	void* instance = renderingEngine.createInstance(info);
 	void* surface = nullptr;
 	this->window->createWindowSurface(instance, &surface);
-	this->renderingEngine.setSurfacePointer(surface);
+	this->renderingEngine.setSurface(surface);
 	this->renderingEngine.init();
 }
 

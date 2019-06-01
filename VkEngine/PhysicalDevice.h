@@ -25,6 +25,7 @@ class PhysicalDevice
 {
 public:
 	static void setSurface(VkSurfaceKHR surface);
+	static VkSurfaceKHR getSurface();
 	static VkPhysicalDevice get();
 	static QueueFamilyIndices getQueueFamilies();
 	static SwapChainSupportDetails getSwapChainSupport();
