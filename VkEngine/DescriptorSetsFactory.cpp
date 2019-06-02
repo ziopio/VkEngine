@@ -6,16 +6,16 @@
 #include "TextureManager.h"
 #include "ApiUtils.h"
 
-static const uniBlock uniform_sample;
-
 SwapChain* DescriptorSetsFactory::swapChain;
 std::vector<Object*> DescriptorSetsFactory::objects;
 std::multimap<MaterialType, Object*> DescriptorSetsFactory::material2obj_map;
 VkDescriptorPool DescriptorSetsFactory::descriptorPool;
-std::vector<VkDescriptorSet> DescriptorSetsFactory::descriptorSets;
-std::vector<void *>DescriptorSetsFactory::mappedUniformMemory;
-std::vector<VkBuffer> DescriptorSetsFactory::uniformBuffers;
-std::vector<VkDeviceMemory> DescriptorSetsFactory::uniformBuffersMemory;
+VkDescriptorSet DescriptorSetsFactory::staticGlobalDescriptorSet;
+std::vector<VkDescriptorSet> DescriptorSetsFactory::frameDescriptorSets;
+std::vector<VkDescriptorSet> DescriptorSetsFactory::materialDescriptorSets;
+void* DescriptorSetsFactory::mappedUniformMemory;
+VkBuffer DescriptorSetsFactory::uniformBuffers;
+VkDeviceMemory DescriptorSetsFactory::uniformBuffersMemory;
 bool DescriptorSetsFactory::ready;
 
 void DescriptorSetsFactory::init(SwapChain* swapChain, std::vector<Object*> objects)
@@ -23,32 +23,39 @@ void DescriptorSetsFactory::init(SwapChain* swapChain, std::vector<Object*> obje
 	DescriptorSetsFactory::swapChain = swapChain;
 	DescriptorSetsFactory::objects = objects;
 	//mapMaterialsToObjects();
-	createUniformBuffers();
+	createFrameDependentUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
 	ready = true;
 }
-
-VkDescriptorSet* DescriptorSetsFactory::getDescriptorSet(MaterialType material)
+void DescriptorSetsFactory::updateUniformBuffer(uniformBlockDefinition uniforms, int imageIndex)
 {
-	if (!ready) {
-		throw std::runtime_error("DescriptorSetsFactory not ready");
-	}
-	return &descriptorSets[material];
+	VkDeviceSize alignemetPadding = sizeof(uniformBlockDefinition) %
+		PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+	memcpy((char *)mappedUniformMemory + imageIndex * (alignemetPadding ? sizeof(uniformBlockDefinition) - alignemetPadding : 0),
+		&uniforms, sizeof(uniforms));
 }
 
-void DescriptorSetsFactory::updateUniformBuffer(uniBlock uniforms, int imageIndex)
+VkDescriptorSet DescriptorSetsFactory::getFrameDescriptorSet(int frame_index)
 {
-	memcpy(mappedUniformMemory[imageIndex], &uniforms, sizeof(uniforms));
+	return frameDescriptorSets[frame_index];
+}
+
+VkDescriptorSet DescriptorSetsFactory::getMaterialDescriptorSets()
+{
+	return VkDescriptorSet();
+}
+
+VkDescriptorSet DescriptorSetsFactory::getStaticGlobalDescriptorSet()
+{
+	return staticGlobalDescriptorSet;
 }
 
 void DescriptorSetsFactory::cleanUp()
 {
-	for (int i = 0; i < swapChain->getImageViews().size();i++) {
-		vkUnmapMemory(Device::get(), uniformBuffersMemory[i]);
-		vkDestroyBuffer(Device::get(), uniformBuffers[i], nullptr);
-		vkFreeMemory(Device::get(), uniformBuffersMemory[i], nullptr);
-	}
+	vkUnmapMemory(Device::get(), uniformBuffersMemory);
+	vkDestroyBuffer(Device::get(), uniformBuffers, nullptr);
+	vkFreeMemory(Device::get(), uniformBuffersMemory, nullptr);
 	vkDestroyDescriptorPool(Device::get(), descriptorPool, nullptr);
 }
 
@@ -61,60 +68,83 @@ void DescriptorSetsFactory::mapMaterialsToObjects()
 
 void DescriptorSetsFactory::createDescriptorSets()
 {
-	std::vector<VkDescriptorSetLayout> layouts;
-	for ( int i = 0; i < MaterialType::LAST; i++) {
-		layouts.push_back(MaterialManager::getMaterial((MaterialType)i)->getDescriptorSetLayouts());
-	}
-	
-	VkDescriptorSetAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 2;//static_cast<uint32_t>(swapChain->getImageViews().size());
-	allocInfo.pSetLayouts = layouts.data(); // same size of descriptorSet array
+	//Static uniforms descriptor sets allocation and definition
+	{
+		auto layout = MaterialManager::getStaticDescriptorSetLayout();
+		VkDescriptorSetAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorSetCount = 1;
+		allocInfo.pSetLayouts = &layout; // same size of descriptorSet array
 
-	descriptorSets.resize(MaterialType::LAST);
-	VkResult result = vkAllocateDescriptorSets(Device::get(), &allocInfo, descriptorSets.data());
-	if( result != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate descriptor sets!");
-	}
-
-	//L'array di textures sarà inizializzato allo stesso modo per tutti i materiali
-	std::array<VkDescriptorImageInfo, MAX_TEXTURE_COUNT>  imagesInfo = {};
-	for (int i = 0; i < MAX_TEXTURE_COUNT; i++) {
-		imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		if (i < objects.size()) {
-			imagesInfo[i].imageView = TextureManager::getTexture(objects[i]->getTextureId())->getTextureImgView();
-			imagesInfo[i].sampler = TextureManager::getTexture(objects[i]->getTextureId())->getTextureSampler();
-		} else {
-			imagesInfo[i].imageView = TextureManager::getTexture(0)->getTextureImgView();
-			imagesInfo[i].sampler = TextureManager::getTexture(0)->getTextureSampler();
+		VkResult result = vkAllocateDescriptorSets(Device::get(), &allocInfo, &staticGlobalDescriptorSet);
+		if (result != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
+		//L'array di textures sarà inizializzato allo stesso modo per tutti i materiali
+		std::array<VkDescriptorImageInfo, MAX_TEXTURE_COUNT>  imagesInfo = {};
+		for (int i = 0; i < MAX_TEXTURE_COUNT; i++) {
+			imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			if (i < objects.size()) {
+				imagesInfo[i].imageView = TextureManager::getTexture(objects[i]->getTextureId())->getTextureImgView();
+				imagesInfo[i].sampler = TextureManager::getTexture(objects[i]->getTextureId())->getTextureSampler();
+			}
+			else {
+				imagesInfo[i].imageView = TextureManager::getTexture(0)->getTextureImgView();
+				imagesInfo[i].sampler = TextureManager::getTexture(0)->getTextureSampler();
+			}
+		}
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = staticGlobalDescriptorSet;
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrite.descriptorCount = imagesInfo.size();
+		descriptorWrite.pImageInfo = imagesInfo.data();
+
+		vkUpdateDescriptorSets(Device::get(), 1, &descriptorWrite, 0, nullptr);
 	}
-	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = uniformBuffer;
-	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(uniform_sample);
+	// Uniform Descriptor Set for data that changes one time each frame
+	{
+		frameDescriptorSets.resize(swapChain->getImageViews().size());
+		std::vector<VkDescriptorSetLayout> frame_dependent_layouts;
+		frame_dependent_layouts.resize(swapChain->getImageViews().size(), MaterialManager::getFrameDependentDescriptorSetLayout());
+		VkDescriptorSetAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorSetCount = 3;
+		allocInfo.pSetLayouts = frame_dependent_layouts.data(); // same size of descriptorSet array
 
-	// Tutti i materiali supportano lo stesso array di texture
-	// 1 descriptor set per ogni materiale
-	for (int i = 0; i < MaterialType::LAST ;i++) {
-		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = descriptorSets[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[0].descriptorCount = imagesInfo.size();
-		descriptorWrites[0].pImageInfo = imagesInfo.data();
+		VkResult result = vkAllocateDescriptorSets(Device::get(), &allocInfo, frameDescriptorSets.data());
+		if (result != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+		VkDeviceSize alignemetPadding = sizeof(uniformBlockDefinition) % 
+			PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
 
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = descriptorSets[i];
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pBufferInfo = &bufferInfo;
+		std::vector<VkDescriptorBufferInfo> bufferInfos = {};
+		bufferInfos.resize(frameDescriptorSets.size());
 
+
+		std::vector<VkWriteDescriptorSet> descriptorWrites = {};
+		descriptorWrites.resize(frame_dependent_layouts.size());
+
+		for (int i = 0; i < descriptorWrites.size(); i++) {
+			//Each descriptor set points to the same uniform buffer but with a different offset
+			bufferInfos[i].buffer = DescriptorSetsFactory::uniformBuffers;
+			bufferInfos[i].range = sizeof(uniformBlockDefinition); 
+			// offset in bytes in the uniform buffer
+			bufferInfos[i].offset = i * (alignemetPadding ? sizeof(uniformBlockDefinition) - alignemetPadding : 0);
+
+			descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[i].dstSet = frameDescriptorSets[i];
+			descriptorWrites[i].dstBinding = 0;
+			descriptorWrites[i].dstArrayElement = 0;
+			descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[i].descriptorCount = 1;
+			descriptorWrites[i].pBufferInfo = &bufferInfos[i];
+		}
 		vkUpdateDescriptorSets(Device::get(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 }
@@ -144,18 +174,23 @@ void DescriptorSetsFactory::createDescriptorPool()
 	}
 }
 
-void DescriptorSetsFactory::createUniformBuffers()
+void DescriptorSetsFactory::createFrameDependentUniformBuffers()
 {
-	VkDeviceSize bufferSize = sizeof(uniform_sample);
+	// one uniform block for each frame in-flight
+	VkDeviceSize alignemetPadding = sizeof(uniformBlockDefinition) % 
+		PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+	VkDeviceSize bufferSize = 
+		(sizeof(uniformBlockDefinition) + (alignemetPadding ? sizeof(uniformBlockDefinition) - alignemetPadding : 0))
+		* swapChain->getImageViews().size();
 
-	uniformBuffers.resize(swapChain->getImageViews().size());
-	uniformBuffersMemory.resize(swapChain->getImageViews().size());
-
-	for (size_t i = 0; i < swapChain->getImageViews().size(); i++) {
-		createBuffer(PhysicalDevice::get(), Device::get(), bufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			uniformBuffers[i], uniformBuffersMemory[i]);
-
-		vkMapMemory(Device::get(), uniformBuffersMemory[i], 0, sizeof(uniform_sample), 0, &mappedUniformMemory[i]);
-	}
+	createBuffer(PhysicalDevice::get(), Device::get(), bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			uniformBuffers, uniformBuffersMemory);
+	vkMapMemory(Device::get(), 
+		uniformBuffersMemory, 
+		0, // offset in bytes 
+		sizeof(uniformBlockDefinition), //range to be mapped
+		0, // flags
+		&mappedUniformMemory); // Pointer location
 }

@@ -26,7 +26,6 @@ Material::Material(MaterialType material, SwapChain* swapchain, RenderPass* rend
 	default:
 		break;
 	}
-	createDescriptorSetLayouts();
 	buildPipeline();
 }
 
@@ -40,62 +39,20 @@ VkPipelineLayout Material::getPipelineLayout()
 	return this->pipelineLayout;
 }
 
-std::vector<VkDescriptorSetLayout> Material::getDescriptorSetLayouts()
+VkDescriptorSetLayout Material::getMaterialSpecificDescriptorSetLayout()
 {
-	return this->descriptorSetLayouts;
+	return VkDescriptorSetLayout();
 }
 
 Material::~Material()
 {
 	vkDestroyPipeline(Device::get(), pipeline, nullptr);
 	vkDestroyPipelineLayout(Device::get(), pipelineLayout, nullptr);
-	for ( auto layout : descriptorSetLayouts) {
-		vkDestroyDescriptorSetLayout(Device::get(), layout, nullptr);
-	}
+
 }
 
-void Material::createDescriptorSetLayouts()
+void Material::createMaterialSpecificDescriptorSetLayouts()
 {
-	// There will be 2 sets
-	descriptorSetLayouts.resize(2);
-	// First set
-	{
-		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-		samplerLayoutBinding.binding = 0;
-		samplerLayoutBinding.descriptorCount = MAX_TEXTURE_COUNT;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		std::array<VkDescriptorSetLayoutBinding, 1> set_0_bindings = { samplerLayoutBinding };
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(set_0_bindings.size());
-		layoutInfo.pBindings = set_0_bindings.data();
-
-		if (vkCreateDescriptorSetLayout(Device::get(), &layoutInfo, nullptr, &descriptorSetLayouts[0]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
-	// Second set
-	{
-		VkDescriptorSetLayoutBinding uniformMatLayoutBinding = {};
-		uniformMatLayoutBinding.binding = 0;
-		uniformMatLayoutBinding.descriptorCount = 1;
-		uniformMatLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uniformMatLayoutBinding.pImmutableSamplers = nullptr;
-		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		std::array<VkDescriptorSetLayoutBinding, 1> set_1_bindings = { uniformMatLayoutBinding };
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(set_1_bindings.size());
-		layoutInfo.pBindings = set_1_bindings.data();
-
-		if (vkCreateDescriptorSetLayout(Device::get(), &layoutInfo, nullptr, &descriptorSetLayouts[1]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
 }
 
 void Material::buildPipeline()
@@ -213,17 +170,19 @@ void Material::buildPipeline()
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	// Definizione del layout per caricare le uniforms sugli shaders
+	std::array<VkDescriptorSetLayout, 2> layouts = { MaterialManager::getStaticDescriptorSetLayout(), MaterialManager::getFrameDependentDescriptorSetLayout() };
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = this->descriptorSetLayouts.size();
-	pipelineLayoutInfo.pSetLayouts = this->descriptorSetLayouts.data();
+	pipelineLayoutInfo.setLayoutCount = layouts.size();
+	pipelineLayoutInfo.pSetLayouts = layouts.data();
 	VkPushConstantRange pushRange = {};
 	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	pushRange.size = sizeof(push_obj);
 	pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = &pushRange; // Optional
 
-	if (vkCreatePipelineLayout(Device::get(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+	VkResult result = vkCreatePipelineLayout(Device::get(), &pipelineLayoutInfo, nullptr, &pipelineLayout);
+	if ( result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 

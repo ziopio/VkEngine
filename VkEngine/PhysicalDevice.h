@@ -29,6 +29,7 @@ public:
 	static VkPhysicalDevice get();
 	static QueueFamilyIndices getQueueFamilies();
 	static SwapChainSupportDetails getSwapChainSupport();
+	static VkPhysicalDeviceProperties getPhysicalDeviceProperties();
 private:
 	static void pickPhysicalDevice();
 	static bool isDeviceSuitable(VkPhysicalDevice device);
@@ -36,6 +37,7 @@ private:
 	static bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	static VkPhysicalDevice physicalDevice;
+	static VkPhysicalDeviceProperties deviceProperties;
 	static VkSurfaceKHR surface;
 	static SwapChainSupportDetails swapChainSupportDetails;
 	static QueueFamilyIndices queueFamilyIndices;

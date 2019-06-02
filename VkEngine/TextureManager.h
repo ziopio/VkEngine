@@ -1,7 +1,6 @@
 #pragma once
 #include "Texture.h"
 
-#define MAX_TEXTURE_COUNT 32
 
 class TextureManager
 {

@@ -15,10 +15,11 @@ public:
 	Material(MaterialType material, SwapChain* swapchain, RenderPass* renderer);
 	VkPipeline getPipeline();
 	VkPipelineLayout getPipelineLayout();
-	std::vector<VkDescriptorSetLayout> getDescriptorSetLayouts();
+	static VkDescriptorSetLayout getMaterialSpecificDescriptorSetLayout();
+
 	~Material();
 private:
-	void createDescriptorSetLayouts();
+	void createMaterialSpecificDescriptorSetLayouts();
 	void buildPipeline();
 	SwapChain* swapChain;
 	RenderPass* renderPass;
@@ -27,6 +28,6 @@ private:
 	Shader* fragmentShader;
 	VkPipeline pipeline;
 	VkPipelineLayout pipelineLayout;
-	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+	VkDescriptorSetLayout materialSpecificDescriptorSetLayout;
 };
 

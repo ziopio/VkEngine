@@ -4,6 +4,7 @@
 
 
 VkPhysicalDevice PhysicalDevice::physicalDevice = VK_NULL_HANDLE;
+VkPhysicalDeviceProperties PhysicalDevice::deviceProperties;
 VkSurfaceKHR PhysicalDevice::surface = VK_NULL_HANDLE;
 QueueFamilyIndices PhysicalDevice::queueFamilyIndices;
 SwapChainSupportDetails PhysicalDevice::swapChainSupportDetails;
@@ -41,6 +42,11 @@ SwapChainSupportDetails PhysicalDevice::getSwapChainSupport()
 	return swapChainSupportDetails = PhysicalDevice::querySwapChainSupport(physicalDevice);
 }
 
+VkPhysicalDeviceProperties PhysicalDevice::getPhysicalDeviceProperties()
+{
+	return PhysicalDevice::deviceProperties;
+}
+
 void PhysicalDevice::pickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;
@@ -66,7 +72,6 @@ void PhysicalDevice::pickPhysicalDevice()
 
 bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device)
 {
-	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);

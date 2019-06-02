@@ -197,7 +197,7 @@ void Renderer::prepareThreadedRendering()
 
 void Renderer::update_camera_infos()
 {
-	uniBlock uniforms = {};
+	uniformBlockDefinition uniforms = {};
 	uniforms.V_matrix = Direction::getCurrentCamera()->setCamera();
 	uniforms.P_matrix = Direction::getCurrentCamera()->getProjection();
 	uniforms.P_matrix[1][1] *= -1; // invert openGL Y sign
@@ -205,7 +205,7 @@ void Renderer::update_camera_infos()
 	for (int i = 0; i < lights.size(); i++) {
 		uniforms.lights[i] = this->lights[i]->getData();
 	}
-	DescriptorSetsFactory::updateUniformBuffer(uniforms);
+	DescriptorSetsFactory::updateUniformBuffer(uniforms,this->currentFrame);
 
 	this->frustum.update(uniforms.P_matrix * uniforms.V_matrix);
 }
@@ -225,7 +225,7 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	{
 		for (uint32_t i = 0; i < objXthread && objIndex < objects.size(); i++, objIndex++)
 		{
-			VkDescriptorSet* set = DescriptorSetsFactory::getDescriptorSet(objects[objIndex]->getMatType());
+			VkDescriptorSet* set = nullptr;//DescriptorSetsFactory::getDescriptorSet(objects[objIndex]->getMatType());
 			if (multithreading) {
 				thread_pool.threads[t]->addJob([=] { threadRenderCode(objects[objIndex], frustum_, &per_thread_resources[t], frameBufferIndex, i, inheritanceInfo, set); });
 			}
@@ -259,6 +259,12 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	// begin render pass
 	vkCmdBeginRenderPass(primaryCommandBuffers[frameBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
+	VkPipelineLayout playout = MaterialManager::getMaterial(MaterialType::SAMPLE)->getPipelineLayout();
+	std::array<VkDescriptorSet, 2> desriptor_sets = {DescriptorSetsFactory::getStaticGlobalDescriptorSet(),DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex)};
+	vkCmdBindDescriptorSets(primaryCommandBuffers[frameBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, 
+		playout,
+		0, 1, desriptor_sets.data(),
+		0, nullptr);
 
 
 	thread_pool.wait();
@@ -329,7 +335,7 @@ void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, 
 
 	VkPipelineLayout pipelineLayout = MaterialManager::getMaterial(obj->getMatType())->getPipelineLayout();
 	
-	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptorSet, 0, nullptr);
+	//vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptorSet, 0, nullptr);
 
 	PushConstantBlock pushConsts = {};
 	pushConsts.model_transform = obj->getMatrix();
