@@ -7,35 +7,34 @@
 Editor::Editor() 
 {
 	WindowManager::init();
-	this->window = WindowManager::createWindow( W_WIDTH, W_WIDTH, "Editor!!!");
+	this->window = WindowManager::createWindow( W_WIDTH, W_HEIGHT, "Editor!!!");
 	this->window->registerEventHandler(this);
 	this->window->activateKeyCallBack();
 	this->window->activateMouseButtonCallback();
 	this->window->activateCursorPosCallback();
 	this->window->activateScrollCallback();
-	VulkanInstanceInitInfo info = {};
-	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
-	info.enableValidation = true;
-	void* instance = renderingEngine.createInstance(info);
-	void* surface = nullptr;
-	this->window->createWindowSurface(instance, &surface);
-	this->renderingEngine.setSurface(surface);
+	this->renderingEngine.setSurfaceOwner(this);
 	this->renderingEngine.init();
+	this->load_demo_scene();
 }
 
 void Editor::execute()
 {
 	while (!this->window->windowShouldClose() || this->terminate) {
 		WindowManager::pollEvents();
-		//enderingEngine.renderFrame();
+		renderingEngine.renderFrame();
 	}
 }
-
 
 Editor::~Editor()
 {
 	WindowManager::destroyWindow(this->window);
 	WindowManager::terminate();
+}
+
+void Editor::onWindowResizeCallBack(int width, int height)
+{	
+	this->renderingEngine.resizeSwapchain(width, height);
 }
 
 void Editor::onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods)
@@ -67,3 +66,34 @@ void Editor::onDropCallback(int count, const char ** paths)
 {
 	std::cout << "Drop file callback" << std::endl;
 }
+
+VulkanInstanceInitInfo Editor::getInstanceExtInfo()
+{
+	VulkanInstanceInitInfo info = {};
+	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
+	info.enableValidation = true;
+	return info;
+}
+
+void * Editor::getSurface(void * vulkan_instance)
+{
+	void* surface;
+	this->window->createWindowSurface(vulkan_instance, &surface);
+	return surface;
+}
+
+void Editor::getFrameBufferSize(int * width, int * height)
+{
+	this->window->getFrameBufferSize(width, height);
+}
+
+void Editor::waitEvents()
+{
+	WindowManager::waitEvents();
+}
+
+void Editor::load_demo_scene()
+{
+
+}
+

@@ -20,6 +20,11 @@ Texture * TextureManager::getTexture(int id)
 	return textures[id];
 }
 
+int TextureManager::getTextureCount()
+{
+	return textures.size();
+}
+
 void TextureManager::cleanUp()
 {
 	for (auto text : textures) {

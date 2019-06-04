@@ -7,7 +7,6 @@
 #include "ApiUtils.h"
 
 SwapChain* DescriptorSetsFactory::swapChain;
-std::vector<Object*> DescriptorSetsFactory::objects;
 std::multimap<MaterialType, Object*> DescriptorSetsFactory::material2obj_map;
 VkDescriptorPool DescriptorSetsFactory::descriptorPool;
 VkDescriptorSet DescriptorSetsFactory::staticGlobalDescriptorSet;
@@ -18,11 +17,9 @@ VkBuffer DescriptorSetsFactory::uniformBuffers;
 VkDeviceMemory DescriptorSetsFactory::uniformBuffersMemory;
 bool DescriptorSetsFactory::ready;
 
-void DescriptorSetsFactory::init(SwapChain* swapChain, std::vector<Object*> objects)
+void DescriptorSetsFactory::init(SwapChain* swapChain)
 {
 	DescriptorSetsFactory::swapChain = swapChain;
-	DescriptorSetsFactory::objects = objects;
-	//mapMaterialsToObjects();
 	createFrameDependentUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
@@ -59,13 +56,6 @@ void DescriptorSetsFactory::cleanUp()
 	vkDestroyDescriptorPool(Device::get(), descriptorPool, nullptr);
 }
 
-void DescriptorSetsFactory::mapMaterialsToObjects()
-{
-	for (auto obj : objects) {
-		material2obj_map.insert(std::pair<MaterialType, Object*>(obj->getMatType(),obj));
-	}
-}
-
 void DescriptorSetsFactory::createDescriptorSets()
 {
 	//Static uniforms descriptor sets allocation and definition
@@ -85,9 +75,9 @@ void DescriptorSetsFactory::createDescriptorSets()
 		std::array<VkDescriptorImageInfo, MAX_TEXTURE_COUNT>  imagesInfo = {};
 		for (int i = 0; i < MAX_TEXTURE_COUNT; i++) {
 			imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			if (i < objects.size()) {
-				imagesInfo[i].imageView = TextureManager::getTexture(objects[i]->getTextureId())->getTextureImgView();
-				imagesInfo[i].sampler = TextureManager::getTexture(objects[i]->getTextureId())->getTextureSampler();
+			if (i < TextureManager::getTextureCount()) {
+				imagesInfo[i].imageView = TextureManager::getTexture(i)->getTextureImgView();
+				imagesInfo[i].sampler = TextureManager::getTexture(i)->getTextureSampler();
 			}
 			else {
 				imagesInfo[i].imageView = TextureManager::getTexture(0)->getTextureImgView();

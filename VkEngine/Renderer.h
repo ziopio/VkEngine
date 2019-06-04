@@ -24,8 +24,8 @@ class Renderer
 {
 public:
 	Renderer(RenderPass* renderPass,SwapChain* swapChain);
-	void setLights(std::vector<LightSource*> lights);
-	void setObjects(std::vector<Object*> objects);
+	void setLights(std::vector<LightSource> lights);
+	void setObjects(std::vector<Object> objects);
 	/* 
 	 * true means OK, false means SWAPCHAIN CHANGED!!!
 	*/
@@ -55,8 +55,8 @@ private:
 	std::vector<ThreadData> per_thread_resources;
 
 	vks::Frustum frustum;
-	std::vector<Object*> objects;
-	std::vector<LightSource*> lights;
+	std::vector<Object> objects;
+	std::vector<LightSource> lights;
 
 	uint32_t numThreads;
 	uint32_t objXthread;

@@ -34,7 +34,7 @@ void RenderPass::createRenderPass(SwapChain* swapchain)
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // final render ready to be presented
 	// reference to the swapchain for the subpass
 	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0; // layout 0 (stesso indice in out nel fragment shader!!!)
+	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription depthAttachment = {};
@@ -47,7 +47,7 @@ void RenderPass::createRenderPass(SwapChain* swapchain)
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	//reference to the dpth buffer image
+	//reference to the depth buffer image
 	VkAttachmentReference depthAttachmentRef = {};
 	depthAttachmentRef.attachment = 1;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;

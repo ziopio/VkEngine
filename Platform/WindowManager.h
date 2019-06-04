@@ -1,9 +1,9 @@
 #pragma once
 #include "WindowInputEnums.h"
 
-
 class WindowEventHandler {
 public:
+	virtual void onWindowResizeCallBack(int width, int height) = 0;
 	virtual void onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods) = 0;
 	virtual void onCharCallback(unsigned int code_point) = 0;
 	virtual void onCursorPosCallback(double xpos, double ypos) = 0;

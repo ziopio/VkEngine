@@ -22,35 +22,38 @@ VkEngine::VkEngine()
 	msgManager->registerListener(this);
 }
 
-void* VkEngine::createInstance(VulkanInstanceInitInfo info)
+void VkEngine::setSurfaceOwner(SurfaceOwner * surfaceOwner)
 {
-	//InputControl::init(msgManager, window);
-	//Direction::initialize(HEIGHT, WIDTH);
-	//Direction::addCamera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	Instance::setAppName("Demo");
-	Instance::setEngineName("VkEngine");
-	Instance::setRequiredExtensions(info);
-	return Instance::get();
-}
-
-void VkEngine::setSurface(void * surface)
-{
-	PhysicalDevice::setSurface(static_cast<VkSurfaceKHR>(surface));
+	this->surfaceOwner = surfaceOwner;
 }
 
 void VkEngine::init()
 {
+	Instance::setAppName("Demo");
+	Instance::setEngineName("VkEngine");
+	Instance::setRequiredExtensions(surfaceOwner->getInstanceExtInfo());
+	PhysicalDevice::setSurface(static_cast<VkSurfaceKHR>
+		(surfaceOwner->getSurface(Instance::get())));
+
 	PhysicalDevice::get();
 	if (Instance::hasValidation()) Device::enableDeviceValidation();
 	Device::get();
-	swapChain = new SwapChain();
+	swapChain = new SwapChain(this->surfaceOwner);
 	renderPass = new RenderPass(swapChain);
 	MaterialManager::init(swapChain, renderPass);
 	MeshManager::init();
 	TextureManager::init();
-	DescriptorSetsFactory::init(swapChain,objects);
+	DescriptorSetsFactory::init(swapChain);
+	int width, height;
+	surfaceOwner->getFrameBufferSize(&width,&height);
+	Direction::updateCamerasScreenSize(width, height);
+	Direction::initialize();
 	renderer = new Renderer(renderPass, swapChain);
+}
 
+void VkEngine::resizeSwapchain(int width, int height)
+{
+	this->recreateSwapChain();
 }
 
 VkEngine::~VkEngine()
@@ -60,9 +63,6 @@ VkEngine::~VkEngine()
 	DescriptorSetsFactory::cleanUp();
 	TextureManager::cleanUp();
 	MeshManager::cleanUp();
-	for (auto obj : objects) {
-		delete obj;
-	}
 	Device::destroy();
 	Instance::destroyInstance();
 }
@@ -77,19 +77,18 @@ void VkEngine::loadTexture(std::string texture_file)
 	TextureManager::addTexture(texture_file);
 }
 
-void VkEngine::setLights(std::vector<LightSource*> lights)
+void VkEngine::addLight(LightSource light)
 {
-	this->lights = lights;
-	if (lights.size() > 10) this->lights.resize(10);
+	if (lights.size() < 10)
+		this->lights.push_back(light);
 	renderer->setLights(lights);
 }
 
-void VkEngine::setObjects(std::vector<Object*> objects)
+void VkEngine::addObject(ObjectInitInfo _obj)
 {
-	this->objects = objects;
-
-	DescriptorSetsFactory::init(swapChain, objects);
-
+	Object obj(_obj.mesh_id,(MaterialType)_obj.material_id,
+		_obj.texture_id,_obj.transformation);
+	this->objects.push_back(obj);
 	renderer->setObjects(objects);
 }
 
@@ -97,38 +96,34 @@ void VkEngine::renderFrame()
 {
 	//InputControl::processInput();
 	this->msgManager->dispatchMessages();
-
 	drawFrame();
 }
 
-void VkEngine::recreateSwapChain() { // TODO: comporre la nuova swapchain riagganciando la vecchia
+void VkEngine::recreateSwapChain() { 
+	// TODO: comporre la nuova swapchain riagganciando la vecchia
 	int width = 0, height = 0;
 	while (width == 0 || height == 0) {
-		//glfwWaitEvents(); // window is minimized so application stops
-		//glfwGetFramebufferSize(window, &width, &height);
+		this->surfaceOwner->waitEvents();// window is minimized so application stops
+		this->surfaceOwner->getFrameBufferSize(&width, &height);
 	}
-	vkDeviceWaitIdle(Device::get());
 	cleanupSwapChain();
 
-	Direction::updateScreenSizes();
-	swapChain = new SwapChain();
+	Direction::updateCamerasScreenSize(width, height);
+	swapChain = new SwapChain(this->surfaceOwner);
 	renderPass = new RenderPass(swapChain);
 	MaterialManager::init(swapChain, renderPass);
 	renderer = new Renderer(renderPass, swapChain);
 	renderer->setObjects(this->objects);
-	renderer->setLights(lights);
+	renderer->setLights(this->lights);
 }
 
 
 void VkEngine::cleanupSwapChain()
 {
-
+	vkDeviceWaitIdle(Device::get());
 	delete renderer;
-
 	MaterialManager::destroyAllMaterials();
-
 	delete renderPass;
-
 	delete swapChain;
 }
 
@@ -142,8 +137,6 @@ void VkEngine::drawFrame()
 void VkEngine::receiveMessage(Message msg)
 {
 	switch (msg) {
-	case Message::SHUT_DOWN: this->terminate = true;
-		break;	
 	case Message::MULTITHREADED_RENDERING_ON_OFF: 
 		if (renderer->multithreading) {
 			renderer->multithreading = false;

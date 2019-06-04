@@ -12,10 +12,9 @@
 #include "ApiUtils.h"
 
 // function to feed a thread job
-void threadRenderCode(Object* obj, vks::Frustum frustum, ThreadData* threadData, uint32_t frameBufferIndex, 
-	uint32_t cmdBufferIndex,VkCommandBufferInheritanceInfo inheritanceInfo, VkDescriptorSet* descriptorSet);
-
-
+void threadRenderCode(Object obj, vks::Frustum frustum, 
+	ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex, 
+	VkCommandBufferInheritanceInfo inheritanceInfo, VkDescriptorSet* descriptorSet);
 
 Renderer::Renderer(RenderPass* renderPass, SwapChain* swapChain)
 {
@@ -23,17 +22,22 @@ Renderer::Renderer(RenderPass* renderPass, SwapChain* swapChain)
 	this->renderPass = renderPass;
 	this->multithreading = true;
 	createDepthResources();
-	createFramebuffers();	
+	createFramebuffers();
 	createSyncObjects();
+	this->findObjXthreadDivision();
+	prepareThreadedRendering();
 }
 
-void Renderer::setLights(std::vector<LightSource*> lights)
+void Renderer::setLights(std::vector<LightSource> lights)
 {
 	this->lights = lights;
 }
 
-void Renderer::setObjects(std::vector<Object*> objects)
+void Renderer::setObjects(std::vector<Object> objects)
 {
+	for (auto threadResource : this->per_thread_resources) {
+		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
+	}
 	this->objects = objects;
 	this->findObjXthreadDivision();
 	prepareThreadedRendering();
@@ -88,9 +92,6 @@ bool Renderer::renderScene()
 Renderer::~Renderer()
 {
 	for (auto threadResource : this->per_thread_resources) {
-		for (auto frameBufferCommandList : threadResource.commandBuffers) {
-			vkFreeCommandBuffers(Device::get(), threadResource.commandPool, frameBufferCommandList.size(), frameBufferCommandList.data());
-		}
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
 	}
 
@@ -163,8 +164,6 @@ void Renderer::prepareThreadedRendering()
 			throw std::runtime_error("failed to allocate primary command buffer!");
 		}
 	}
-
-
 	//allocazione pool e buffer secondari per ogni thread
 	this->per_thread_resources.resize(numThreads);
 
@@ -203,7 +202,7 @@ void Renderer::update_camera_infos()
 	uniforms.P_matrix[1][1] *= -1; // invert openGL Y sign
 	uniforms.light_count = lights.size();
 	for (int i = 0; i < lights.size(); i++) {
-		uniforms.lights[i] = this->lights[i]->getData();
+		uniforms.lights[i] = this->lights[i].getData();
 	}
 	DescriptorSetsFactory::updateUniformBuffer(uniforms,this->currentFrame);
 
@@ -242,6 +241,15 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	if (vkBeginCommandBuffer(primaryCommandBuffers[frameBufferIndex], &beginInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
+
+	VkPipelineLayout playout = MaterialManager::getMaterial(MaterialType::SAMPLE)->getPipelineLayout();
+	std::array<VkDescriptorSet, 2> desriptor_sets = { DescriptorSetsFactory::getStaticGlobalDescriptorSet(),DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex) };
+	
+	vkCmdBindDescriptorSets(primaryCommandBuffers[frameBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS,
+		playout,
+		0, desriptor_sets.size(), desriptor_sets.data(),
+		0, nullptr);
+
 	std::array<VkClearValue, 2> clearValues = {};
 	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
 	clearValues[1].depthStencil = { 1.0f, 0 };
@@ -259,12 +267,6 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	// begin render pass
 	vkCmdBeginRenderPass(primaryCommandBuffers[frameBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-	VkPipelineLayout playout = MaterialManager::getMaterial(MaterialType::SAMPLE)->getPipelineLayout();
-	std::array<VkDescriptorSet, 2> desriptor_sets = {DescriptorSetsFactory::getStaticGlobalDescriptorSet(),DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex)};
-	vkCmdBindDescriptorSets(primaryCommandBuffers[frameBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		playout,
-		0, 1, desriptor_sets.data(),
-		0, nullptr);
 
 
 	thread_pool.wait();
@@ -273,7 +275,7 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	{
 		for (uint32_t i = 0;  i < objXthread && objIndex < objects.size(); i++, objIndex++)
 		{
-			if (objects[objIndex]->visible)
+			if (objects[objIndex].visible)
 			{
 				secondaryCmdBuffers.push_back(per_thread_resources[t].commandBuffers[frameBufferIndex][i]);
 			}
@@ -281,7 +283,9 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	}
 
 	// Execute render commands from all secondary command buffers
-	vkCmdExecuteCommands(primaryCommandBuffers[frameBufferIndex], secondaryCmdBuffers.size(), secondaryCmdBuffers.data());
+	if (secondaryCmdBuffers.size() > 0) {
+		vkCmdExecuteCommands(primaryCommandBuffers[frameBufferIndex], secondaryCmdBuffers.size(), secondaryCmdBuffers.data());
+	}
 	vkCmdEndRenderPass(primaryCommandBuffers[frameBufferIndex]);
 	vkEndCommandBuffer(primaryCommandBuffers[frameBufferIndex]);
 }
@@ -293,24 +297,26 @@ void Renderer::findObjXthreadDivision()
 	// Se i thread superano il numero degli oggetti, 
 	// riduco il numero di thread e imposto 1 oggetto per thread.
 	if (objects.size() < numThreads) {
-		numThreads = objects.size();
-		objXthread = 1;
+		numThreads = 1;
+		objXthread = objects.size();
 	}
 	else {
 		this->objXthread = objects.size() / numThreads;
 	}
 	//Imposto il numero di thread che la libreria deve utilizzare
 	thread_pool.setThreadCount(numThreads);
-	printf("\nRendering impostato su %i threads, %i oggetti ciascuno. Totale: %i oggetti.",numThreads, objXthread,objects.size());
+	std::cout << "\nRendering impostato su " << numThreads 
+		<<" threads, " << objXthread << " oggetti ciascuno. Totale: " 
+		<< objects.size() << " oggetti." << std::endl;
 }
 
 /*
 	This function assembles a command buffer for 1 object running on 1 thread
 */
-void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
+void threadRenderCode(Object obj, vks::Frustum frustum,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
 	VkCommandBufferInheritanceInfo inheritanceInfo, VkDescriptorSet* descriptorSet)
 {
-	obj->visible = frustum.checkSphere(obj->getPos(), obj->getInfo().scale_factor );
+	obj.visible = frustum.checkSphere(obj.getPos(), obj.getInfo().scale_factor );
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -324,26 +330,26 @@ void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, 
 	}
 	//RenderPass has already been started by the main thread so here i just have to bind the needed data and draw.
 
-	VkPipeline pipiline = MaterialManager::getMaterial(obj->getMatType())->getPipeline();
+	VkPipeline pipiline = MaterialManager::getMaterial(obj.getMatType())->getPipeline();
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipiline);
 
-	VkBuffer vertexBuffers[] = { MeshManager::getMesh(obj->getMeshId())->getVkVertexBuffer() };
+	VkBuffer vertexBuffers[] = { MeshManager::getMesh(obj.getMeshId())->getVkVertexBuffer() };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj->getMeshId())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj.getMeshId())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-	VkPipelineLayout pipelineLayout = MaterialManager::getMaterial(obj->getMatType())->getPipelineLayout();
+	VkPipelineLayout pipelineLayout = MaterialManager::getMaterial(obj.getMatType())->getPipelineLayout();
 	
 	//vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptorSet, 0, nullptr);
 
 	PushConstantBlock pushConsts = {};
-	pushConsts.model_transform = obj->getMatrix();
-	pushConsts.textureIndex = obj->getTextureId();
+	pushConsts.model_transform = obj.getMatrix();
+	pushConsts.textureIndex = obj.getTextureId();
 	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConsts), &pushConsts);
 
 
-	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj->getMeshId())->indices.size()), 1, 0, 0, 0);
+	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj.getMeshId())->indices.size()), 1, 0, 0, 0);
 	vkEndCommandBuffer(cmdBuffer);
 }
 

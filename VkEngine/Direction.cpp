@@ -9,12 +9,12 @@ int Direction::camera_index;
 bool Direction::ready;
 
 
-
-void Direction::initialize( float height, float width)
+void Direction::initialize()
 {
-	Direction::w_height = height;
-	Direction::w_width = width;
 	Direction::ready = true;
+	Direction::addCamera(glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 10.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 Camera* Direction::getCurrentCamera()
@@ -46,8 +46,10 @@ int Direction::countCameras()
 	return Direction::cameras.size();
 }
 
-void Direction::updateScreenSizes()
+void Direction::updateCamerasScreenSize(int width, int height)
 {
+	Direction::w_width = width;
+	Direction::w_height = height;
 	for (auto cam : cameras) {
 		cam->updateScreenCenter(w_height, w_width);
 	}

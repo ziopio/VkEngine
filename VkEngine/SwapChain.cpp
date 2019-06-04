@@ -6,8 +6,9 @@
 #include "VkEngine.h"
 
 
-SwapChain::SwapChain()
+SwapChain::SwapChain(SurfaceOwner * surface_owner)
 {
+	this->surface_owner = surface_owner;
 	this->createSwapChain();
 	this->createImageViews();
 }
@@ -65,6 +66,10 @@ VkFormat SwapChain::getFormat()
 VkExtent2D SwapChain::getExtent()
 {
 	return  this->swapChainExtent;
+}
+
+void SwapChain::requestFrameBufferSize(int * width, int * height)
+{
 }
 
 SwapChain::~SwapChain()
@@ -166,7 +171,7 @@ VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilit
 	}
 	else {
 		int width=0, height=0;
-		//glfwGetFramebufferSize(this->surface->getWindow(), &width, &height);
+		this->surface_owner->getFrameBufferSize( &width, &height);
 
 		VkExtent2D actualExtent = {
 			static_cast<uint32_t>(width),

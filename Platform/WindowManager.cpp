@@ -8,6 +8,7 @@
 
 // internal glfw callbacks
 
+void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 void keyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods);
 void charCallback(GLFWwindow* window, unsigned int code_point);
 void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
@@ -91,6 +92,7 @@ void WindowManager::Window::registerEventHandler(WindowEventHandler * handler)
 {
 	this->window_client = handler;
 	glfwSetWindowUserPointer(this->pimpl->window, window_client);
+	glfwSetFramebufferSizeCallback(this->pimpl->window,framebufferResizeCallback);
 }
 
 bool WindowManager::Window::windowShouldClose()
@@ -222,6 +224,12 @@ void dropCallback(GLFWwindow * window, int count, const char ** paths)
 {
 	auto client = static_cast<WindowEventHandler*>(glfwGetWindowUserPointer(window));
 	client->onDropCallback(count, paths);
+}
+
+void framebufferResizeCallback(GLFWwindow * window, int width, int height)
+{
+	auto app = static_cast<WindowEventHandler*>(glfwGetWindowUserPointer(window));
+	app->onWindowResizeCallBack(width, height);
 }
 
 void keyCallBack(GLFWwindow * window, int key, int scancode, int action, int mods)
