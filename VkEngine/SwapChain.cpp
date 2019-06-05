@@ -68,16 +68,14 @@ VkExtent2D SwapChain::getExtent()
 	return  this->swapChainExtent;
 }
 
-void SwapChain::requestFrameBufferSize(int * width, int * height)
-{
-}
-
 SwapChain::~SwapChain()
 {
 	for (auto imageView : swapImageViews) {
 		vkDestroyImageView(Device::get(), imageView, nullptr);
 	}
 	vkDestroySwapchainKHR(Device::get(), swapChain, nullptr);
+	swapImages.clear();
+	swapImageViews.clear();
 }
 
 void SwapChain::createSwapChain()

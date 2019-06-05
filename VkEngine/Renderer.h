@@ -50,6 +50,7 @@ private:
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
 
+	VkCommandPool primaryCommandPool;
 	std::vector<VkCommandBuffer> primaryCommandBuffers;
 	vks::ThreadPool thread_pool;
 	std::vector<ThreadData> per_thread_resources;

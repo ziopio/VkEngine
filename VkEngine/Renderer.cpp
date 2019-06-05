@@ -38,6 +38,7 @@ void Renderer::setObjects(std::vector<Object> objects)
 	for (auto threadResource : this->per_thread_resources) {
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
 	}
+	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
 	this->objects = objects;
 	this->findObjXthreadDivision();
 	prepareThreadedRendering();
@@ -91,9 +92,17 @@ bool Renderer::renderScene()
 
 Renderer::~Renderer()
 {
+	this->objects.clear();
+	this->lights.clear();
+
 	for (auto threadResource : this->per_thread_resources) {
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
 	}
+	this->per_thread_resources.clear();
+
+
+	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
+	primaryCommandBuffers.clear();
 
 	vkDestroyImageView(Device::get(), depth_buffer.depthImageView, nullptr);
 	vkDestroyImage(Device::get(), depth_buffer.depthImage, nullptr);
@@ -102,11 +111,17 @@ Renderer::~Renderer()
 	for (auto framebuffer : swapChainFramebuffers) {
 		vkDestroyFramebuffer(Device::get(), framebuffer, nullptr);
 	}
+	swapChainFramebuffers.clear();
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(Device::get(), renderFinishedSemaphores[i], nullptr);
 		vkDestroySemaphore(Device::get(), imageAvailableSemaphores[i], nullptr);
 		vkDestroyFence(Device::get(), inFlightFences[i], nullptr);
-	}}
+	}
+	renderFinishedSemaphores.clear();
+	imageAvailableSemaphores.clear();
+	inFlightFences.clear();
+}
+
 
 
 void Renderer::createFramebuffers()
@@ -151,11 +166,13 @@ void Renderer::createDepthResources() {
 
 void Renderer::prepareThreadedRendering()
 {
+	//Creazione della pool per i buffer di comando principali
+	Device::createCommandPool(PhysicalDevice::getQueueFamilies().graphicsFamily,&this->primaryCommandPool);
 	//allocazione buffer principali 1 per ogni frame
 	primaryCommandBuffers.resize(swapChainFramebuffers.size());
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = Device::getGraphicCmdPool(); // using the standard Pool
+	allocInfo.commandPool = this->primaryCommandPool; // using the standard Pool
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = 1;
 

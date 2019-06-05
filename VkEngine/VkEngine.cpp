@@ -18,8 +18,7 @@
 
 VkEngine::VkEngine()
 {
-	this->msgManager = new MessageManager();
-	msgManager->registerListener(this);
+	msgManager.registerListener(this);
 }
 
 void VkEngine::setSurfaceOwner(SurfaceOwner * surfaceOwner)
@@ -34,7 +33,6 @@ void VkEngine::init()
 	Instance::setRequiredExtensions(surfaceOwner->getInstanceExtInfo());
 	PhysicalDevice::setSurface(static_cast<VkSurfaceKHR>
 		(surfaceOwner->getSurface(Instance::get())));
-
 	PhysicalDevice::get();
 	if (Instance::hasValidation()) Device::enableDeviceValidation();
 	Device::get();
@@ -95,13 +93,16 @@ void VkEngine::addObject(ObjectInitInfo _obj)
 void VkEngine::renderFrame()
 {
 	//InputControl::processInput();
-	this->msgManager->dispatchMessages();
-	drawFrame();
+	this->msgManager.dispatchMessages();	
+	if (!renderer->renderScene()) {
+		this->recreateSwapChain();
+	}
 }
 
 void VkEngine::recreateSwapChain() { 
 	// TODO: comporre la nuova swapchain riagganciando la vecchia
 	int width = 0, height = 0;
+	this->surfaceOwner->getFrameBufferSize(&width, &height);
 	while (width == 0 || height == 0) {
 		this->surfaceOwner->waitEvents();// window is minimized so application stops
 		this->surfaceOwner->getFrameBufferSize(&width, &height);
@@ -125,13 +126,6 @@ void VkEngine::cleanupSwapChain()
 	MaterialManager::destroyAllMaterials();
 	delete renderPass;
 	delete swapChain;
-}
-
-void VkEngine::drawFrame()
-{
-	if (!renderer->renderScene()) {
-		this->recreateSwapChain();
-	}
 }
 
 void VkEngine::receiveMessage(Message msg)

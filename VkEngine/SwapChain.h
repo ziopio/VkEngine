@@ -12,7 +12,6 @@ public:
 	std::vector<VkImageView> getImageViews();
 	VkFormat getFormat();
 	VkExtent2D getExtent();
-	void requestFrameBufferSize(int* width, int* height);
 	~SwapChain();
 private:
 	void createSwapChain();

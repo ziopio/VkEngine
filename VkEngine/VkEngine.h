@@ -52,11 +52,10 @@ public:
 	~VkEngine();
 private:
 	void recreateSwapChain();
-	void drawFrame();
 	void cleanupSwapChain();
 	void receiveMessage(Message msg);
 	SurfaceOwner* surfaceOwner;
-	MessageManager* msgManager;
+	MessageManager msgManager;
 	std::vector<Object> objects;
 	std::vector<LightSource> lights;
 	SwapChain* swapChain;
