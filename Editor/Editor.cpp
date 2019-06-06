@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include <iostream>
+#include "glm/glm.hpp"
 
 #define W_WIDTH 500
 #define W_HEIGHT 500
@@ -9,10 +10,10 @@ Editor::Editor()
 	WindowManager::init();
 	this->window = WindowManager::createWindow( W_WIDTH, W_HEIGHT, "Editor!!!");
 	this->window->registerEventHandler(this);
-	this->window->activateKeyCallBack();
-	this->window->activateMouseButtonCallback();
-	this->window->activateCursorPosCallback();
-	this->window->activateScrollCallback();
+	//this->window->activateKeyCallBack();
+	//this->window->activateMouseButtonCallback();
+	//this->window->activateCursorPosCallback();
+	//this->window->activateScrollCallback();
 	this->renderingEngine.setSurfaceOwner(this);
 	this->renderingEngine.init();
 	this->load_demo_scene();
@@ -94,6 +95,23 @@ void Editor::waitEvents()
 
 void Editor::load_demo_scene()
 {
+	this->renderingEngine.loadTexture("VkEngine/Textures/cube1.png");
 
+	float position[] = { 0,0,0 };
+	float rotation_vector[] = { 0,1,0 };
+	float scale_vector[] = { 1,1,1 };
+	ObjTransformation  t = {};
+	t.angularSpeed = 30.0f;
+	std::copy(std::begin(position), std::end(position), std::begin(t.position));
+	std::copy(std::begin(rotation_vector), std::end(rotation_vector),std::begin(t.rotation_vector));
+	t.scale_factor = 1.;
+	std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
+
+	ObjectInitInfo obj = {};
+	obj.mesh_id = 0;
+	obj.texture_id = 1;
+	obj.material_id = 0;
+	obj.transformation = t;
+	this->renderingEngine.addObject(obj);
 }
 

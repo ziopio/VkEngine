@@ -88,7 +88,7 @@ void Material::buildPipeline()
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // tipo di disegno
-	inputAssembly.primitiveRestartEnable = VK_FALSE; // VK_TRUE enables special idex for mesh splitting during drawing
+	inputAssembly.primitiveRestartEnable = VK_FALSE; // VK_TRUE enables special index for mesh splitting during drawing
 
 	//il viewport definisce quale porzione del frame è occupato dall'immagine
 	VkViewport viewport = {};

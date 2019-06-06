@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "Object.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace glm;
@@ -10,19 +12,19 @@ Object::Object(int mesh_id, MaterialType material, int texture_id, ObjTransforma
 	this->texture_id = texture_id;
 	this->material = material;
 	this->transform = transform;
-	glm::mat4 traslation = glm::translate(glm::mat4(), glm::make_vec3(transform.position));
-	glm::mat4 scale = glm::scale(glm::mat4(), glm::make_vec3(transform.scale_vector) * transform.scale_factor);
+	this->position = glm::make_vec3(transform.position);
+	glm::mat4 traslation = glm::translate(glm::mat4(1.f), this->position);
+	glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::make_vec3(transform.scale_vector) * transform.scale_factor);
 	this->ObjMatrix = traslation * scale;
 }
 
 glm::mat4 Object::getMatrix()
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
-
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-	
-	this->ObjMatrix =  glm::rotate(this->ObjMatrix, transform.angularSpeed, glm::make_vec3(transform.rotation_vector));
+	startTime = currentTime;
+	this->ObjMatrix = glm::rotate(ObjMatrix, time * glm::radians(transform.angularSpeed), glm::make_vec3(transform.rotation_vector));
 	return this->ObjMatrix;
 }
 
@@ -48,7 +50,7 @@ MaterialType Object::getMatType()
 
 int Object::getTextureId()
 {
-	return mesh_id;
+	return texture_id;
 }
 
 Object::~Object()

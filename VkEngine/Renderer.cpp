@@ -12,9 +12,9 @@
 #include "ApiUtils.h"
 
 // function to feed a thread job
-void threadRenderCode(Object obj, vks::Frustum frustum, 
+void threadRenderCode(Object* obj, vks::Frustum frustum, 
 	ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex, 
-	VkCommandBufferInheritanceInfo inheritanceInfo, VkDescriptorSet* descriptorSet);
+	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSet);
 
 Renderer::Renderer(RenderPass* renderPass, SwapChain* swapChain)
 {
@@ -56,7 +56,7 @@ bool Renderer::renderScene()
 	if (!this->swapChain->acquireNextImage(imageAvailableSemaphores[currentFrame], &imageIndex)) {
 		return false;
 	}
-	this->update_camera_infos();
+	this->update_camera_infos(imageIndex);
 	//Aggiorno tutti i commandBuffers
 
 	this->updateCommandBuffer(imageIndex); 
@@ -84,7 +84,7 @@ bool Renderer::renderScene()
 	if (!swapChain->presentImage(imageIndex, &renderFinishedSemaphores[currentFrame])) {
 		return false;
 	}
-	//vkQueueWaitIdle(presentQueue); not optimal time usage
+	//vkQueueWaitIdle(Device::getPresentQueue()); //not optimal time usage
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	return true;
@@ -211,7 +211,7 @@ void Renderer::prepareThreadedRendering()
 	}
 }
 
-void Renderer::update_camera_infos()
+void Renderer::update_camera_infos(uint32_t frameBufferIndex)
 {
 	uniformBlockDefinition uniforms = {};
 	uniforms.V_matrix = Direction::getCurrentCamera()->setCamera();
@@ -221,7 +221,7 @@ void Renderer::update_camera_infos()
 	for (int i = 0; i < lights.size(); i++) {
 		uniforms.lights[i] = this->lights[i].getData();
 	}
-	DescriptorSetsFactory::updateUniformBuffer(uniforms,this->currentFrame);
+	DescriptorSetsFactory::updateUniformBuffer(uniforms, frameBufferIndex);
 
 	this->frustum.update(uniforms.P_matrix * uniforms.V_matrix);
 }
@@ -237,20 +237,24 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	inheritanceInfo.framebuffer = swapChainFramebuffers[frameBufferIndex];
 	// work is divided between the available threads
 	vks::Frustum frustum_ = frustum;
+	std::array<VkDescriptorSet,2> descriptor_sets = { 
+		DescriptorSetsFactory::getStaticGlobalDescriptorSet(),
+		DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex) };
+
 	for (uint32_t t = 0, objIndex = 0; t < numThreads; t++)
 	{
 		for (uint32_t i = 0; i < objXthread && objIndex < objects.size(); i++, objIndex++)
 		{
-			VkDescriptorSet* set = nullptr;//DescriptorSetsFactory::getDescriptorSet(objects[objIndex]->getMatType());
 			if (multithreading) {
-				thread_pool.threads[t]->addJob([=] { threadRenderCode(objects[objIndex], frustum_, &per_thread_resources[t], frameBufferIndex, i, inheritanceInfo, set); });
+				thread_pool.threads[t]->addJob([=] { threadRenderCode(&objects[objIndex], frustum_, &per_thread_resources[t], 
+					frameBufferIndex, i, inheritanceInfo, descriptor_sets); });
 			}
 			else {
-				threadRenderCode(objects[objIndex], frustum_, &per_thread_resources[t], frameBufferIndex, i, inheritanceInfo, set);
+				threadRenderCode(&objects[objIndex], frustum_, &per_thread_resources[t], frameBufferIndex, i, 
+					inheritanceInfo, descriptor_sets);
 			}
 		}
 	}
-
 
 	// begin main command recording
 	VkCommandBufferBeginInfo beginInfo = {};
@@ -259,16 +263,8 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 
-	VkPipelineLayout playout = MaterialManager::getMaterial(MaterialType::SAMPLE)->getPipelineLayout();
-	std::array<VkDescriptorSet, 2> desriptor_sets = { DescriptorSetsFactory::getStaticGlobalDescriptorSet(),DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex) };
-	
-	vkCmdBindDescriptorSets(primaryCommandBuffers[frameBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS,
-		playout,
-		0, desriptor_sets.size(), desriptor_sets.data(),
-		0, nullptr);
-
 	std::array<VkClearValue, 2> clearValues = {};
-	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	clearValues[0].color = { 0.2f, 0.2f, 0.2f, 1.0f };
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
 	VkRenderPassBeginInfo renderPassInfo = {};
@@ -277,14 +273,10 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	renderPassInfo.framebuffer = swapChainFramebuffers[frameBufferIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = swapChain->getExtent();
-	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 	// begin render pass
 	vkCmdBeginRenderPass(primaryCommandBuffers[frameBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-
-
 
 	thread_pool.wait();
 	// i draw only the command buffers related to visible objects
@@ -330,10 +322,10 @@ void Renderer::findObjXthreadDivision()
 /*
 	This function assembles a command buffer for 1 object running on 1 thread
 */
-void threadRenderCode(Object obj, vks::Frustum frustum,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
-	VkCommandBufferInheritanceInfo inheritanceInfo, VkDescriptorSet* descriptorSet)
+void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
+	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSets)
 {
-	obj.visible = frustum.checkSphere(obj.getPos(), obj.getInfo().scale_factor );
+	obj->visible = frustum.checkSphere(obj->getPos(), obj->getInfo().scale_factor );
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -347,27 +339,34 @@ void threadRenderCode(Object obj, vks::Frustum frustum,ThreadData* threadData, u
 	}
 	//RenderPass has already been started by the main thread so here i just have to bind the needed data and draw.
 
-	VkPipeline pipiline = MaterialManager::getMaterial(obj.getMatType())->getPipeline();
+	VkPipeline pipiline = MaterialManager::getMaterial(obj->getMatType())->getPipeline();
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipiline);
 
-	VkBuffer vertexBuffers[] = { MeshManager::getMesh(obj.getMeshId())->getVkVertexBuffer() };
+	VkBuffer vertexBuffers[] = { MeshManager::getMesh(obj->getMeshId())->getVkVertexBuffer() };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj.getMeshId())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj->getMeshId())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-	VkPipelineLayout pipelineLayout = MaterialManager::getMaterial(obj.getMatType())->getPipelineLayout();
-	
-	//vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptorSet, 0, nullptr);
+	VkPipelineLayout pipelineLayout = MaterialManager::getMaterial(obj->getMatType())->getPipelineLayout();
+
+	VkPipelineLayout playout = MaterialManager::getMaterial(obj->getMatType())->getPipelineLayout();
+	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		playout,
+		0,descriptorSets.size(), descriptorSets.data(),
+		0, nullptr);
 
 	PushConstantBlock pushConsts = {};
-	pushConsts.model_transform = obj.getMatrix();
-	pushConsts.textureIndex = obj.getTextureId();
+	pushConsts.model_transform = obj->getMatrix();
+	pushConsts.textureIndex = obj->getTextureId();
 	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConsts), &pushConsts);
 
 
-	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj.getMeshId())->indices.size()), 1, 0, 0, 0);
-	vkEndCommandBuffer(cmdBuffer);
+	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj->getMeshId())->indices.size()), 1, 0, 0, 0);
+	VkResult result = vkEndCommandBuffer(cmdBuffer);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("Command buffer ending failed");
+	}
 }
 
 

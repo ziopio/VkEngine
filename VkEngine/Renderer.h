@@ -36,7 +36,7 @@ private:
 	void createFramebuffers();
 	void createDepthResources();
 	void prepareThreadedRendering();
-	void update_camera_infos();
+	void update_camera_infos(uint32_t frameBufferIndex);
 	void updateCommandBuffer(uint32_t frameBufferIndex);
 	void findObjXthreadDivision();
 	void createSyncObjects();

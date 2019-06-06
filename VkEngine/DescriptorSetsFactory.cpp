@@ -27,9 +27,11 @@ void DescriptorSetsFactory::init(SwapChain* swapChain)
 }
 void DescriptorSetsFactory::updateUniformBuffer(uniformBlockDefinition uniforms, int imageIndex)
 {
-	VkDeviceSize alignemetPadding = sizeof(uniformBlockDefinition) %
+	VkDeviceSize minAlignement =
 		PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
-	memcpy((char *)mappedUniformMemory + imageIndex * (alignemetPadding ? sizeof(uniformBlockDefinition) - alignemetPadding : 0),
+	VkDeviceSize alignemetPadding = minAlignement - (sizeof(uniformBlockDefinition) % minAlignement);
+
+	memcpy((char *)mappedUniformMemory + imageIndex * (sizeof(uniformBlockDefinition) + alignemetPadding ),
 		&uniforms, sizeof(uniforms));
 }
 
@@ -40,6 +42,7 @@ VkDescriptorSet DescriptorSetsFactory::getFrameDescriptorSet(int frame_index)
 
 VkDescriptorSet DescriptorSetsFactory::getMaterialDescriptorSets()
 {
+	throw std::runtime_error("not implemented");
 	return VkDescriptorSet();
 }
 
@@ -103,19 +106,19 @@ void DescriptorSetsFactory::createDescriptorSets()
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = 3;
+		allocInfo.descriptorSetCount = frame_dependent_layouts.size();
 		allocInfo.pSetLayouts = frame_dependent_layouts.data(); // same size of descriptorSet array
 
 		VkResult result = vkAllocateDescriptorSets(Device::get(), &allocInfo, frameDescriptorSets.data());
 		if (result != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
-		VkDeviceSize alignemetPadding = sizeof(uniformBlockDefinition) % 
+		VkDeviceSize minAlignement =
 			PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+		VkDeviceSize alignemetPadding = minAlignement - (sizeof(uniformBlockDefinition) % minAlignement);
 
 		std::vector<VkDescriptorBufferInfo> bufferInfos = {};
 		bufferInfos.resize(frameDescriptorSets.size());
-
 
 		std::vector<VkWriteDescriptorSet> descriptorWrites = {};
 		descriptorWrites.resize(frame_dependent_layouts.size());
@@ -125,7 +128,7 @@ void DescriptorSetsFactory::createDescriptorSets()
 			bufferInfos[i].buffer = DescriptorSetsFactory::uniformBuffers;
 			bufferInfos[i].range = sizeof(uniformBlockDefinition); 
 			// offset in bytes in the uniform buffer
-			bufferInfos[i].offset = i * (alignemetPadding ? sizeof(uniformBlockDefinition) - alignemetPadding : 0);
+			bufferInfos[i].offset = i * (sizeof(uniformBlockDefinition) + alignemetPadding);
 
 			descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[i].dstSet = frameDescriptorSets[i];
@@ -167,20 +170,20 @@ void DescriptorSetsFactory::createDescriptorPool()
 void DescriptorSetsFactory::createFrameDependentUniformBuffers()
 {
 	// one uniform block for each frame in-flight
-	VkDeviceSize alignemetPadding = sizeof(uniformBlockDefinition) % 
+	VkDeviceSize minAlignement =
 		PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
-	VkDeviceSize bufferSize = 
-		(sizeof(uniformBlockDefinition) + (alignemetPadding ? sizeof(uniformBlockDefinition) - alignemetPadding : 0))
-		* swapChain->getImageViews().size();
+	VkDeviceSize alignemetPadding = minAlignement - (sizeof(uniformBlockDefinition) % minAlignement);
+
+	VkDeviceSize bufferSize = (sizeof(uniformBlockDefinition) + alignemetPadding ) * swapChain->getImageViews().size();
 
 	createBuffer(PhysicalDevice::get(), Device::get(), bufferSize,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			uniformBuffers, uniformBuffersMemory);
 	vkMapMemory(Device::get(), 
-		uniformBuffersMemory, 
+		uniformBuffersMemory,
 		0, // offset in bytes 
-		sizeof(uniformBlockDefinition), //range to be mapped
+		bufferSize, //range to be mapped
 		0, // flags
 		&mappedUniformMemory); // Pointer location
 }

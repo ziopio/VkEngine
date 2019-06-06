@@ -72,7 +72,9 @@ void VkEngine::loadMesh(std::string mesh_file)
 
 void VkEngine::loadTexture(std::string texture_file)
 {
+	DescriptorSetsFactory::cleanUp();
 	TextureManager::addTexture(texture_file);
+	DescriptorSetsFactory::init(this->swapChain);
 }
 
 void VkEngine::addLight(LightSource light)
@@ -97,6 +99,7 @@ void VkEngine::renderFrame()
 	if (!renderer->renderScene()) {
 		this->recreateSwapChain();
 	}
+	//vkDeviceWaitIdle(Device::get());
 }
 
 void VkEngine::recreateSwapChain() { 
