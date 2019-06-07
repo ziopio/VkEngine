@@ -96,9 +96,15 @@ void Editor::waitEvents()
 void Editor::load_demo_scene()
 {
 	this->renderingEngine.loadTexture("VkEngine/Textures/cube1.png");
+	PointLightInfo l = {
+		2,2,2,
+		1,1,1,
+		1
+	};
+	this->renderingEngine.addLight(l);
 
 	float position[] = { 0,0,0 };
-	float rotation_vector[] = { 0,1,0 };
+	float rotation_vector[] = { 1,1,1 };
 	float scale_vector[] = { 1,1,1 };
 	ObjTransformation  t = {};
 	t.angularSpeed = 30.0f;
@@ -107,11 +113,11 @@ void Editor::load_demo_scene()
 	t.scale_factor = 1.;
 	std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
 
-	ObjectInitInfo obj = {};
-	obj.mesh_id = 0;
-	obj.texture_id = 1;
-	obj.material_id = 0;
-	obj.transformation = t;
-	this->renderingEngine.addObject(obj);
+	ObjectInitInfo cube = {};
+	cube.mesh_id = 0;
+	cube.texture_id = 1;
+	cube.material_id = 1;
+	cube.transformation = t;
+	this->renderingEngine.addObject(cube);
 }
 

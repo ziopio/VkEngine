@@ -8,6 +8,7 @@
 x64/*
 x86/*
 **/Models/*
+**/Meshes/*
 **/Textures/*
 
 # Ignore NuGet Packages

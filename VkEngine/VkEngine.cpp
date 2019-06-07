@@ -77,8 +77,9 @@ void VkEngine::loadTexture(std::string texture_file)
 	DescriptorSetsFactory::init(this->swapChain);
 }
 
-void VkEngine::addLight(LightSource light)
+void VkEngine::addLight(PointLightInfo light_info)
 {
+	LightSource light(glm::make_vec3(light_info.position), glm::make_vec3(light_info.color),light_info.power);
 	if (lights.size() < 10)
 		this->lights.push_back(light);
 	renderer->setLights(lights);

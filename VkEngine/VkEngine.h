@@ -15,20 +15,27 @@ typedef struct {
 	const char** instanceExtensions;
 	bool enableValidation;
 } VulkanInstanceInitInfo;
-struct ObjTransformation {
+
+typedef struct {
+	float position[3];
+	float color[3];
+	float power;
+} PointLightInfo;
+typedef struct {
 	float position[3];
 	/* Axis of the rotation	*/
 	float rotation_vector[3];
 	float angularSpeed;
 	float scale_vector[3];
 	float scale_factor;
-};
-struct ObjectInitInfo {
+}ObjTransformation;
+typedef struct {
 	int mesh_id;
 	int material_id;
 	int texture_id;
 	ObjTransformation transformation;
-};
+}ObjectInitInfo;
+
 class SurfaceOwner {
 public:
 	virtual VulkanInstanceInitInfo getInstanceExtInfo() = 0;
@@ -46,7 +53,7 @@ public:
 	void resizeSwapchain(int width, int height);
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
-	void addLight(LightSource light);
+	void addLight(PointLightInfo light);
 	void addObject(ObjectInitInfo obj_info);
 	void renderFrame();
 	~VkEngine();
