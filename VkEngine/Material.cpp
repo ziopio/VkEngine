@@ -11,6 +11,7 @@ static PushConstantBlock push_obj;
 
 Material::Material(MaterialType material, SwapChain* swapchain, RenderPass* renderPass)
 {
+	this->type = material;
 	this->swapChain = swapchain;
 	this->renderPass = renderPass;
 	switch (material)
@@ -22,6 +23,10 @@ Material::Material(MaterialType material, SwapChain* swapchain, RenderPass* rend
 	case PHONG:
 		this->vertexShader = new Shader("VkEngine/Shaders/phong_multi_light/vert.spv");
 		this->fragmentShader = new Shader("VkEngine/Shaders/phong_multi_light/frag.spv");
+		break;
+	case UI:
+		this->vertexShader = new Shader("VkEngine/Shaders/imgui/vert.spv");
+		this->fragmentShader = new Shader("VkEngine/Shaders/imgui/frag.spv");
 		break;
 	default:
 		break;
@@ -48,11 +53,11 @@ Material::~Material()
 {
 	vkDestroyPipeline(Device::get(), pipeline, nullptr);
 	vkDestroyPipelineLayout(Device::get(), pipelineLayout, nullptr);
-
 }
 
 void Material::createMaterialSpecificDescriptorSetLayouts()
 {
+	throw std::runtime_error("Method not implemented");
 }
 
 void Material::buildPipeline()
@@ -73,8 +78,16 @@ void Material::buildPipeline()
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	//Chiedo alla struct vertex info sul binding e descrizioni sugli attributi
-	auto bindingDescription = Vertex::getBindingDescription();
-	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+	VkVertexInputBindingDescription bindingDescription;
+	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+	if (this->type == MaterialType::UI) {
+		bindingDescription = Vertex2D::getBindingDescription();
+		attributeDescriptions = Vertex2D::getAttributeDescriptions();
+	}
+	else {
+		bindingDescription = Vertex3D::getBindingDescription();
+		attributeDescriptions = Vertex3D::getAttributeDescriptions();
+	}
 	// vertex buffer setup to feed the vertex shader
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -148,7 +161,9 @@ void Material::buildPipeline()
 
 	//Definizione del blending per 1 framebuffer
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachment.colorWriteMask =
+		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+		VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment.blendEnable = VK_FALSE;
 	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
 	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
@@ -170,11 +185,18 @@ void Material::buildPipeline()
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	// Definizione del layout per caricare le uniforms sugli shaders
-	std::array<VkDescriptorSetLayout, 2> layouts = { MaterialManager::getStaticDescriptorSetLayout(), MaterialManager::getFrameDependentDescriptorSetLayout() };
+	std::array<VkDescriptorSetLayout, 2> layouts = { 
+		MaterialManager::getStaticDescriptorSetLayout(), 
+		MaterialManager::getFrameDependentDescriptorSetLayout() };
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = layouts.size();
 	pipelineLayoutInfo.pSetLayouts = layouts.data();
+	if (this->type == MaterialType::UI) 
+	{
+		pipelineLayoutInfo.setLayoutCount = 1;
+	}
 	VkPushConstantRange pushRange = {};
 	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	pushRange.size = sizeof(push_obj);
@@ -185,7 +207,6 @@ void Material::buildPipeline()
 	if ( result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
-
 
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -208,10 +229,10 @@ void Material::buildPipeline()
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 
-	if (vkCreateGraphicsPipelines(Device::get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(Device::get(), VK_NULL_HANDLE, 1, &pipelineInfo, 
+		nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
-
 	delete this->vertexShader;
 	delete this->fragmentShader;
 }

@@ -5,6 +5,7 @@
 enum MaterialType {
 	SAMPLE,
 	PHONG,
+	UI,
 	LAST // DUMMY TOKEN leave at END!
 };
 

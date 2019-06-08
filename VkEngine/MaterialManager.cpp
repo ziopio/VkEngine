@@ -58,6 +58,9 @@ void MaterialManager::loadMaterials()
 	MaterialManager::materials.push_back(new Material(MaterialType::SAMPLE, swapchain, renderPass));
 
 	MaterialManager::materials.push_back(new Material(MaterialType::PHONG, swapchain, renderPass));
+
+	MaterialManager::materials.push_back(new Material(MaterialType::UI, swapchain, renderPass));
+
 }
 
 

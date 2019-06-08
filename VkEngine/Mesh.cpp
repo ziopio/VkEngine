@@ -45,11 +45,11 @@ void Mesh::loadModel(std::string modelPath) {
 		throw std::runtime_error(err);
 	}
 
-	std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
+	std::unordered_map<Vertex3D, uint32_t> uniqueVertices = {};
 	int i = 0;
 	for (const auto& shape : shapes) {
 		for (const auto& index : shape.mesh.indices) {
-			Vertex vertex = {};
+			Vertex3D vertex = {};
 			//nota attrib_t.vertices è un array di float non di vec3
 			vertex.pos = {
 				attrib.vertices[3 * index.vertex_index + 0],
@@ -83,7 +83,7 @@ void Mesh::loadModel(std::string modelPath) {
 
 void Mesh::createVertexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+	VkDeviceSize bufferSize = sizeof(Vertex3D) * vertices.size();
 	// first I create a reachable "staging buffer" as source of data
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
