@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "MessageManager.h"
-
+#include "Camera.h"
 
 class Object;
 class LightSource;
@@ -51,6 +51,7 @@ public:
 	void setSurfaceOwner(SurfaceOwner* surface_owner);
 	void init();
 	void resizeSwapchain(int width, int height);
+	Camera* getCurrentCamera();
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
 	void addLight(PointLightInfo light);

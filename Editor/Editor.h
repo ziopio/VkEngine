@@ -1,6 +1,7 @@
 #pragma once
 #include "..\\VkEngine\VkEngine.h"
 #include "..\\Platform\WindowManager.h"
+#include "EditorUI.h"
 
 
 class Editor : WindowEventHandler, SurfaceOwner
@@ -24,6 +25,7 @@ public:
 	virtual void waitEvents() override;
 private:
 	WindowManager::Window* window;
+	EditorUI UI;
 	VkEngine renderingEngine;
 	bool terminate;
 	void load_demo_scene();

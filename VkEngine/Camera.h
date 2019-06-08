@@ -1,4 +1,5 @@
 #pragma once
+#include <glm/glm.hpp>
 
 #define CAMERA_NORMAL_SPEED 10.0f 
 #define CAMERA_FASTER_SPEED 100.0f
@@ -51,6 +52,6 @@ private:
 	bool foreward = false, back = false, left = false, right = false;
 	bool wasd_movement_mutex = false;
 	float camera_speed;
-	clock_t camera_timer;
-	clock_t debug_timer;
+	double camera_timer;
+	double debug_timer;
 };

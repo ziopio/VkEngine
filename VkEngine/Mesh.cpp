@@ -46,8 +46,7 @@ void Mesh::loadModel(std::string modelPath) {
 	}
 
 	std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
-
-
+	int i = 0;
 	for (const auto& shape : shapes) {
 		for (const auto& index : shape.mesh.indices) {
 			Vertex vertex = {};
@@ -71,19 +70,20 @@ void Mesh::loadModel(std::string modelPath) {
 
 			vertex.color = { 1.0f, 1.0f, 1.0f };
 
-			if (uniqueVertices.count(vertex) == 0) {
-				uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-				vertices.push_back(vertex);
-			}
-
-			indices.push_back(uniqueVertices[vertex]);
+			//if (uniqueVertices.count(vertex) == 0) {
+			//	uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+			//	vertices.push_back(vertex);
+			//}
+			//indices.push_back(uniqueVertices[vertex]);
+			vertices.push_back(vertex);
+			indices.push_back(i++);
 		}
 	}
 }
 
 void Mesh::createVertexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+	VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 	// first I create a reachable "staging buffer" as source of data
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;

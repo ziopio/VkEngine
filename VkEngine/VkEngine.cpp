@@ -54,6 +54,11 @@ void VkEngine::resizeSwapchain(int width, int height)
 	this->recreateSwapChain();
 }
 
+Camera * VkEngine::getCurrentCamera()
+{
+	return Direction::getCurrentCamera();
+}
+
 VkEngine::~VkEngine()
 {
 	Direction::cleanUp();

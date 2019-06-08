@@ -12,7 +12,7 @@ bool Direction::ready;
 void Direction::initialize()
 {
 	Direction::ready = true;
-	Direction::addCamera(glm::vec3(10.0f, 0.0f, 0.0f),
+	Direction::addCamera(glm::vec3(10.0f, 3.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f));
 }
