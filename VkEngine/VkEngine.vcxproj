@@ -206,6 +206,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Shaders\imgui\ui.frag" />
+    <None Include="Shaders\imgui\ui.vert" />
     <None Include="Shaders\phong_multi_light\phong.frag" />
     <None Include="Shaders\phong_multi_light\phong.vert" />
     <None Include="Shaders\sample\shader.frag" />

@@ -7,7 +7,7 @@
 
 
 // internal glfw callbacks
-
+void windowResizeCallback(GLFWwindow* window, int width, int height);
 void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 void keyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods);
 void charCallback(GLFWwindow* window, unsigned int code_point);
@@ -26,7 +26,7 @@ void WindowManager::init()
 	{
 		std::cout << "GLFW: Vulkan Not Supported" << std::endl;
 	}
-	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
+	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API);
 }
 
 const char ** WindowManager::getRequiredInstanceExtensions4Vulkan(unsigned int *extension_count)
@@ -57,6 +57,11 @@ void WindowManager::pollEvents()
 void WindowManager::waitEvents()
 {
 	glfwWaitEvents();
+}
+
+double WindowManager::getTime()
+{
+	return glfwGetTime();
 }
 
 void WindowManager::terminate()
@@ -93,6 +98,7 @@ void WindowManager::Window::registerEventHandler(WindowEventHandler * handler)
 	this->window_client = handler;
 	glfwSetWindowUserPointer(this->pimpl->window, window_client);
 	glfwSetFramebufferSizeCallback(this->pimpl->window,framebufferResizeCallback);
+	glfwSetWindowSizeCallback(this->pimpl->window,windowResizeCallback);
 }
 
 bool WindowManager::Window::windowShouldClose()
@@ -105,6 +111,11 @@ void WindowManager::Window::createWindowSurface(void* instance, void *surface)
 	if (glfwCreateWindowSurface(static_cast<VkInstance>(instance), this->pimpl->window, nullptr, static_cast<VkSurfaceKHR*>(surface))) {
 		throw std::runtime_error("failed to create window surface!");
 	}
+}
+
+void WindowManager::Window::getWindowSize(int * w_width, int * w_height)
+{
+	glfwGetWindowSize(this->pimpl->window,w_width,w_height);
 }
 
 void WindowManager::Window::getFrameBufferSize(int * width, int * height)
@@ -120,6 +131,16 @@ void WindowManager::Window::getCursorPos(double * xpos, double * ypos)
 void WindowManager::Window::getMouseButton(int button)
 {
 	glfwGetMouseButton(this->pimpl->window, button);
+}
+
+void WindowManager::Window::setClipboardText(const char * text)
+{
+	glfwSetClipboardString(this->pimpl->window, text);
+}
+
+const char * WindowManager::Window::getClipboardText()
+{
+	return glfwGetClipboardString(this->pimpl->window);
 }
 
 void WindowManager::Window::activateKeyCallBack()
@@ -226,10 +247,16 @@ void dropCallback(GLFWwindow * window, int count, const char ** paths)
 	client->onDropCallback(count, paths);
 }
 
+void windowResizeCallback(GLFWwindow * window, int width, int height)
+{
+	//auto app = static_cast<WindowEventHandler*>(glfwGetWindowUserPointer(window));
+	//app->onWindowResizeCallback(width, height);
+}
+
 void framebufferResizeCallback(GLFWwindow * window, int width, int height)
 {
 	auto app = static_cast<WindowEventHandler*>(glfwGetWindowUserPointer(window));
-	app->onWindowResizeCallBack(width, height);
+	app->onFrameBufferResizeCallBack(width, height);
 }
 
 void keyCallBack(GLFWwindow * window, int key, int scancode, int action, int mods)

@@ -3,12 +3,17 @@ class Texture
 {
 public:
 	Texture(std::string texturePath);
+	//User must free memory pointed by pixels
+	Texture(unsigned char* pixels, int * width, int * height);
 	VkImageView getTextureImgView();
 	VkSampler getTextureSampler();
 	~Texture();
 	
 private:
-	void createTextureImage(std::string texturePath);
+	unsigned char* readImageFile(std::string texturePath,	int * width, 
+		int * height);
+	void createTextureImage(unsigned char* pixels, int width, 
+		int height);
 	void createTextureImageView();
 	void createTextureSampler();
 	VkImage textureImage;

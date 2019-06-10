@@ -1,6 +1,7 @@
 #pragma once
 
-enum class ActionType {
+
+enum ActionType {
 	NONE = -1,
 	PRESS,
 	RELEASE,
@@ -12,7 +13,7 @@ enum class ActionType {
 //	CURSOR_HIDDEN = GLFW_CURSOR_HIDDEN,
 //	CURSOR_DISABLED = GLFW_CURSOR_DISABLED
 //};
-enum class ModifierKeyType {
+enum ModifierKeyType {
 	MODIFIER_NONE,
 	MODIFIER_SHIFT,
 	MODIFIER_CTRL,
@@ -22,7 +23,7 @@ enum class ModifierKeyType {
 	MODIFIER_NUM_LOCK
 };
 
-enum class MouseButtonType {
+enum MouseButtonType {
 	MOUSE_BUTTON_NONE = -1,
 	MOUSE_BUTTON_1,
 	MOUSE_BUTTON_2,
@@ -38,7 +39,7 @@ enum class MouseButtonType {
 	MOUSE_BUTTON_MIDDLE
 };
 
-enum class KeyType {
+enum KeyType {
 	KEY_UNKNOWN,
 	KEY_SPACE,
 	KEY_APOSTROPHE,

@@ -36,6 +36,20 @@ typedef struct {
 	ObjTransformation transformation;
 }ObjectInitInfo;
 
+struct UiDrawData {
+	glm::vec2 display_pos;
+	glm::vec2 display_size;
+	size_t totalVtxCount;
+	size_t totalIdxCount;
+	std::vector<unsigned int> elemCounts;
+	std::vector<glm::vec4> clipRectangles;
+	std::vector<void*> vertexBuffers;
+	std::vector<size_t> vertexBuffersSizes;
+	std::vector<void*> indexBuffers;
+	std::vector<size_t> indexBuffersSizes;
+};
+
+
 class SurfaceOwner {
 public:
 	virtual VulkanInstanceInitInfo getInstanceExtInfo() = 0;
@@ -54,6 +68,8 @@ public:
 	Camera* getCurrentCamera();
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
+	void loadFontAtlas(unsigned char* pixels, int * width, int * height);
+	void updateImGuiData(UiDrawData draw_data);
 	void addLight(PointLightInfo light);
 	void addObject(ObjectInitInfo obj_info);
 	void renderFrame();

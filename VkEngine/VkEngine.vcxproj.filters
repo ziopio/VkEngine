@@ -206,5 +206,11 @@
     <None Include="Shaders\sample\shader.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="Shaders\imgui\ui.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\imgui\ui.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

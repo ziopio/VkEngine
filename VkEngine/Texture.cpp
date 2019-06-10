@@ -9,7 +9,16 @@
 
 Texture::Texture(std::string texturePath)
 {
-	this->createTextureImage(texturePath);
+	unsigned char* pixels;
+	int width, height;
+	pixels = this->readImageFile(texturePath, &width, &height);
+	this->Texture::Texture(pixels, &width, &height);
+	stbi_image_free(pixels);
+}
+
+Texture::Texture(unsigned char* pixels, int *width, int *height)
+{
+	this->createTextureImage(pixels,*width,*height);
 	this->createTextureImageView();
 	this->createTextureSampler();
 }
@@ -33,17 +42,19 @@ Texture::~Texture()
 	vkFreeMemory(Device::get(), textureImageMemory, nullptr);
 }
 
-
-void Texture::createTextureImage(std::string texturePath) {
-	// file loading
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //  RGBA forced
-	VkDeviceSize imageSize = texWidth * texHeight * 4;
-
+unsigned char* Texture::readImageFile(std::string texturePath, int * width, int * height)
+{	// file loading
+	int channels;
+	unsigned char * pixels = stbi_load(texturePath.c_str(), width, height, &channels, STBI_rgb_alpha); // STBI_rgb_alpha RGBA forced
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
 	}
-	// load image to an accessible stage buffer
+	return pixels;
+}
+
+void Texture::createTextureImage(unsigned char * pixels, int width, int height)
+{	// load image to an accessible stage buffer
+	VkDeviceSize imageSize = width * height * 4;
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 	createBuffer(PhysicalDevice::get(), Device::get(),
@@ -54,25 +65,24 @@ void Texture::createTextureImage(std::string texturePath) {
 	vkMapMemory(Device::get(), stagingBufferMemory, 0, imageSize, 0, &data);
 	memcpy(data, pixels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(Device::get(), stagingBufferMemory);
-	stbi_image_free(pixels); // clean array
 
-	createImage(PhysicalDevice::get(), Device::get(), texWidth, texHeight,
+	createImage(PhysicalDevice::get(), Device::get(), width, height,
 		VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		textureImage, textureImageMemory);
 
-	transitionImageLayout(Device::get(),Device::getGraphicQueue(),Device::getGraphicCmdPool(),
+	transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
 		textureImage,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	copyBufferToImage(Device::get(),Device::getGraphicQueue(),Device::getGraphicCmdPool(),
+	copyBufferToImage(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
 		stagingBuffer, textureImage,
-		static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
-	transitionImageLayout(Device::get(),Device::getGraphicQueue(), Device::getGraphicCmdPool(),
+	transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
 		textureImage,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,

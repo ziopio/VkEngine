@@ -2,11 +2,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Editor.h"
+#include "EditorUI.h"
 
 #define W_WIDTH 500
 #define W_HEIGHT 500
 
-Editor::Editor() 
+Editor::Editor()
 {
 	WindowManager::init();
 	this->window = WindowManager::createWindow( W_WIDTH, W_HEIGHT, "Editor!!!");
@@ -23,12 +24,16 @@ Editor::Editor()
 	catch (std::runtime_error err){
 		std::cout << err.what() << std::endl;
 	}
+	this->UI = new EditorUI(this);
+	FontAtlas f = UI->getDefaultFontAtlas();
+	this->renderingEngine.loadFontAtlas(f.pixels,&f.width,&f.height);
 }
 
 void Editor::execute()
 {
 	while (!this->window->windowShouldClose() || this->terminate) {
 		WindowManager::pollEvents();
+		renderingEngine.updateImGuiData(this->UI->drawUI());
 		renderingEngine.renderFrame();
 	}
 }
@@ -39,9 +44,17 @@ Editor::~Editor()
 	WindowManager::terminate();
 }
 
-void Editor::onWindowResizeCallBack(int width, int height)
+WindowManager::Window* Editor::getWindow()
+{
+	return this->window;
+}
+
+void Editor::onFrameBufferResizeCallBack(int width, int height)
 {	
 	this->renderingEngine.resizeSwapchain(width, height);
+	int w_width, w_height;
+	this->window->getWindowSize(&w_width,&w_height);
+	this->UI->updateFrameSize(w_width, w_height,width,height);
 }
 
 void Editor::onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods)
@@ -56,12 +69,12 @@ void Editor::onCharCallback(unsigned int code_point)
 
 void Editor::onCursorPosCallback(double xpos, double ypos)
 {
-	//this->renderingEngine.getCurrentCamera()->mouseRotation(xpos,ypos);
+	this->UI->updateMousePos(xpos,ypos);
 }
 
 void Editor::onMouseButtonCallback(MouseButtonType button, ActionType action, ModifierKeyType mods)
 {
-	std::cout << "Key callback" << std::endl;
+	this->UI->updateMouseButton(button ,action, mods);
 }
 
 void Editor::onScrollCallback(double xoffset, double yoffset)
@@ -107,9 +120,6 @@ void Editor::load_demo_scene()
 	this->renderingEngine.loadMesh("VkEngine/Meshes/axis.obj");
 	this->renderingEngine.loadMesh("VkEngine/Meshes/icosphere.obj");
 	this->renderingEngine.loadMesh("VkEngine/Meshes/sphere.obj");
-
-
-
 
 	PointLightInfo l = {
 		3,3,3,

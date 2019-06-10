@@ -82,6 +82,15 @@ void VkEngine::loadTexture(std::string texture_file)
 	DescriptorSetsFactory::init(this->swapChain);
 }
 
+void VkEngine::loadFontAtlas(unsigned char * pixels, int * width, int * height)
+{
+	TextureManager::loadFontAtlasTexture(pixels,width,height);
+}
+
+void VkEngine::updateImGuiData(UiDrawData draw_data)
+{
+}
+
 void VkEngine::addLight(PointLightInfo light_info)
 {
 	LightSource light(glm::make_vec3(light_info.position), glm::make_vec3(light_info.color),light_info.power);

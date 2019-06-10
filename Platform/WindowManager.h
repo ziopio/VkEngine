@@ -3,7 +3,7 @@
 
 class WindowEventHandler {
 public:
-	virtual void onWindowResizeCallBack(int width, int height) = 0;
+	virtual void onFrameBufferResizeCallBack(int width, int height) = 0;
 	virtual void onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods) = 0;
 	virtual void onCharCallback(unsigned int code_point) = 0;
 	virtual void onCursorPosCallback(double xpos, double ypos) = 0;
@@ -23,6 +23,7 @@ public:
 	static void destroyWindow(Window* window);
 	static void pollEvents();
 	static void waitEvents();
+	static double getTime();
 	static void terminate();
 	class Window
 	{
@@ -38,9 +39,12 @@ public:
 		void registerEventHandler(WindowEventHandler* handler);
 		bool windowShouldClose();
 		void createWindowSurface(void* instance, void *surface);
+		void getWindowSize(int *w_width, int *w_height);
 		void getFrameBufferSize(int *width, int *height);
 		void getCursorPos(double * xpos, double * ypos);
 		void getMouseButton(int button);
+		void setClipboardText(const char* text);
+		const char* getClipboardText();
 		void activateKeyCallBack();
 		void activateCharCallback();
 		void activateCursorPosCallback();
