@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Mesh.h"
-
+#include "VkEngine.h"
 #include "ApiUtils.h"
 #include "PhysicalDevice.h"
 #include "Device.h"
@@ -9,6 +9,9 @@
 #include "Libraries/tiny_obj_loader.h"
 
 
+VkBuffer BaseMesh::getVkVertexBuffer(){return this->vertexBuffer;}
+
+VkBuffer BaseMesh::getVkIndexBuffer(){return this->indexBuffer;}
 
 Mesh::Mesh(std::string modelPath)
 {
@@ -17,15 +20,11 @@ Mesh::Mesh(std::string modelPath)
 	this->createIndexBuffer();
 }
 
-VkBuffer Mesh::getVkVertexBuffer()
+uint32_t Mesh::getIdxCount()
 {
-	return this->vertexBuffer;
+	return static_cast<uint32_t>(this->indices.size());
 }
 
-VkBuffer Mesh::getVkIndexBuffer()
-{
-	return this->indexBuffer;
-}
 
 Mesh::~Mesh()
 {
@@ -75,7 +74,7 @@ void Mesh::loadModel(std::string modelPath) {
 			//	vertices.push_back(vertex);
 			//}
 			//indices.push_back(uniqueVertices[vertex]);
-			vertices.push_back(vertex);
+			this->vertices.push_back(vertex);
 			indices.push_back(i++);
 		}
 	}
@@ -140,4 +139,85 @@ void Mesh::createIndexBuffer()
 
 	vkDestroyBuffer(Device::get(), stagingBuffer, nullptr);
 	vkFreeMemory(Device::get(), stagingBufferMemory, nullptr);
+}
+
+GuiMesh::GuiMesh()
+{
+}
+
+void GuiMesh::updateMeshData(UiDrawData draw_data)
+{
+	// Check if vertexBufferMemory needs reallocation
+	size_t updateVtxSize = sizeof(Vertex2D) * draw_data.totalVtxCount;
+	if (this->allocated_Vtx_MemSize < updateVtxSize) {
+		if (allocated_Vtx_MemSize > 0) {
+			vkUnmapMemory(Device::get(), vertexBufferMemory);
+			vkDestroyBuffer(Device::get(), vertexBuffer, nullptr);
+			vkFreeMemory(Device::get(), vertexBufferMemory, nullptr);
+		}
+		// double the previus allocated memory to minimize future reallocations
+		this->allocated_Vtx_MemSize = updateVtxSize * 2;
+		createBuffer(PhysicalDevice::get(), Device::get(),
+			allocated_Vtx_MemSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			vertexBuffer, vertexBufferMemory);
+		vkMapMemory(Device::get(), vertexBufferMemory, 0, allocated_Vtx_MemSize, 0, &mappedVtxMemory);
+	}
+	// Check if indexBufferMemory needs reallocation
+	size_t updateIdxSize = sizeof(uint32_t) * draw_data.totalIdxCount;
+	if (this->allocated_Idx_MemSize < updateIdxSize) {
+		if (allocated_Idx_MemSize > 0) {
+			vkUnmapMemory(Device::get(), indexBufferMemory);
+			vkDestroyBuffer(Device::get(), indexBuffer, nullptr);
+			vkFreeMemory(Device::get(), indexBufferMemory, nullptr);
+		}
+		// double the previus allocated memory to minimize future reallocations
+		this->allocated_Idx_MemSize = updateIdxSize * 2;
+		createBuffer(PhysicalDevice::get(), Device::get(),
+			allocated_Idx_MemSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			indexBuffer, indexBufferMemory);
+		vkMapMemory(Device::get(), indexBufferMemory, 0, allocated_Idx_MemSize, 0, &mappedIdxMemory);
+	}
+	//Update vertex buffer with each sub_buffer
+	void** vtx_dst = (void**) mappedVtxMemory;
+	for (int i = 0; i < draw_data.vertexBuffers.size(); i++) {
+		memcpy(vtx_dst, draw_data.vertexBuffers[i],
+			draw_data.vertexBuffersSizes[i]);
+		vtx_dst += draw_data.vertexBuffersSizes[i];
+	}
+	//Update index buffer with each sub_buffer
+	void** idx_dst = (void**)mappedIdxMemory;
+	for (int i = 0; i < draw_data.indexBuffers.size(); i++) {
+		memcpy(idx_dst, draw_data.indexBuffers[i],
+			draw_data.indexBuffersSizes[i]);
+		idx_dst += draw_data.indexBuffersSizes[i];
+	}
+	this->draw_data = draw_data;
+}
+
+UiDrawData GuiMesh::getData()
+{
+	return this->draw_data;
+}
+
+uint32_t GuiMesh::getIdxCount()
+{
+	return this->IdxCount;
+}
+
+GuiMesh::~GuiMesh()
+{
+	if (allocated_Idx_MemSize > 0) {
+		vkUnmapMemory(Device::get(), indexBufferMemory);
+		vkDestroyBuffer(Device::get(), indexBuffer, nullptr);
+		vkFreeMemory(Device::get(), indexBufferMemory, nullptr);
+	}
+	if (allocated_Vtx_MemSize > 0) {
+		vkUnmapMemory(Device::get(), vertexBufferMemory);
+		vkDestroyBuffer(Device::get(), vertexBuffer, nullptr);
+		vkFreeMemory(Device::get(), vertexBufferMemory, nullptr);
+	}
 }

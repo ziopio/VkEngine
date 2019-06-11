@@ -8,11 +8,12 @@ class MeshManager
 public:
 	static void init();
 	static void addMesh(std::string mesh_path);
-	static Mesh* getMesh(int id);
+	static BaseMesh* getMesh(int id);
+	static GuiMesh* getImGuiMesh();
 	static void updateImGuiBuffers(UiDrawData imgui);
 	static void cleanUp();
 private:
 	static std::vector<Mesh*> scene_meshes;
-	static Mesh* imgui;
+	static GuiMesh* imgui;
 };
 

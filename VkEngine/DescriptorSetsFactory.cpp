@@ -9,6 +9,7 @@
 SwapChain* DescriptorSetsFactory::swapChain;
 std::multimap<MaterialType, Object*> DescriptorSetsFactory::material2obj_map;
 VkDescriptorPool DescriptorSetsFactory::descriptorPool;
+VkDescriptorSet DescriptorSetsFactory::imGuiDescriptorSet;
 VkDescriptorSet DescriptorSetsFactory::staticGlobalDescriptorSet;
 std::vector<VkDescriptorSet> DescriptorSetsFactory::frameDescriptorSets;
 std::vector<VkDescriptorSet> DescriptorSetsFactory::materialDescriptorSets;
@@ -51,6 +52,11 @@ VkDescriptorSet DescriptorSetsFactory::getStaticGlobalDescriptorSet()
 	return staticGlobalDescriptorSet;
 }
 
+VkDescriptorSet DescriptorSetsFactory::getImGuiDescriptorSet()
+{
+	return imGuiDescriptorSet;
+}
+
 void DescriptorSetsFactory::cleanUp()
 {
 	vkUnmapMemory(Device::get(), uniformBuffersMemory);
@@ -63,7 +69,7 @@ void DescriptorSetsFactory::createDescriptorSets()
 {
 	//Static uniforms descriptor sets allocation and definition
 	{
-		auto layout = MaterialManager::getStaticDescriptorSetLayout();
+		auto layout = MaterialManager::getTextureDescriptorSetLayout();
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = descriptorPool;
@@ -140,26 +146,62 @@ void DescriptorSetsFactory::createDescriptorSets()
 		}
 		vkUpdateDescriptorSets(Device::get(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
+
+	//Static set for imgui texture samplers
+	{
+		auto layout = MaterialManager::getImGuiDescriptorSetLayout();
+		VkDescriptorSetAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorSetCount = 1;
+		allocInfo.pSetLayouts = &layout; // same size of descriptorSet array
+
+		VkResult result = vkAllocateDescriptorSets(Device::get(), &allocInfo, &imGuiDescriptorSet);
+		if (result != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+		//temporaneamente tutti i descrittori punteranno allo stesso sampler
+		std::array<VkDescriptorImageInfo, MAX_TEXTURE_COUNT>  imagesInfo = {};
+		for (int i = 0; i < MAX_TEXTURE_COUNT; i++) {
+			imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imagesInfo[i].imageView = TextureManager::getFontAtlasTexture()->getTextureImgView();
+			imagesInfo[i].sampler = TextureManager::getFontAtlasTexture()->getTextureSampler();
+		}
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = imGuiDescriptorSet;
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrite.descriptorCount = imagesInfo.size();
+		descriptorWrite.pImageInfo = imagesInfo.data();
+
+		vkUpdateDescriptorSets(Device::get(), 1, &descriptorWrite, 0, nullptr);
+	}
 }
 
 void DescriptorSetsFactory::createDescriptorPool()
 {
 	// First: select which types of descriptors the pool handles and how many descriptors per type
 	// I need 1 descriptor for each type, for each swapchain image
-	std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+	std::array<VkDescriptorPoolSize, 3> poolSizes = {};
 	// here i need 1 uniform descriptor for each frame in flight
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChain->getImageViews().size());
 	// here i need as many samplers as the size of the texture2D array in the shader
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[1].descriptorCount = MAX_TEXTURE_COUNT;
+	// same samplers for another array used in ImGui shaders
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[2].descriptorCount = MAX_TEXTURE_COUNT;
 
 	//Second: select how many sets can be allocated
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = static_cast<uint32_t>(swapChain->getImageViews().size()) + 1;
+	// 1 per image + 1 for textures(3D scene) + 1 for IMGUI (2D gui)
+	poolInfo.maxSets = static_cast<uint32_t>(swapChain->getImageViews().size()) + 1 + 1;
 
 	VkResult result = vkCreateDescriptorPool(Device::get(), &poolInfo, nullptr, &descriptorPool);
 	if (result != VK_SUCCESS) {

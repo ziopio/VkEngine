@@ -14,12 +14,18 @@ struct uniformBlockDefinition {
 	glm::mat4 P_matrix;
 	glm::mat4 V_matrix;
 	Light lights[10];
-	int light_count;
+	uint32_t light_count;
 };
 
 struct PushConstantBlock {
 	glm::mat4 model_transform;
-	int textureIndex;
+	uint32_t textureIndex;
+};
+
+struct ImGuiPushConstantBlock {
+	glm::vec2 uScale;
+	glm::vec2 uTranslate;
+	uint32_t tex_ID;
 };
 
 class MaterialManager
@@ -27,13 +33,15 @@ class MaterialManager
 public:
 	static void init(SwapChain* swapchain, RenderPass* renderer);
 	static Material* getMaterial(MaterialType material);
-	static VkDescriptorSetLayout getStaticDescriptorSetLayout();
+	static VkDescriptorSetLayout getImGuiDescriptorSetLayout();
+	static VkDescriptorSetLayout getTextureDescriptorSetLayout();
 	static VkDescriptorSetLayout getFrameDependentDescriptorSetLayout();
 	static void destroyAllMaterials();
 private:
 	static void loadMaterials();
 	static void createDescriptorSetLayouts();
-	static VkDescriptorSetLayout staticGlobalDescriptorSetLayout;
+	static VkDescriptorSetLayout imGuiDescriptorSetLayout;
+	static VkDescriptorSetLayout globalTextureDescriptorSetLayout;
 	static VkDescriptorSetLayout frameDependentDescriptorSetLayout;
 	static std::vector<Material*> materials;
 	static SwapChain* swapchain;

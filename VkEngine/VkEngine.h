@@ -41,7 +41,7 @@ struct UiDrawData {
 	glm::vec2 display_size;
 	size_t totalVtxCount;
 	size_t totalIdxCount;
-	std::vector<unsigned int> elemCounts;
+	std::vector<uint32_t> elemtCounts;
 	std::vector<glm::vec4> clipRectangles;
 	std::vector<void*> vertexBuffers;
 	std::vector<size_t> vertexBuffersSizes;

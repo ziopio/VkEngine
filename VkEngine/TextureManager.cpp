@@ -18,6 +18,9 @@ void TextureManager::loadFontAtlasTexture(unsigned char * pixels,
 
 Texture * TextureManager::getFontAtlasTexture()
 {
+	if (TextureManager::fontAtlas == nullptr) {
+		return TextureManager::textures[0];
+	}
 	return TextureManager::fontAtlas;
 }
 

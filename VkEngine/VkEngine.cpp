@@ -89,6 +89,7 @@ void VkEngine::loadFontAtlas(unsigned char * pixels, int * width, int * height)
 
 void VkEngine::updateImGuiData(UiDrawData draw_data)
 {
+	MeshManager::updateImGuiBuffers(draw_data);
 }
 
 void VkEngine::addLight(PointLightInfo light_info)

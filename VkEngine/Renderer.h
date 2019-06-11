@@ -12,7 +12,6 @@ struct DepthBufferResource {
 	VkImageView depthImageView;
 };
 
-
 struct ThreadData {
 	// One pool per thread
 	VkCommandPool commandPool;
@@ -29,7 +28,7 @@ public:
 	/* 
 	 * true means OK, false means SWAPCHAIN CHANGED!!!
 	*/
-	bool renderScene(); 
+	bool renderScene();
 	~Renderer();
 	bool multithreading;
 private:
@@ -38,6 +37,7 @@ private:
 	void prepareThreadedRendering();
 	void update_camera_infos(uint32_t frameBufferIndex);
 	void updateCommandBuffer(uint32_t frameBufferIndex);
+	void recordImGuiDrawCmds(uint32_t frameBufferIndex, VkCommandBufferInheritanceInfo inheritanceInfo);
 	void findObjXthreadDivision();
 	void createSyncObjects();
 
@@ -51,7 +51,9 @@ private:
 	std::vector<VkFence> inFlightFences;
 
 	VkCommandPool primaryCommandPool;
-	std::vector<VkCommandBuffer> primaryCommandBuffers;
+	std::vector<VkCommandBuffer> primaryCmdBuffers;
+	VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
+	std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
 	vks::ThreadPool thread_pool;
 	std::vector<ThreadData> per_thread_resources;
 

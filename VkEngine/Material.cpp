@@ -7,7 +7,6 @@
 #include "MaterialManager.h"
 #include "TextureManager.h"
 
-static PushConstantBlock push_obj;
 
 Material::Material(MaterialType material, SwapChain* swapchain, RenderPass* renderPass)
 {
@@ -186,7 +185,7 @@ void Material::buildPipeline()
 
 	// Definizione del layout per caricare le uniforms sugli shaders
 	std::array<VkDescriptorSetLayout, 2> layouts = { 
-		MaterialManager::getStaticDescriptorSetLayout(), 
+		MaterialManager::getTextureDescriptorSetLayout(), 
 		MaterialManager::getFrameDependentDescriptorSetLayout() };
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -199,7 +198,10 @@ void Material::buildPipeline()
 	}
 	VkPushConstantRange pushRange = {};
 	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	pushRange.size = sizeof(push_obj);
+	pushRange.size = sizeof(PushConstantBlock);
+	if (this->type == MaterialType::UI) {
+		pushRange.size = sizeof(ImGuiPushConstantBlock);
+	}
 	pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = &pushRange; // Optional
 

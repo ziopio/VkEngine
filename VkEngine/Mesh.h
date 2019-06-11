@@ -1,4 +1,5 @@
 #pragma once
+#include "VkEngine.h"
 
 struct Vertex3D {
 	glm::vec3 pos;
@@ -92,22 +93,48 @@ namespace std {
 	};
 }
 
-class Mesh
-{
+class BaseMesh {
 public:
-	Mesh(std::string modelPath);
-	VkBuffer getVkVertexBuffer();
-	VkBuffer getVkIndexBuffer();
-	~Mesh();
-	std::vector<Vertex3D> vertices;
-	std::vector<uint32_t> indices;
-private:
-	void loadModel(std::string modelPath);
-	void createVertexBuffer();
-	void createIndexBuffer();
+	virtual VkBuffer getVkVertexBuffer();
+	virtual VkBuffer getVkIndexBuffer();
+	virtual uint32_t getIdxCount() = 0;
+protected:
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer vertexBuffer;
 	VkDeviceMemory indexBufferMemory;
 	VkBuffer indexBuffer;
 };
 
+class Mesh : public BaseMesh
+{
+public:
+	Mesh(std::string modelPath);
+	uint32_t getIdxCount() override;
+	~Mesh();
+private:
+	void loadModel(std::string modelPath);
+	void createVertexBuffer();
+	void createIndexBuffer();
+	std::vector<Vertex3D> vertices;
+	std::vector<uint32_t> indices;
+};
+
+class GuiMesh : public BaseMesh {
+public:
+	GuiMesh();
+	//Update buffers with new fresh data, 
+	//if space is not enough, buffers and memory 
+	//are re-allocated with the double of needed space.
+	void updateMeshData(UiDrawData draw_data);
+	UiDrawData getData();
+	uint32_t getIdxCount() override;
+	~GuiMesh();
+private:
+	UiDrawData draw_data;
+	uint32_t VtxCount;
+	uint32_t IdxCount;
+	void* mappedVtxMemory;
+	void* mappedIdxMemory;
+	size_t allocated_Vtx_MemSize;
+	size_t allocated_Idx_MemSize;
+};

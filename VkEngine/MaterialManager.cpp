@@ -7,8 +7,9 @@
 std::vector<Material*> MaterialManager::materials;
 SwapChain*  MaterialManager::swapchain;
 RenderPass* MaterialManager::renderPass;
-bool MaterialManager::ready;
-VkDescriptorSetLayout MaterialManager::staticGlobalDescriptorSetLayout;
+bool MaterialManager::ready; 
+VkDescriptorSetLayout MaterialManager::imGuiDescriptorSetLayout;
+VkDescriptorSetLayout MaterialManager::globalTextureDescriptorSetLayout;
 VkDescriptorSetLayout MaterialManager::frameDependentDescriptorSetLayout;
 
 
@@ -29,9 +30,14 @@ Material* MaterialManager::getMaterial(MaterialType material)
 	return MaterialManager::materials[material];
 }
 
-VkDescriptorSetLayout MaterialManager::getStaticDescriptorSetLayout()
+VkDescriptorSetLayout MaterialManager::getImGuiDescriptorSetLayout()
 {
-	return MaterialManager::staticGlobalDescriptorSetLayout;
+	return imGuiDescriptorSetLayout;
+}
+
+VkDescriptorSetLayout MaterialManager::getTextureDescriptorSetLayout()
+{
+	return MaterialManager::globalTextureDescriptorSetLayout;
 }
 
 VkDescriptorSetLayout MaterialManager::getFrameDependentDescriptorSetLayout()
@@ -45,8 +51,9 @@ void MaterialManager::destroyAllMaterials()
 	for (auto mat : MaterialManager::materials) {
 		delete mat;
 	}
-	MaterialManager::materials.clear();
-	vkDestroyDescriptorSetLayout(Device::get(), staticGlobalDescriptorSetLayout, nullptr);
+	MaterialManager::materials.clear();	
+	vkDestroyDescriptorSetLayout(Device::get(), imGuiDescriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(Device::get(), globalTextureDescriptorSetLayout, nullptr);
 	vkDestroyDescriptorSetLayout(Device::get(), frameDependentDescriptorSetLayout, nullptr);
 	ready = false;
 }
@@ -66,7 +73,7 @@ void MaterialManager::loadMaterials()
 
 void MaterialManager::createDescriptorSetLayouts()
 {
-	// There will be 2 sets
+	// There will be 2 sets + 1 stand alone set for ImGui
 	// First set
 	{
 		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
@@ -82,7 +89,7 @@ void MaterialManager::createDescriptorSetLayouts()
 		layoutInfo.bindingCount = static_cast<uint32_t>(set_0_bindings.size());
 		layoutInfo.pBindings = set_0_bindings.data();
 
-		if (vkCreateDescriptorSetLayout(Device::get(), &layoutInfo, nullptr, &staticGlobalDescriptorSetLayout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(Device::get(), &layoutInfo, nullptr, &globalTextureDescriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
@@ -102,6 +109,25 @@ void MaterialManager::createDescriptorSetLayouts()
 		layoutInfo.pBindings = set_1_bindings.data();
 
 		if (vkCreateDescriptorSetLayout(Device::get(), &layoutInfo, nullptr, &frameDependentDescriptorSetLayout) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+	// ImGui set for gui textures
+	{
+		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+		samplerLayoutBinding.binding = 0;
+		samplerLayoutBinding.descriptorCount = MAX_TEXTURE_COUNT;
+		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		samplerLayoutBinding.pImmutableSamplers = nullptr;
+		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		std::array<VkDescriptorSetLayoutBinding, 1> set_0_bindings = { samplerLayoutBinding };
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = static_cast<uint32_t>(set_0_bindings.size());
+		layoutInfo.pBindings = set_0_bindings.data();
+
+		if (vkCreateDescriptorSetLayout(Device::get(), &layoutInfo, nullptr, &imGuiDescriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}

@@ -31,10 +31,13 @@ EditorUI::EditorUI(Editor* editor)
 
 UiDrawData EditorUI::drawUI()
 {
+
 	ImGui::NewFrame();
 	ImGui::ShowDemoWindow(&show_demo_window);
+
 	ImGui::Render();
-	return out_put_draw_data(ImGui::GetDrawData());
+	ImDrawData* draw_data = ImGui::GetDrawData();
+	return out_put_draw_data(draw_data);
 }
 
 EditorUI::~EditorUI()
@@ -132,7 +135,7 @@ UiDrawData out_put_draw_data(ImDrawData* data)
 	ui_data.display_size = data->DisplaySize;
 	ui_data.totalIdxCount = data->TotalIdxCount;
 	ui_data.totalVtxCount = data->TotalVtxCount;
-	ui_data.elemCounts.reserve(data->CmdListsCount);
+	ui_data.elemtCounts.reserve(data->CmdListsCount);
 	ui_data.clipRectangles.reserve(data->CmdListsCount);
 	ui_data.vertexBuffers.reserve(data->CmdListsCount);
 	ui_data.vertexBuffersSizes.reserve(data->CmdListsCount);
@@ -140,7 +143,7 @@ UiDrawData out_put_draw_data(ImDrawData* data)
 	ui_data.indexBuffersSizes.reserve(data->CmdListsCount);
 	for (int i = 0; i < data->CmdListsCount; i++) {
 		ImDrawList* list = data->CmdLists[i];
-		ui_data.elemCounts.push_back(list->CmdBuffer[i].ElemCount);
+		ui_data.elemtCounts.push_back(list->CmdBuffer[i].ElemCount);
 		ui_data.clipRectangles.push_back(list->CmdBuffer[i].ClipRect);
 		ui_data.vertexBuffers.push_back((void*)(list->VtxBuffer.Data));
 		ui_data.vertexBuffersSizes.push_back(list->VtxBuffer.Size);

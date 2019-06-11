@@ -38,6 +38,7 @@ void Renderer::setObjects(std::vector<Object> objects)
 	for (auto threadResource : this->per_thread_resources) {
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
 	}
+	vkDestroyCommandPool(Device::get(), this->mainThreadSecondaryCmdPool, nullptr);
 	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
 	this->objects = objects;
 	this->findObjXthreadDivision();
@@ -71,7 +72,7 @@ bool Renderer::renderScene()
 	submitInfo.pWaitSemaphores = waitSemaphores; // indice semaforo = indice stage della pipeline
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &primaryCommandBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &primaryCmdBuffers[imageIndex];
 	// Indico quale è il semaforo che indica la fine dell'attesa
 	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
@@ -100,9 +101,10 @@ Renderer::~Renderer()
 	}
 	this->per_thread_resources.clear();
 
-
+	vkDestroyCommandPool(Device::get(), this->mainThreadSecondaryCmdPool, nullptr);
+	mainThreadSecondaryCmdBuffers.clear();
 	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
-	primaryCommandBuffers.clear();
+	primaryCmdBuffers.clear();
 
 	vkDestroyImageView(Device::get(), depth_buffer.depthImageView, nullptr);
 	vkDestroyImage(Device::get(), depth_buffer.depthImage, nullptr);
@@ -166,19 +168,23 @@ void Renderer::createDepthResources() {
 
 void Renderer::prepareThreadedRendering()
 {
-	//Creazione della pool per i buffer di comando principali
-	Device::createCommandPool(PhysicalDevice::getQueueFamilies().graphicsFamily,&this->primaryCommandPool);
-	//allocazione buffer principali 1 per ogni frame
-	primaryCommandBuffers.resize(swapChainFramebuffers.size());
-	VkCommandBufferAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = this->primaryCommandPool; // using the standard Pool
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = 1;
+	{
+		//Creazione della pool per i buffer di comando principali
+		Device::createCommandPool(PhysicalDevice::getQueueFamilies().graphicsFamily, &this->primaryCommandPool);
+		//allocazione buffer principali 1 per ogni frame
+		primaryCmdBuffers.resize(swapChainFramebuffers.size());
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = this->primaryCommandPool; // using the standard Pool
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
 
-	for (int i = 0; i< swapChainFramebuffers.size();i++) {
-		if (vkAllocateCommandBuffers(Device::get(), &allocInfo, &primaryCommandBuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate primary command buffer!");
+		for (int i = 0; i < swapChainFramebuffers.size(); i++) {
+			if (vkAllocateCommandBuffers(Device::get(), &allocInfo, &primaryCmdBuffers[i]) 
+				!= VK_SUCCESS) 
+			{
+				throw std::runtime_error("failed to allocate primary command buffer!");
+			}
 		}
 	}
 	//allocazione pool e buffer secondari per ogni thread
@@ -203,11 +209,28 @@ void Renderer::prepareThreadedRendering()
 
 			//... and for each object to draw, 1 command buffer.
 			for (int i = 0; i < objXthread; i++) {
-				if (vkAllocateCommandBuffers(Device::get(), &allocInfo, &per_thread_resources[t].commandBuffers[f][i]) != VK_SUCCESS) {
+				if (vkAllocateCommandBuffers(Device::get(), &allocInfo, 
+					&per_thread_resources[t].commandBuffers[f][i]) != VK_SUCCESS) 
+				{
 					throw std::runtime_error("failed to allocate primary command buffer!");
 				}
 			}
 		}
+	}
+	//Secondary buffer and pool for gui draw comands
+	// 1 command pool
+	Device::createCommandPool(PhysicalDevice::getQueueFamilies().graphicsFamily,
+		&mainThreadSecondaryCmdPool);
+	mainThreadSecondaryCmdBuffers.resize(swapChainFramebuffers.size());
+	//1 command buffer
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = mainThreadSecondaryCmdPool; // using the standard Pool
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+	allocInfo.commandBufferCount = swapChainFramebuffers.size();
+	if (vkAllocateCommandBuffers(Device::get(), &allocInfo, mainThreadSecondaryCmdBuffers.data()) 
+		!= VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate primary command buffer!");
 	}
 }
 
@@ -237,10 +260,11 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	inheritanceInfo.framebuffer = swapChainFramebuffers[frameBufferIndex];
 	// work is divided between the available threads
 	vks::Frustum frustum_ = frustum;
-	std::array<VkDescriptorSet,2> descriptor_sets = { 
+	std::array<VkDescriptorSet,2> descriptor_sets = 
+	{ 
 		DescriptorSetsFactory::getStaticGlobalDescriptorSet(),
-		DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex) };
-
+		DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex) 
+	};
 	for (uint32_t t = 0, objIndex = 0; t < numThreads; t++)
 	{
 		for (uint32_t i = 0; i < objXthread && objIndex < objects.size(); i++, objIndex++)
@@ -259,7 +283,7 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	// begin main command recording
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	if (vkBeginCommandBuffer(primaryCommandBuffers[frameBufferIndex], &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(primaryCmdBuffers[frameBufferIndex], &beginInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 
@@ -276,7 +300,7 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 	// begin render pass
-	vkCmdBeginRenderPass(primaryCommandBuffers[frameBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+	vkCmdBeginRenderPass(primaryCmdBuffers[frameBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
 	thread_pool.wait();
 	// i draw only the command buffers related to visible objects
@@ -290,13 +314,71 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 			}
 		}
 	}
+	// ImGui rendering
+	if (MeshManager::getImGuiMesh()->getIdxCount() > 0) 
+	{
+		this->recordImGuiDrawCmds(frameBufferIndex, inheritanceInfo);
+		secondaryCmdBuffers.push_back(this->mainThreadSecondaryCmdBuffers[frameBufferIndex]);
+	}
 
 	// Execute render commands from all secondary command buffers
 	if (secondaryCmdBuffers.size() > 0) {
-		vkCmdExecuteCommands(primaryCommandBuffers[frameBufferIndex], secondaryCmdBuffers.size(), secondaryCmdBuffers.data());
+		vkCmdExecuteCommands(primaryCmdBuffers[frameBufferIndex], secondaryCmdBuffers.size(), secondaryCmdBuffers.data());
 	}
-	vkCmdEndRenderPass(primaryCommandBuffers[frameBufferIndex]);
-	vkEndCommandBuffer(primaryCommandBuffers[frameBufferIndex]);
+	vkCmdEndRenderPass(primaryCmdBuffers[frameBufferIndex]);
+	vkEndCommandBuffer(primaryCmdBuffers[frameBufferIndex]);
+}
+
+void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex, VkCommandBufferInheritanceInfo inheritanceInfo)
+{
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	beginInfo.pInheritanceInfo = &inheritanceInfo;
+
+	if (vkBeginCommandBuffer(mainThreadSecondaryCmdBuffers[frameBufferIndex], &beginInfo) 
+		!= VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+
+	vkCmdBindPipeline(mainThreadSecondaryCmdBuffers[frameBufferIndex],
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		MaterialManager::getMaterial(MaterialType::UI)->getPipeline());
+
+	auto pipelineLayout = 
+		MaterialManager::getMaterial(MaterialType::UI)->getPipelineLayout();
+	auto descrSet = DescriptorSetsFactory::getImGuiDescriptorSet();
+	vkCmdBindDescriptorSets(mainThreadSecondaryCmdBuffers[frameBufferIndex],
+		VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,
+		&descrSet,0,nullptr);
+	GuiMesh* imgui = MeshManager::getImGuiMesh();
+	VkBuffer vertexBuffer = imgui->getVkVertexBuffer();
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(mainThreadSecondaryCmdBuffers[frameBufferIndex]
+		,0,1,&vertexBuffer,offsets);
+	vkCmdBindIndexBuffer(mainThreadSecondaryCmdBuffers[frameBufferIndex],
+		imgui->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	UiDrawData data = imgui->getData();
+	ImGuiPushConstantBlock pushBlock = {};
+	pushBlock.uScale = 2.0f / data.display_size;
+	pushBlock.uTranslate = -1.0f - data.display_pos * pushBlock.uScale;
+	pushBlock.tex_ID = 0;
+	vkCmdPushConstants(mainThreadSecondaryCmdBuffers[frameBufferIndex],
+		pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+		0, sizeof(ImGuiPushConstantBlock), &pushBlock);
+
+	int idx_offset = 0;
+	int vtx_offset = 0;
+	for (int i = 0; i < data.elemtCounts.size(); i++) {
+		vkCmdDrawIndexed(mainThreadSecondaryCmdBuffers[frameBufferIndex],
+			data.elemtCounts[i], 1, idx_offset, vtx_offset, 0);
+		idx_offset += data.elemtCounts[i];
+		vtx_offset += data.vertexBuffersSizes[i];
+	}
+	VkResult result = vkEndCommandBuffer(mainThreadSecondaryCmdBuffers[frameBufferIndex]);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("Command buffer ending failed");
+	}
 }
 
 void Renderer::findObjXthreadDivision()
@@ -362,7 +444,7 @@ void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, 
 	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConsts), &pushConsts);
 
 
-	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj->getMeshId())->indices.size()), 1, 0, 0, 0);
+	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj->getMeshId())->getIdxCount()), 1, 0, 0, 0);
 	VkResult result = vkEndCommandBuffer(cmdBuffer);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("Command buffer ending failed");
