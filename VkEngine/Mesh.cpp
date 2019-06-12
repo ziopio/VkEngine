@@ -162,7 +162,7 @@ void GuiMesh::updateMeshData(UiDrawData draw_data)
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			vertexBuffer, vertexBufferMemory);
-		vkMapMemory(Device::get(), vertexBufferMemory, 0, allocated_Vtx_MemSize, 0, &mappedVtxMemory);
+		vkMapMemory(Device::get(), vertexBufferMemory, 0, allocated_Vtx_MemSize, 0, (void**)&mappedVtxMemory);
 	}
 	// Check if indexBufferMemory needs reallocation
 	size_t updateIdxSize = sizeof(uint32_t) * draw_data.totalIdxCount;
@@ -179,21 +179,31 @@ void GuiMesh::updateMeshData(UiDrawData draw_data)
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			indexBuffer, indexBufferMemory);
-		vkMapMemory(Device::get(), indexBufferMemory, 0, allocated_Idx_MemSize, 0, &mappedIdxMemory);
+		vkMapMemory(Device::get(), indexBufferMemory, 0, allocated_Idx_MemSize, 0, (void**)&mappedIdxMemory);
 	}
-	//Update vertex buffer with each sub_buffer
-	void** vtx_dst = (void**) mappedVtxMemory;
-	for (int i = 0; i < draw_data.vertexBuffers.size(); i++) {
-		memcpy(vtx_dst, draw_data.vertexBuffers[i],
-			draw_data.vertexBuffersSizes[i]);
-		vtx_dst += draw_data.vertexBuffersSizes[i];
+	//Update vertex and index buffer with each sub_buffer
+	Vertex2D* vtx_dst = mappedVtxMemory;
+	uint32_t* idx_dst = mappedIdxMemory;
+	for (auto draw_list : draw_data.drawLists) 
+	{
+			memcpy(vtx_dst, draw_list.vertexBuffer,	
+				draw_list.vertexBufferSize * sizeof(Vertex2D));
+			memcpy(idx_dst, draw_list.indexBuffer, 
+				draw_list.indexBufferSize * sizeof(uint32_t));
+			vtx_dst += draw_list.vertexBufferSize;
+			idx_dst += draw_list.indexBufferSize;
 	}
-	//Update index buffer with each sub_buffer
-	void** idx_dst = (void**)mappedIdxMemory;
-	for (int i = 0; i < draw_data.indexBuffers.size(); i++) {
-		memcpy(idx_dst, draw_data.indexBuffers[i],
-			draw_data.indexBuffersSizes[i]);
-		idx_dst += draw_data.indexBuffersSizes[i];
+	if (draw_data.totalIdxCount > 0) {
+		VkMappedMemoryRange range[2] = {};
+		range[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		range[0].memory = vertexBufferMemory;
+		range[0].size = VK_WHOLE_SIZE;
+		range[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		range[1].memory = indexBufferMemory;
+		range[1].size = VK_WHOLE_SIZE;
+		if (vkFlushMappedMemoryRanges(Device::get(), 2, range) != VK_SUCCESS) {
+			std::runtime_error("Flush Memory ranges has failed");
+		}
 	}
 	this->draw_data = draw_data;
 }
@@ -205,7 +215,7 @@ UiDrawData GuiMesh::getData()
 
 uint32_t GuiMesh::getIdxCount()
 {
-	return this->IdxCount;
+	return this->draw_data.totalIdxCount;
 }
 
 GuiMesh::~GuiMesh()

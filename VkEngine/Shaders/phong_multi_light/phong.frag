@@ -37,7 +37,7 @@ void main(){
 	
 	vec4 texel=texture(texSamplers[inTextureIndex],fragTexCoord);	
 
-	outColor= texel * 0.01;
+	outColor= texel * 0.05;
 
 	for(int i=0;i<uniforms.light_count;i++){
 		// Distance to the light
@@ -67,4 +67,5 @@ void main(){
 		vec4(1.0,1.0,1.0,1.0) * uniforms.lights[i].power.w *
 			pow(cosAlpha,100) * attenuation;
 	}
+	outColor = vec4 (outColor.rgb ,texel.a); // alpha correction
 }

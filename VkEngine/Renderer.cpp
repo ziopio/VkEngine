@@ -367,14 +367,40 @@ void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex, VkCommandBufferInh
 		pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
 		0, sizeof(ImGuiPushConstantBlock), &pushBlock);
 
-	int idx_offset = 0;
-	int vtx_offset = 0;
-	for (int i = 0; i < data.elemtCounts.size(); i++) {
-		vkCmdDrawIndexed(mainThreadSecondaryCmdBuffers[frameBufferIndex],
-			data.elemtCounts[i], 1, idx_offset, vtx_offset, 0);
-		idx_offset += data.elemtCounts[i];
-		vtx_offset += data.vertexBuffersSizes[i];
+	VkViewport viewport = {};
+	viewport.x = 0;
+	viewport.y = 0;
+	viewport.width = data.display_size.x * data.frame_buffer_scale.x;
+	viewport.height = data.display_size.y * data.frame_buffer_scale.y;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(mainThreadSecondaryCmdBuffers[frameBufferIndex],
+		0, 1, &viewport);
+
+	uint32_t idx_offset = 0;
+	uint32_t vtx_offset = 0;
+	for (auto draw_list : data.drawLists) {
+		for ( auto cmd : draw_list.drawCommands) {
+			// Project scissor/clipping rectangles into framebuffer space
+			glm::vec4 clip_rect;
+			clip_rect = (cmd.clipRectangle - glm::vec4(data.display_pos,data.display_pos) )
+				* glm::vec4(data.display_size, data.display_size);
+
+			// Apply scissor/clipping rectangle
+			VkRect2D scissor;
+			scissor.offset.x = std::max((int32_t)(cmd.clipRectangle.x), 0);
+			scissor.offset.y = std::max((int32_t)(cmd.clipRectangle.y), 0);
+			scissor.extent.width = (uint32_t)(cmd.clipRectangle.z - cmd.clipRectangle.x);
+			scissor.extent.height = (uint32_t)(cmd.clipRectangle.w - cmd.clipRectangle.y);
+			vkCmdSetScissor(mainThreadSecondaryCmdBuffers[frameBufferIndex], 
+				0, 1, &scissor);
+			vkCmdDrawIndexed(mainThreadSecondaryCmdBuffers[frameBufferIndex],
+					cmd.elementCount, 1, idx_offset, vtx_offset, 0);
+			idx_offset += cmd.elementCount;
+		}
+		vtx_offset += draw_list.vertexBufferSize;
 	}
+
 	VkResult result = vkEndCommandBuffer(mainThreadSecondaryCmdBuffers[frameBufferIndex]);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("Command buffer ending failed");

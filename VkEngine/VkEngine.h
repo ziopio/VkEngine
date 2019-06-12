@@ -36,17 +36,26 @@ typedef struct {
 	ObjTransformation transformation;
 }ObjectInitInfo;
 
+// This structs serve to remove depencdencies from imgui types
+typedef struct  {
+	uint32_t elementCount;
+	glm::vec4 clipRectangle;
+	uint32_t textureID;
+}UiDrawCmd;
+typedef struct  {
+	std::vector<UiDrawCmd> drawCommands;
+	void* vertexBuffer;
+	size_t vertexBufferSize;
+	void* indexBuffer;
+	size_t indexBufferSize;
+}UiDrawList;
 struct UiDrawData {
+	glm::vec2 frame_buffer_scale;
 	glm::vec2 display_pos;
 	glm::vec2 display_size;
 	size_t totalVtxCount;
 	size_t totalIdxCount;
-	std::vector<uint32_t> elemtCounts;
-	std::vector<glm::vec4> clipRectangles;
-	std::vector<void*> vertexBuffers;
-	std::vector<size_t> vertexBuffersSizes;
-	std::vector<void*> indexBuffers;
-	std::vector<size_t> indexBuffersSizes;
+	std::vector<UiDrawList> drawLists;
 };
 
 

@@ -47,14 +47,13 @@ struct Vertex3D {
 struct Vertex2D {
 	glm::vec2 pos;
 	glm::vec2 texCoord;
-	glm::vec4 color;
+	uint32_t color;
 
 	static VkVertexInputBindingDescription getBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription = {};
 		bindingDescription.binding = 0;
 		bindingDescription.stride = sizeof(Vertex2D);
 		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
 		return bindingDescription;
 	}
 	static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
@@ -70,10 +69,8 @@ struct Vertex2D {
 		attributeDescriptions[1].offset = offsetof(Vertex2D, texCoord);
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT; //vec4
+		attributeDescriptions[2].format = VK_FORMAT_R8G8B8A8_UNORM; //uint32 to vec4
 		attributeDescriptions[2].offset = offsetof(Vertex2D, color);
-
-
 		return attributeDescriptions;
 	}
 	bool operator==(const Vertex2D& other) const {
@@ -131,10 +128,8 @@ public:
 	~GuiMesh();
 private:
 	UiDrawData draw_data;
-	uint32_t VtxCount;
-	uint32_t IdxCount;
-	void* mappedVtxMemory;
-	void* mappedIdxMemory;
+	Vertex2D* mappedVtxMemory;
+	uint32_t* mappedIdxMemory;
 	size_t allocated_Vtx_MemSize;
 	size_t allocated_Idx_MemSize;
 };

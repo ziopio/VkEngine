@@ -3,6 +3,8 @@
 #include "../ImGui/imgui.h"
 
 static bool show_demo_window = true;
+static bool show_another_window = true;
+float clear_color[3] = {0,0,0};
 
 void setClipboardText(void* user_pointer, const char* text);
 const char* getClipboardText(void* user_pointer);
@@ -31,9 +33,25 @@ EditorUI::EditorUI(Editor* editor)
 
 UiDrawData EditorUI::drawUI()
 {
-
 	ImGui::NewFrame();
 	ImGui::ShowDemoWindow(&show_demo_window);
+	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+	{
+		static float f = 0.0f;
+		static int counter = 0;
+		ImGui::Begin("Hello, world!");                         // Create a window called "Hello, world!" and append into it.
+		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+		ImGui::Checkbox("Another Window", &show_another_window);
+		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			counter++;
+		ImGui::SameLine();
+		ImGui::Text("counter = %d", counter);
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
+	}
 
 	ImGui::Render();
 	ImDrawData* draw_data = ImGui::GetDrawData();
@@ -59,10 +77,19 @@ void EditorUI::updateFrameSize(int w_width, int w_height, int frame_width, int f
 
 void EditorUI::updateMousePos(double xpos, double ypos)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	io.MousePos = ImVec2((float)xpos, (float)ypos);
 }
 
 void EditorUI::updateMouseButton(int button, int action, int mods)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	if ( action == ActionType::PRESS) {
+		io.MouseDown[button] = true;
+	}
+	else if(action == ActionType::RELEASE){
+		io.MouseDown[button] = false;
+	}
 }
 
 void EditorUI::updateCursor()
@@ -135,20 +162,22 @@ UiDrawData out_put_draw_data(ImDrawData* data)
 	ui_data.display_size = data->DisplaySize;
 	ui_data.totalIdxCount = data->TotalIdxCount;
 	ui_data.totalVtxCount = data->TotalVtxCount;
-	ui_data.elemtCounts.reserve(data->CmdListsCount);
-	ui_data.clipRectangles.reserve(data->CmdListsCount);
-	ui_data.vertexBuffers.reserve(data->CmdListsCount);
-	ui_data.vertexBuffersSizes.reserve(data->CmdListsCount);
-	ui_data.indexBuffers.reserve(data->CmdListsCount);
-	ui_data.indexBuffersSizes.reserve(data->CmdListsCount);
+	ui_data.frame_buffer_scale = data->FramebufferScale;
 	for (int i = 0; i < data->CmdListsCount; i++) {
 		ImDrawList* list = data->CmdLists[i];
-		ui_data.elemtCounts.push_back(list->CmdBuffer[i].ElemCount);
-		ui_data.clipRectangles.push_back(list->CmdBuffer[i].ClipRect);
-		ui_data.vertexBuffers.push_back((void*)(list->VtxBuffer.Data));
-		ui_data.vertexBuffersSizes.push_back(list->VtxBuffer.Size);
-		ui_data.indexBuffers.push_back((void*)(list->IdxBuffer.Data));
-		ui_data.indexBuffersSizes.push_back(list->IdxBuffer.Size);
+		UiDrawList myList = {};
+		myList.vertexBuffer = list->VtxBuffer.Data;
+		myList.vertexBufferSize = list->VtxBuffer.Size;
+		myList.indexBuffer = list->IdxBuffer.Data;
+		myList.indexBufferSize = list->IdxBuffer.Size;
+		for (ImDrawCmd cmd : list->CmdBuffer) {
+			UiDrawCmd my_cmd = {};
+			my_cmd.elementCount = cmd.ElemCount;
+			my_cmd.clipRectangle = cmd.ClipRect;
+			my_cmd.textureID = reinterpret_cast<uint32_t>(cmd.TextureId);
+			myList.drawCommands.push_back(my_cmd);
+		}
+		ui_data.drawLists.push_back(myList);
 	}
 	return ui_data;
 }

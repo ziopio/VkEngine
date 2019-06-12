@@ -19,14 +19,15 @@ Editor::Editor()
 	try {
 		this->renderingEngine.setSurfaceOwner(this);
 		this->renderingEngine.init();
+		this->UI = new EditorUI(this);
+		FontAtlas f = UI->getDefaultFontAtlas();
+		this->renderingEngine.loadFontAtlas(f.pixels, &f.width, &f.height);
 		this->load_demo_scene();
 	}
 	catch (std::runtime_error err){
 		std::cout << err.what() << std::endl;
 	}
-	this->UI = new EditorUI(this);
-	FontAtlas f = UI->getDefaultFontAtlas();
-	this->renderingEngine.loadFontAtlas(f.pixels,&f.width,&f.height);
+
 }
 
 void Editor::execute()
