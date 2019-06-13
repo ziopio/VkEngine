@@ -54,7 +54,7 @@ unsigned char* Texture::readImageFile(std::string texturePath, int * width, int 
 
 void Texture::createTextureImage(unsigned char * pixels, int width, int height)
 {	// load image to an accessible stage buffer
-	VkDeviceSize imageSize = width * height * 4;
+	VkDeviceSize imageSize = width * height * 4 * sizeof(char);
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 	createBuffer(PhysicalDevice::get(), Device::get(),

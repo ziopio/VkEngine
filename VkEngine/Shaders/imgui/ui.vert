@@ -11,9 +11,9 @@ layout(push_constant) uniform uPushConstant {
     int tex_ID;
 } pc;
 //outputs
-layout(location = 0) flat out int tex_index;
-layout(location = 1) out vec2 UV;
-layout(location = 2) out vec4 Color;
+layout(location = 0) out vec2 UV;
+layout(location = 1) out vec4 Color;
+layout(location = 2) flat out int tex_index;
 
 void main()
 {

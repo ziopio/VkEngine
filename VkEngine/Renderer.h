@@ -23,6 +23,7 @@ class Renderer
 {
 public:
 	Renderer(RenderPass* renderPass,SwapChain* swapChain);
+	unsigned getNextFrameBufferIndex();
 	void setLights(std::vector<LightSource> lights);
 	void setObjects(std::vector<Object> objects);
 	/* 
@@ -64,5 +65,6 @@ private:
 	uint32_t numThreads;
 	uint32_t objXthread;
 	uint32_t currentFrame;
+	uint32_t last_imageIndex;
 };
 

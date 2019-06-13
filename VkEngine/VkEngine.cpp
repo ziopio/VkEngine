@@ -39,7 +39,7 @@ void VkEngine::init()
 	swapChain = new SwapChain(this->surfaceOwner);
 	renderPass = new RenderPass(swapChain);
 	MaterialManager::init(swapChain, renderPass);
-	MeshManager::init();
+	MeshManager::init(swapChain->getImageViews().size());
 	TextureManager::init();
 	DescriptorSetsFactory::init(swapChain);
 	int width, height;
@@ -89,7 +89,8 @@ void VkEngine::loadFontAtlas(unsigned char * pixels, int * width, int * height)
 
 void VkEngine::updateImGuiData(UiDrawData draw_data)
 {
-	MeshManager::updateImGuiBuffers(draw_data);
+	MeshManager::updateImGuiBuffers(draw_data, 
+		renderer->getNextFrameBufferIndex());
 }
 
 void VkEngine::addLight(PointLightInfo light_info)

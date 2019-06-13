@@ -45,9 +45,9 @@ typedef struct  {
 typedef struct  {
 	std::vector<UiDrawCmd> drawCommands;
 	void* vertexBuffer;
-	size_t vertexBufferSize;
+	int vertexBufferSize;
 	void* indexBuffer;
-	size_t indexBufferSize;
+	int indexBufferSize;
 }UiDrawList;
 struct UiDrawData {
 	glm::vec2 frame_buffer_scale;

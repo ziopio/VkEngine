@@ -28,6 +28,12 @@ Renderer::Renderer(RenderPass* renderPass, SwapChain* swapChain)
 	prepareThreadedRendering();
 }
 
+unsigned Renderer::getNextFrameBufferIndex()
+{
+	return this->last_imageIndex >= swapChain->getImageViews().size() - 1 ?
+		0 : this->last_imageIndex + 1;
+}
+
 void Renderer::setLights(std::vector<LightSource> lights)
 {
 	this->lights = lights;
@@ -57,6 +63,7 @@ bool Renderer::renderScene()
 	if (!this->swapChain->acquireNextImage(imageAvailableSemaphores[currentFrame], &imageIndex)) {
 		return false;
 	}
+	this->last_imageIndex = imageIndex;
 	this->update_camera_infos(imageIndex);
 	//Aggiorno tutti i commandBuffers
 
@@ -315,7 +322,7 @@ void Renderer::updateCommandBuffer(uint32_t frameBufferIndex)
 		}
 	}
 	// ImGui rendering
-	if (MeshManager::getImGuiMesh()->getIdxCount() > 0) 
+	if (MeshManager::getImGuiMesh(frameBufferIndex)->getIdxCount() > 0) 
 	{
 		this->recordImGuiDrawCmds(frameBufferIndex, inheritanceInfo);
 		secondaryCmdBuffers.push_back(this->mainThreadSecondaryCmdBuffers[frameBufferIndex]);
@@ -351,13 +358,15 @@ void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex, VkCommandBufferInh
 	vkCmdBindDescriptorSets(mainThreadSecondaryCmdBuffers[frameBufferIndex],
 		VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,
 		&descrSet,0,nullptr);
-	GuiMesh* imgui = MeshManager::getImGuiMesh();
+
+	GuiMesh* imgui = MeshManager::getImGuiMesh(frameBufferIndex);
 	VkBuffer vertexBuffer = imgui->getVkVertexBuffer();
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(mainThreadSecondaryCmdBuffers[frameBufferIndex]
-		,0,1,&vertexBuffer,offsets);
+		, 0, 1, &vertexBuffer, offsets);
 	vkCmdBindIndexBuffer(mainThreadSecondaryCmdBuffers[frameBufferIndex],
 		imgui->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
 	UiDrawData data = imgui->getData();
 	ImGuiPushConstantBlock pushBlock = {};
 	pushBlock.uScale = 2.0f / data.display_size;
@@ -385,17 +394,17 @@ void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex, VkCommandBufferInh
 			glm::vec4 clip_rect;
 			clip_rect = (cmd.clipRectangle - glm::vec4(data.display_pos,data.display_pos) )
 				* glm::vec4(data.display_size, data.display_size);
-
 			// Apply scissor/clipping rectangle
 			VkRect2D scissor;
 			scissor.offset.x = std::max((int32_t)(cmd.clipRectangle.x), 0);
 			scissor.offset.y = std::max((int32_t)(cmd.clipRectangle.y), 0);
 			scissor.extent.width = (uint32_t)(cmd.clipRectangle.z - cmd.clipRectangle.x);
 			scissor.extent.height = (uint32_t)(cmd.clipRectangle.w - cmd.clipRectangle.y);
-			vkCmdSetScissor(mainThreadSecondaryCmdBuffers[frameBufferIndex], 
+			vkCmdSetScissor(mainThreadSecondaryCmdBuffers[frameBufferIndex],
 				0, 1, &scissor);
 			vkCmdDrawIndexed(mainThreadSecondaryCmdBuffers[frameBufferIndex],
-					cmd.elementCount, 1, idx_offset, vtx_offset, 0);
+				cmd.elementCount, 1, idx_offset, vtx_offset, 0);
+
 			idx_offset += cmd.elementCount;
 		}
 		vtx_offset += draw_list.vertexBufferSize;

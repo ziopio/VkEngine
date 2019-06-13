@@ -115,12 +115,13 @@ void Editor::waitEvents()
 
 void Editor::load_demo_scene()
 {
-	this->renderingEngine.loadTexture("VkEngine/Textures/cube1.png");
-	this->renderingEngine.loadTexture("VkEngine/Textures/AXIS_TEX.png");
-	this->renderingEngine.loadTexture("VkEngine/Textures/.png");
+
 	this->renderingEngine.loadMesh("VkEngine/Meshes/axis.obj");
 	this->renderingEngine.loadMesh("VkEngine/Meshes/icosphere.obj");
 	this->renderingEngine.loadMesh("VkEngine/Meshes/sphere.obj");
+	this->renderingEngine.loadTexture("VkEngine/Textures/cube1.png");
+	this->renderingEngine.loadTexture("VkEngine/Textures/AXIS_TEX.png");
+	this->renderingEngine.loadTexture("VkEngine/Textures/.png");
 
 	PointLightInfo l = {
 		3,3,3,

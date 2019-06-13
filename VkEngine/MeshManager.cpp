@@ -3,11 +3,14 @@
 #include "VkEngine.h"
 
 std::vector<Mesh*> MeshManager::scene_meshes;
-GuiMesh* MeshManager::imgui;
+std::vector<GuiMesh*> MeshManager::per_frame_imguis;
 
-void MeshManager::init()
+void MeshManager::init(unsigned swapchain_image_count)
 {
-	imgui = new GuiMesh();
+	MeshManager::per_frame_imguis.resize(swapchain_image_count);
+	for (int i = 0; i < swapchain_image_count; i++) {
+		MeshManager::per_frame_imguis[i] = new GuiMesh();
+	}
 	MeshManager::addMesh("VkEngine/Meshes/cube.obj");
 }
 
@@ -21,14 +24,14 @@ BaseMesh * MeshManager::getMesh(int id)
 	return scene_meshes[id];
 }
 
-GuiMesh * MeshManager::getImGuiMesh()
+GuiMesh * MeshManager::getImGuiMesh(unsigned imageIndex)
 {
-	return MeshManager::imgui;
+	return MeshManager::per_frame_imguis[imageIndex];
 }
 
-void MeshManager::updateImGuiBuffers(UiDrawData imgui)
+void MeshManager::updateImGuiBuffers(UiDrawData imgui, unsigned imageIndex)
 {
-	MeshManager::imgui->updateMeshData(imgui);
+	MeshManager::per_frame_imguis[imageIndex]->updateMeshData(imgui);
 }
 
 void MeshManager::cleanUp()
@@ -36,5 +39,7 @@ void MeshManager::cleanUp()
 	for (auto mesh : scene_meshes) {
 		delete mesh;
 	}
-	delete imgui;
+	for (auto imgui : per_frame_imguis) {
+		delete imgui;
+	}
 }
