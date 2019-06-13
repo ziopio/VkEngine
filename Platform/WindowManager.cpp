@@ -128,9 +128,9 @@ void WindowManager::Window::getCursorPos(double * xpos, double * ypos)
 	glfwGetCursorPos(this->pimpl->window, xpos, ypos);
 }
 
-void WindowManager::Window::getMouseButton(int button)
+int WindowManager::Window::getMouseButton(int button)
 {
-	glfwGetMouseButton(this->pimpl->window, button);
+	return glfwGetMouseButton(this->pimpl->window, button);
 }
 
 void WindowManager::Window::setClipboardText(const char * text)
@@ -287,7 +287,7 @@ void keyCallBack(GLFWwindow * window, int key, int scancode, int action, int mod
 
 	switch (key)
 	{
-	case GLFW_KEY_SPACE: t = KeyType::KEY_ESCAPE; break;
+	case GLFW_KEY_SPACE: t = KeyType::KEY_SPACE; break;
 	case GLFW_KEY_APOSTROPHE:	t = KeyType::KEY_APOSTROPHE ;break;					
 	case GLFW_KEY_COMMA:		t = KeyType::KEY_COMMA ;break;					
 	case GLFW_KEY_MINUS:	t = KeyType::KEY_MINUS;break;
@@ -406,7 +406,7 @@ void keyCallBack(GLFWwindow * window, int key, int scancode, int action, int mod
 	case GLFW_KEY_RIGHT_CONTROL:t = KeyType::KEY_RIGHT_CTRL;break;
 	case GLFW_KEY_RIGHT_ALT:	t = KeyType::KEY_RIGHT_ALT;break;
 	case GLFW_KEY_RIGHT_SUPER:	t = KeyType::KEY_RIGHT_SUPER;break;
-	case GLFW_KEY_MENU:			t = KeyType::KEY_MENU; // same a key_lastbreak;
+	case GLFW_KEY_MENU:			t = KeyType::KEY_MENU; break;// same a key_lastbreak;
 	default: t = KeyType::KEY_UNKNOWN;break;
 	}
 	

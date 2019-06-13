@@ -42,7 +42,7 @@ public:
 		void getWindowSize(int *w_width, int *w_height);
 		void getFrameBufferSize(int *width, int *height);
 		void getCursorPos(double * xpos, double * ypos);
-		void getMouseButton(int button);
+		int getMouseButton(int button);
 		void setClipboardText(const char* text);
 		const char* getClipboardText();
 		void activateKeyCallBack();

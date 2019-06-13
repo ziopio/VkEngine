@@ -1,6 +1,7 @@
 #include "EditorUI.h"
 #include "Editor.h"
 #include "../ImGui/imgui.h"
+#include <ctime>
 
 static bool show_demo_window = true;
 static bool show_another_window = true;
@@ -8,7 +9,7 @@ float clear_color[3] = {0,0,0};
 
 void setClipboardText(void* user_pointer, const char* text);
 const char* getClipboardText(void* user_pointer);
-//Takes data and pointer from ImDrawData and copies to UiDrawData
+//Takes data and pointers from ImDrawData and copies those to UiDrawData
 UiDrawData out_put_draw_data(ImDrawData* data);
 
 EditorUI::EditorUI(Editor* editor)
@@ -17,8 +18,11 @@ EditorUI::EditorUI(Editor* editor)
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+	ImGuiIO& io = ImGui::GetIO();
+	//ImGuiIO& io = ImGui::GetIO();
+	io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
+	io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
 	// Setup Dear ImGui style
@@ -33,8 +37,13 @@ EditorUI::EditorUI(Editor* editor)
 
 UiDrawData EditorUI::drawUI()
 {
+	this->pollInputs();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow(&show_demo_window);
+	this->setCaptureFlags();
+
+	if (show_demo_window) {
+		ImGui::ShowDemoWindow(&show_demo_window);
+	}
 	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
 	{
 		static float f = 0.0f;
@@ -84,16 +93,47 @@ void EditorUI::updateMousePos(double xpos, double ypos)
 void EditorUI::updateMouseButton(int button, int action, int mods)
 {
 	ImGuiIO& io = ImGui::GetIO();
-	if ( action == ActionType::PRESS) {
-		io.MouseDown[button] = true;
+	if (action == ActionType::PRESS && button >= 0 
+		&& button < IM_ARRAYSIZE(mouseButtonsHasBeenPressed))
+		mouseButtonsHasBeenPressed[button] = true;
+}
+
+void EditorUI::updateKeyboard(int key, int scancode, int action, int mods)
+{
+	bool pressed = false;
+	ImGuiIO& io = ImGui::GetIO();
+	if (action == ActionType::PRESS) {
+		pressed = true;
 	}
-	else if(action == ActionType::RELEASE){
-		io.MouseDown[button] = false;
-	}
+	io.KeysDown[key] = pressed;
+	// Modifiers are not reliable across systems
+	io.KeyCtrl = io.KeysDown[KeyType::KEY_LEFT_CTRL] || io.KeysDown[KeyType::KEY_RIGHT_CTRL];
+	io.KeyShift = io.KeysDown[KeyType::KEY_LEFT_SHIFT] || io.KeysDown[KeyType::KEY_RIGHT_SHIFT];
+	io.KeyAlt = io.KeysDown[KeyType::KEY_LEFT_ALT] || io.KeysDown[KeyType::KEY_RIGHT_ALT];
+	io.KeySuper = io.KeysDown[KeyType::KEY_LEFT_SUPER] || io.KeysDown[KeyType::KEY_RIGHT_SUPER];
+}
+
+void EditorUI::updateChar(unsigned int character)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.AddInputCharacter(character);
+}
+
+void EditorUI::updateScroll(double xoffset, double yoffset)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseWheel += yoffset;
+	io.MouseWheelH += xoffset;
 }
 
 void EditorUI::updateCursor()
 {
+}
+
+void EditorUI::setDeltaTime(double delta_time)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = (float)delta_time > 0 ? (float)delta_time : 0;
 }
 
 void EditorUI::mapWindowInput2ImGui()
@@ -132,7 +172,29 @@ void EditorUI::mapWindowInput2ImGui()
 //#if defined(_WIN32)
 //	io.ImeWindowHandle = (void*)glfwGetWin32Window(g_Window);
 //#endif
+}
 
+void EditorUI::pollInputs()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
+	{
+		// If a mouse press event came, always pass it as 
+		// "mouse held this frame", so we don't miss click-release events 
+		// that are shorter than 1 frame.
+		io.MouseDown[i] = mouseButtonsHasBeenPressed[i] || 
+			this->editor->getWindow()->getMouseButton(i) != 0;
+		mouseButtonsHasBeenPressed[i] = false;
+	}
+}
+
+void EditorUI::setCaptureFlags()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	this->_wantCaptureKeyboard = io.WantCaptureKeyboard;
+	this->_wantTextInput = io.WantTextInput;
+	this->_wantSetMousePos = io.WantSetMousePos;
+	this->_wantCaptureMouse = io.WantCaptureMouse;
 }
 
 FontAtlas EditorUI::getDefaultFontAtlas()

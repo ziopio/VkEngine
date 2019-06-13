@@ -4,14 +4,15 @@
 #include "Editor.h"
 #include "EditorUI.h"
 
-#define W_WIDTH 500
-#define W_HEIGHT 500
+#define W_WIDTH 1366
+#define W_HEIGHT 768
 
 Editor::Editor()
 {
 	WindowManager::init();
 	this->window = WindowManager::createWindow( W_WIDTH, W_HEIGHT, "Editor!!!");
 	this->window->registerEventHandler(this);
+	this->window->activateCharCallback();
 	this->window->activateKeyCallBack();
 	this->window->activateMouseButtonCallback();
 	this->window->activateCursorPosCallback();
@@ -32,8 +33,16 @@ Editor::Editor()
 
 void Editor::execute()
 {
+	static double last_iteration;
+	double delta_time;
+	double now;
 	while (!this->window->windowShouldClose() || this->terminate) {
 		WindowManager::pollEvents();
+		now = WindowManager::getTime();
+		delta_time = now - last_iteration;
+		this->UI->setDeltaTime(delta_time);
+		last_iteration = now;
+
 		renderingEngine.updateImGuiData(this->UI->drawUI());
 		renderingEngine.renderFrame();
 	}
@@ -60,12 +69,12 @@ void Editor::onFrameBufferResizeCallBack(int width, int height)
 
 void Editor::onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods)
 {
-	std::cout << "Key callback" << std::endl;
+	this->UI->updateKeyboard(key, scancode, action, mods);
 }
 
 void Editor::onCharCallback(unsigned int code_point)
 {
-	std::cout << "Char callback" << std::endl;
+	this->UI->updateChar(code_point);
 }
 
 void Editor::onCursorPosCallback(double xpos, double ypos)
@@ -80,7 +89,7 @@ void Editor::onMouseButtonCallback(MouseButtonType button, ActionType action, Mo
 
 void Editor::onScrollCallback(double xoffset, double yoffset)
 {
-	std::cout << "Scroll callback" << std::endl;
+	this->UI->updateScroll(xoffset,yoffset);
 }
 
 void Editor::onDropCallback(int count, const char ** paths)

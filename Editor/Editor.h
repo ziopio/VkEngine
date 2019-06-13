@@ -29,10 +29,10 @@ public:
 	void getFrameBufferSize(int * width, int * height) override;
 	void waitEvents() override;
 private:
+	void load_demo_scene();
 	WindowManager::Window* window;
 	EditorUI* UI;
 	VkEngine renderingEngine;
 	bool terminate;
-	void load_demo_scene();
 };
 
