@@ -4,31 +4,24 @@
 #include "Editor.h"
 #include "EditorUI.h"
 
-#define W_WIDTH 1366
-#define W_HEIGHT 768
+void window_system_debug_callback(int error, const char *description);
 
-Editor::Editor()
+Editor::Editor() 
 {
 	WindowManager::init();
-	this->window = WindowManager::createWindow( W_WIDTH, W_HEIGHT, "Editor!!!");
-	this->window->registerEventHandler(this);
-	this->window->activateCharCallback();
-	this->window->activateKeyCallBack();
-	this->window->activateMouseButtonCallback();
-	this->window->activateCursorPosCallback();
-	this->window->activateScrollCallback();
+	WindowManager::setDebugCallBack(window_system_debug_callback);
+	this->UI = new EditorUI(this);
+	this->renderingEngine = new VkEngine();
 	try {
-		this->renderingEngine.setSurfaceOwner(this);
-		this->renderingEngine.init();
-		this->UI = new EditorUI(this);
+		this->renderingEngine->setSurfaceOwner(this->UI);
+		this->renderingEngine->init();
 		FontAtlas f = UI->getDefaultFontAtlas();
-		this->renderingEngine.loadFontAtlas(f.pixels, &f.width, &f.height);
+		this->renderingEngine->loadFontAtlas(f.pixels, &f.width, &f.height);
 		this->load_demo_scene();
 	}
 	catch (std::runtime_error err){
 		std::cout << err.what() << std::endl;
 	}
-
 }
 
 void Editor::execute()
@@ -36,7 +29,7 @@ void Editor::execute()
 	static double last_iteration;
 	double delta_time;
 	double now;
-	while (!this->window->windowShouldClose() || this->terminate) 
+	while (!this->UI->getWindow()->windowShouldClose() || this->terminate) 
 	{
 		WindowManager::pollEvents();
 		now = WindowManager::getTime();
@@ -44,106 +37,39 @@ void Editor::execute()
 		this->UI->setDeltaTime(delta_time);
 		last_iteration = now;
 
-		renderingEngine.updateImGuiData(this->UI->drawUI());
-		renderingEngine.renderFrame();
+		renderingEngine->updateImGuiData(this->UI->drawUI());
+		renderingEngine->renderFrame();
 	}
+}
+
+void Editor::resizeSwapChain(int width, int height)
+{
+	this->renderingEngine->resizeSwapchain( width, height);
 }
 
 Editor::~Editor()
 {
-	WindowManager::destroyWindow(this->window);
+	delete renderingEngine;
+	delete UI;
 	WindowManager::terminate();
-}
-
-WindowManager::Window* Editor::getWindow()
-{
-	return this->window;
-}
-
-void Editor::onFrameBufferResizeCallBack(int width, int height)
-{	
-	this->renderingEngine.resizeSwapchain(width, height);
-	int w_width, w_height;
-	this->window->getWindowSize(&w_width,&w_height);
-	this->UI->updateFrameSize(w_width, w_height,width,height);
-}
-
-void Editor::onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods)
-{
-	this->UI->updateKeyboard(key, scancode, action, mods);
-}
-
-void Editor::onCharCallback(unsigned int code_point)
-{
-	this->UI->updateChar(code_point);
-}
-
-void Editor::onCursorPosCallback(double xpos, double ypos)
-{
-	this->UI->updateMousePos(xpos,ypos);
-}
-
-void Editor::onMouseButtonCallback(MouseButtonType button, ActionType action, ModifierKeyType mods)
-{
-	this->UI->updateMouseButton(button ,action, mods);
-}
-
-void Editor::onScrollCallback(double xoffset, double yoffset)
-{
-	this->UI->updateScroll(xoffset,yoffset);
-}
-
-void Editor::onDropCallback(int count, const char ** paths)
-{
-	std::cout << "Drop file callback" << std::endl;
-}
-
-VulkanInstanceInitInfo Editor::getInstanceExtInfo()
-{
-	VulkanInstanceInitInfo info = {};
-	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
-	info.enableValidation = true;
-	return info;
-}
-
-void * Editor::getSurface(void * vulkan_instance)
-{
-	void* surface;
-	this->window->createWindowSurface(vulkan_instance, &surface);
-	return surface;
-}
-
-void Editor::getFrameBufferSize(int * width, int * height)
-{
-	this->window->getFrameBufferSize(width, height);
-}
-
-void Editor::printDebug(std::string msg)
-{
-	this->UI->showDebugString(msg);
-}
-
-void Editor::waitEvents()
-{
-	WindowManager::waitEvents();
 }
 
 void Editor::load_demo_scene()
 {
 
-	this->renderingEngine.loadMesh("VkEngine/Meshes/axis.obj");
-	this->renderingEngine.loadMesh("VkEngine/Meshes/icosphere.obj");
-	this->renderingEngine.loadMesh("VkEngine/Meshes/sphere.obj");
-	this->renderingEngine.loadTexture("VkEngine/Textures/cube1.png");
-	this->renderingEngine.loadTexture("VkEngine/Textures/AXIS_TEX.png");
-	this->renderingEngine.loadTexture("VkEngine/Textures/.png");
+	this->renderingEngine->loadMesh("VkEngine/Meshes/axis.obj");
+	this->renderingEngine->loadMesh("VkEngine/Meshes/icosphere.obj");
+	this->renderingEngine->loadMesh("VkEngine/Meshes/sphere.obj");
+	this->renderingEngine->loadTexture("VkEngine/Textures/cube1.png");
+	this->renderingEngine->loadTexture("VkEngine/Textures/AXIS_TEX.png");
+	this->renderingEngine->loadTexture("VkEngine/Textures/.png");
 
 	PointLightInfo l = {
 		3,3,3,
 		1,1,1,
 		2
 	};
-	this->renderingEngine.addLight(l);
+	this->renderingEngine->addLight(l);
 	{
 		float position[] = { 0,0,0 };
 		float rotation_vector[] = { -1,1,-1 };
@@ -160,7 +86,7 @@ void Editor::load_demo_scene()
 		cube.texture_id = 1;
 		cube.material_id = 1;
 		cube.transformation = t;
-		this->renderingEngine.addObject(cube);
+		this->renderingEngine->addObject(cube);
 	}
 	{
 		float position[] = { 0,0,0 };
@@ -178,8 +104,12 @@ void Editor::load_demo_scene()
 		axis.texture_id = 2;
 		axis.material_id = 0;
 		axis.transformation = t;
-		this->renderingEngine.addObject(axis);
+		this->renderingEngine->addObject(axis);
 	}
 
 }
 
+void window_system_debug_callback(int error, const char * description)
+{
+	std::cout << "WindowManager  ERROR " << error << ": " << description << std::endl;
+}

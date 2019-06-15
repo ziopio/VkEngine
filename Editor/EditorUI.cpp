@@ -1,12 +1,14 @@
 #include "EditorUI.h"
 #include "Editor.h"
 #include "../ImGui/imgui.h"
+#include <iostream>
 #include <ctime>
 
+#define W_WIDTH 1366
+#define W_HEIGHT 768
+
 static bool show_demo_window = true;
-static bool show_another_window = true;
 static std::string debug_logs = "";
-float clear_color[3] = {0,0,0};
 
 void setClipboardText(void* user_pointer, const char* text);
 const char* getClipboardText(void* user_pointer);
@@ -16,6 +18,13 @@ UiDrawData out_put_draw_data(ImDrawData* data);
 EditorUI::EditorUI(Editor* editor)
 {   
 	this->editor = editor;
+	this->window = WindowManager::createWindow(W_WIDTH, W_HEIGHT, "Editor!!!");
+	this->window->registerEventHandler(this);
+	this->window->activateCharCallback();
+	this->window->activateKeyCallBack();
+	this->window->activateMouseButtonCallback();
+	this->window->activateCursorPosCallback();
+	this->window->activateScrollCallback();
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -29,10 +38,9 @@ EditorUI::EditorUI(Editor* editor)
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
 	this->mapWindowInput2ImGui();
-	int w_width, w_height, f_width, f_height;
-	this->editor->getWindow()->getWindowSize(&w_width,&w_height);
-	this->editor->getFrameBufferSize(&f_width,&f_height);
-	this->updateFrameSize(w_width,w_height,f_width,f_height);
+	int f_width, f_height;
+	this->window->getFrameBufferSize(&f_width,&f_height);
+	this->updateImguiDisplay(f_width, f_height);
 }
 
 UiDrawData EditorUI::drawUI()
@@ -46,7 +54,7 @@ UiDrawData EditorUI::drawUI()
 	// Debug logging window
 	{	
 		int x, y;
-		this->editor->getWindow()->getWindowSize(&x,&y);
+		this->window->getWindowSize(&x,&y);
 		ImGui::SetNextWindowPos(ImVec2(0, y - y / 4), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(x , y / 4), ImGuiCond_Always);
 		ImGui::Begin("Validation Layers");
@@ -62,75 +70,21 @@ UiDrawData EditorUI::drawUI()
 EditorUI::~EditorUI()
 {
 	ImGui::DestroyContext();
-}
-
-void EditorUI::updateFrameSize(int w_width, int w_height, int frame_width, int frame_height)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2((float)w_width, (float)w_height);
-	if (io.DisplaySize.x > 0 && io.DisplaySize.y > 0)
-	{
-		io.DisplayFramebufferScale =
-			ImVec2((float)frame_width / io.DisplaySize.x,
-			(float)frame_height / io.DisplaySize.y);
-	}
-}
-
-void EditorUI::updateMousePos(double xpos, double ypos)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2((float)xpos, (float)ypos);
-}
-
-void EditorUI::updateMouseButton(int button, int action, int mods)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	if (action == ActionType::PRESS && button >= 0 
-		&& button < IM_ARRAYSIZE(mouseButtonsHasBeenPressed))
-		mouseButtonsHasBeenPressed[button] = true;
-}
-
-void EditorUI::updateKeyboard(int key, int scancode, int action, int mods)
-{
-	bool pressed = false;
-	ImGuiIO& io = ImGui::GetIO();
-	if (action == ActionType::PRESS) {
-		pressed = true;
-	}
-	io.KeysDown[key] = pressed;
-	// Modifiers are not reliable across systems
-	io.KeyCtrl = io.KeysDown[KeyType::KEY_LEFT_CTRL] || io.KeysDown[KeyType::KEY_RIGHT_CTRL];
-	io.KeyShift = io.KeysDown[KeyType::KEY_LEFT_SHIFT] || io.KeysDown[KeyType::KEY_RIGHT_SHIFT];
-	io.KeyAlt = io.KeysDown[KeyType::KEY_LEFT_ALT] || io.KeysDown[KeyType::KEY_RIGHT_ALT];
-	io.KeySuper = io.KeysDown[KeyType::KEY_LEFT_SUPER] || io.KeysDown[KeyType::KEY_RIGHT_SUPER];
-}
-
-void EditorUI::updateChar(unsigned int character)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	io.AddInputCharacter(character);
-}
-
-void EditorUI::updateScroll(double xoffset, double yoffset)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	io.MouseWheel += yoffset;
-	io.MouseWheelH += xoffset;
+	WindowManager::destroyWindow(this->window);
 }
 
 void EditorUI::updateCursor()
 {
-	auto win = this->editor->getWindow();
 	ImGuiIO& io = ImGui::GetIO();
 	if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) || 
-		win->getInputMode(InputMode::CURSOR) == InputModeValueType::CURSOR_DISABLED)
+		window->getInputMode(InputMode::CURSOR) == InputModeValueType::CURSOR_DISABLED)
 		return;
 
 	ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
 	if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
 	{
 		// Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
-		win->setInputMode(InputMode::CURSOR, InputModeValueType::CURSOR_HIDDEN);
+		window->setInputMode(InputMode::CURSOR, InputModeValueType::CURSOR_HIDDEN);
 	}
 	else
 	{
@@ -153,8 +107,22 @@ void EditorUI::updateCursor()
 			default: newCursor = CursorType::ARROW_CURSOR; break;
 		}
 		// Show OS mouse cursor
-		win->setCursor(newCursor);
-		win->setInputMode(InputMode::CURSOR, InputModeValueType::CURSOR_NORMAL);
+		window->setCursor(newCursor);
+		window->setInputMode(InputMode::CURSOR, InputModeValueType::CURSOR_NORMAL);
+	}
+}
+
+void EditorUI::updateImguiDisplay(int width, int height)
+{
+	int w_width, w_height;
+	this->window->getWindowSize(&w_width, &w_height);
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = ImVec2((float)w_width, (float)w_height);
+	if (io.DisplaySize.x > 0 && io.DisplaySize.y > 0)
+	{
+		io.DisplayFramebufferScale =
+			ImVec2((float)width / io.DisplaySize.x,
+			(float)height / io.DisplaySize.y);
 	}
 }
 
@@ -162,11 +130,6 @@ void EditorUI::setDeltaTime(double delta_time)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.DeltaTime = (float)delta_time > 0 ? (float)delta_time : 0;
-}
-
-void EditorUI::showDebugString(std::string debug_info)
-{
-	debug_logs.append(debug_info);
 }
 
 void EditorUI::mapWindowInput2ImGui()
@@ -215,9 +178,9 @@ void EditorUI::pollInputs()
 		// If a mouse press event came, always pass it as 
 		// "mouse held this frame", so we don't miss click-release events 
 		// that are shorter than 1 frame.
-		io.MouseDown[i] = mouseButtonsHasBeenPressed[i] || 
-			this->editor->getWindow()->getMouseButton(i) != 0;
-		mouseButtonsHasBeenPressed[i] = false;
+		io.MouseDown[i] = mouseButtonsHaveBeenPressed[i] || 
+			window->getMouseButton(i) != 0;
+		mouseButtonsHaveBeenPressed[i] = false;
 	}
 	this->updateCursor();
 }
@@ -239,16 +202,100 @@ FontAtlas EditorUI::getDefaultFontAtlas()
 	return f;
 }
 
+
+void EditorUI::onFrameBufferResizeCallBack(int width, int height)
+{
+	this->editor->resizeSwapChain(width, height);
+	this->updateImguiDisplay(width, height);
+}
+
+void EditorUI::onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods)
+{
+	bool pressed = false;
+	ImGuiIO& io = ImGui::GetIO();
+	if (action == ActionType::PRESS) {
+		pressed = true;
+	}
+	io.KeysDown[key] = pressed;
+	// Modifiers are not reliable across systems
+	io.KeyCtrl = io.KeysDown[KeyType::KEY_LEFT_CTRL] || io.KeysDown[KeyType::KEY_RIGHT_CTRL];
+	io.KeyShift = io.KeysDown[KeyType::KEY_LEFT_SHIFT] || io.KeysDown[KeyType::KEY_RIGHT_SHIFT];
+	io.KeyAlt = io.KeysDown[KeyType::KEY_LEFT_ALT] || io.KeysDown[KeyType::KEY_RIGHT_ALT];
+	io.KeySuper = io.KeysDown[KeyType::KEY_LEFT_SUPER] || io.KeysDown[KeyType::KEY_RIGHT_SUPER];
+}
+void EditorUI::onCharCallback(unsigned int code_point)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.AddInputCharacter(code_point);
+}
+
+void EditorUI::onCursorPosCallback(double xpos, double ypos)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MousePos = ImVec2((float)xpos, (float)ypos);
+}
+
+void EditorUI::onMouseButtonCallback(MouseButtonType button, ActionType action, ModifierKeyType mods)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (action == ActionType::PRESS && button >= 0
+		&& button < IM_ARRAYSIZE(mouseButtonsHaveBeenPressed))
+		mouseButtonsHaveBeenPressed[button] = true;
+}
+
+void EditorUI::onScrollCallback(double xoffset, double yoffset)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseWheel += yoffset;
+	io.MouseWheelH += xoffset;
+}
+
+void EditorUI::onDropCallback(int count, const char ** paths)
+{
+	std::cout << "Drop file callback" << std::endl;
+}
+
+VulkanInstanceInitInfo EditorUI::getInstanceExtInfo()
+{
+	VulkanInstanceInitInfo info = {};
+	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
+	info.enableValidation = true;
+	return info;
+}
+
+void * EditorUI::getSurface(void * vulkan_instance)
+{
+	void* surface;
+	this->window->createWindowSurface(vulkan_instance, &surface);
+	return surface;
+}
+
+void EditorUI::getFrameBufferSize(int * width, int * height)
+{
+	this->window->getFrameBufferSize(width, height);
+}
+
+void EditorUI::printDebug(std::string msg)
+{
+	debug_logs.append(msg);
+}
+
+void EditorUI::waitEvents()
+{
+	WindowManager::waitEvents();
+}
+
+
 void setClipboardText(void * user_pointer, const char * text)
 {
-	auto editor = static_cast<Editor*>(user_pointer);
-	editor->getWindow()->setClipboardText(text);
+	auto UI = static_cast<EditorUI*>(user_pointer);
+	return UI->getWindow()->setClipboardText(text);
 }
 
 const char * getClipboardText(void * user_pointer)
 {
-	auto editor = static_cast<Editor*>(user_pointer);	
-	return editor->getWindow()->getClipboardText();
+	auto UI = static_cast<EditorUI*>(user_pointer);
+	return UI->getWindow()->getClipboardText();
 }
 
 UiDrawData out_put_draw_data(ImDrawData* data)

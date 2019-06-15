@@ -1,7 +1,9 @@
 #pragma once
+#include "..\\Platform\WindowManager.h"
+#include "..\\VkEngine\VkEngine.h"
 #include <string>
+
 class Editor;
-struct UiDrawData;
 
 typedef struct {
 	unsigned char* pixels;
@@ -9,32 +11,44 @@ typedef struct {
 	int height;
 } FontAtlas;
 
-class EditorUI
+class EditorUI : WindowEventHandler, public SurfaceOwner
 {
 public:
 	EditorUI(Editor* editor);
+	FontAtlas getDefaultFontAtlas();
+	void setDeltaTime(double delta_time);
 	UiDrawData drawUI();
 	~EditorUI();
-	void updateFrameSize(int w_width, int w_height, int frame_width, int frame_height);
-	void updateMousePos(double xpos, double ypos);
-	void updateMouseButton(int button, int action, int mods);
-	void updateKeyboard(int key, int scancode, int action, int mods);
-	void updateChar(unsigned int character);
-	void updateScroll(double xoffset, double yoffset);
-	void updateCursor();
-	void setDeltaTime(double delta_time);
-	void showDebugString(std::string debug_info);
-	FontAtlas getDefaultFontAtlas();
+	inline WindowManager::Window* getWindow() { return this->window; }
 	inline bool wantCaptureMouse() { return _wantCaptureMouse; };
 	inline bool wantCaptureKeyboard() { return _wantCaptureKeyboard; };
 	inline bool wantTextInput() { return _wantTextInput; };
 	inline bool wantSetMousePos() {	return _wantSetMousePos;};
+	// Ereditato tramite SurfaceOwner
+	VulkanInstanceInitInfo getInstanceExtInfo() override;
+	void *getSurface(void * vulkan_instance) override;
+	void getFrameBufferSize(int * width, int * height) override;
+	virtual void printDebug(std::string msg) override;
+	void waitEvents() override;
 private:
 	void mapWindowInput2ImGui();
 	void pollInputs();
+	void updateCursor();
+	void updateImguiDisplay(int width, int height);
 	void setCaptureFlags();
+	// Ereditato tramite WindowEventHandler
+	void onFrameBufferResizeCallBack(int width, int height) override;
+	void onKeyCallBack(KeyType key, int scancode, ActionType action,
+		ModifierKeyType mods) override;
+	void onCharCallback(unsigned int code_point) override;
+	void onCursorPosCallback(double xpos, double ypos) override;
+	void onMouseButtonCallback(MouseButtonType button, ActionType action,
+		ModifierKeyType mods) override;
+	void onScrollCallback(double xoffset, double yoffset) override;
+	void onDropCallback(int count, const char ** paths) override;
 	Editor* editor;
-	bool mouseButtonsHasBeenPressed[5];
+	WindowManager::Window* window;
+	bool mouseButtonsHaveBeenPressed[5];
 	bool _wantCaptureMouse;   
 	bool _wantCaptureKeyboard;
 	bool _wantTextInput;      
