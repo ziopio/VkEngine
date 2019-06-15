@@ -64,6 +64,7 @@ public:
 	virtual VulkanInstanceInitInfo getInstanceExtInfo() = 0;
 	virtual void* getSurface(void* vulkan_instance) = 0;
 	virtual void getFrameBufferSize(int* width, int* height) = 0;
+	virtual void printDebug(std::string msg) = 0;
 	virtual void waitEvents() = 0;
 };
 

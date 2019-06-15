@@ -5,6 +5,13 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define _GLFW_CURSORS_COUNT 5
+
+static GLFWcursor* cursors[_GLFW_CURSORS_COUNT] = {};
+
+//internal functions declarations
+int mapInputMode2GLFW(InputMode mode);
+int mapInputModeValueType2GLFW(InputModeValueType valueType);
 
 // internal glfw callbacks
 void windowResizeCallback(GLFWwindow* window, int width, int height);
@@ -27,6 +34,12 @@ void WindowManager::init()
 		std::cout << "GLFW: Vulkan Not Supported" << std::endl;
 	}
 	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API);
+	cursors[CursorType::ARROW_CURSOR] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+	cursors[CursorType::IBEAM_CURSOR] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+	cursors[CursorType::CROSSHAIR_CURSOR] = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
+	cursors[CursorType::HAND_CURSOR] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+	cursors[CursorType::HRESIZE_CURSOR] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+	cursors[CursorType::VRESIZE_CURSOR] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
 }
 
 const char ** WindowManager::getRequiredInstanceExtensions4Vulkan(unsigned int *extension_count)
@@ -84,7 +97,7 @@ struct WindowManager::Window::SurfaceCreationInfo {
 WindowManager::Window::Window( unsigned int width, unsigned int height, const char* title)
 	: pimpl(new _window_impl())
 {
-	this->pimpl->window = glfwCreateWindow(width, height, title, NULL, NULL);
+	this->pimpl->window = glfwCreateWindow(width, height, title, NULL, NULL);	
 }
 
 WindowManager::Window::~Window()
@@ -98,7 +111,7 @@ void WindowManager::Window::registerEventHandler(WindowEventHandler * handler)
 	this->window_client = handler;
 	glfwSetWindowUserPointer(this->pimpl->window, window_client);
 	glfwSetFramebufferSizeCallback(this->pimpl->window,framebufferResizeCallback);
-	glfwSetWindowSizeCallback(this->pimpl->window,windowResizeCallback);
+	//glfwSetWindowSizeCallback(this->pimpl->window,windowResizeCallback);
 }
 
 bool WindowManager::Window::windowShouldClose()
@@ -141,6 +154,32 @@ void WindowManager::Window::setClipboardText(const char * text)
 const char * WindowManager::Window::getClipboardText()
 {
 	return glfwGetClipboardString(this->pimpl->window);
+}
+
+InputModeValueType WindowManager::Window::getInputMode(InputMode mode)
+{
+	InputModeValueType value_type;
+	int glfw_val = glfwGetInputMode(this->pimpl->window, mapInputMode2GLFW(mode));
+	switch (glfw_val)
+	{
+	case GLFW_CURSOR_NORMAL: value_type = InputModeValueType::CURSOR_NORMAL; break;
+	case GLFW_CURSOR_HIDDEN:value_type = InputModeValueType::CURSOR_HIDDEN; break;
+	case GLFW_CURSOR_DISABLED: value_type = InputModeValueType::CURSOR_DISABLED; break;
+	case GLFW_TRUE: value_type = InputModeValueType::TRUE; break;
+	case GLFW_FALSE: value_type = InputModeValueType::FALSE; break;
+	default:	break;
+	}
+	return value_type;
+}
+
+void WindowManager::Window::setInputMode(InputMode mode, InputModeValueType value)
+{
+	glfwSetInputMode(this->pimpl->window, mapInputMode2GLFW(mode), mapInputModeValueType2GLFW(value));
+}
+
+void WindowManager::Window::setCursor(CursorType type)
+{
+	glfwSetCursor(this->pimpl->window, cursors[type]);
 }
 
 void WindowManager::Window::activateKeyCallBack()
@@ -225,7 +264,7 @@ void mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
 	case GLFW_MOUSE_BUTTON_5: t = MouseButtonType::MOUSE_BUTTON_5; break;
 	case GLFW_MOUSE_BUTTON_6: t = MouseButtonType::MOUSE_BUTTON_6; break;
 	case GLFW_MOUSE_BUTTON_7: t = MouseButtonType::MOUSE_BUTTON_7; break;
-	//case GLFW_MOUSE_BUTTON_8: t = MouseButtonType::MOUSE_BUTTON_8;break;
+	//case GLFW_MOUSE_BUTTON_8: t = MouseButtonType::MOUSE_BUTTON_8; break;
 	//case GLFW_MOUSE_BUTTON_1: t = MouseButtonType::MOUSE_BUTTON_1; break;
 	//case GLFW_MOUSE_BUTTON_2: t = MouseButtonType::MOUSE_BUTTON_2; break;
 	//case GLFW_MOUSE_BUTTON_3: t = MouseButtonType::MOUSE_BUTTON_3; break;
@@ -247,9 +286,39 @@ void dropCallback(GLFWwindow * window, int count, const char ** paths)
 	client->onDropCallback(count, paths);
 }
 
+int mapInputMode2GLFW(InputMode mode)
+{
+	int glfw_val;
+	switch (mode)
+	{
+	case InputMode::CURSOR: glfw_val = GLFW_CURSOR;	break;
+	case InputMode::STICKY_KEYS: glfw_val = GLFW_STICKY_KEYS; break;
+	case InputMode::STICKY_MOUSE_BUTTONS:glfw_val = GLFW_STICKY_MOUSE_BUTTONS; break;
+	case InputMode::LOCK_KEY_MODS: glfw_val = GLFW_LOCK_KEY_MODS;	break;
+	case InputMode::RAW_MOUSE_MOTION: glfw_val = GLFW_RAW_MOUSE_MOTION; break;
+	default: glfw_val = GLFW_CURSOR; break;
+	}
+	return glfw_val;
+}
+
+int mapInputModeValueType2GLFW(InputModeValueType valueType)
+{
+	int val;
+	switch (valueType)
+	{
+	case InputModeValueType::CURSOR_NORMAL: val = GLFW_CURSOR_NORMAL;  break;
+	case InputModeValueType::CURSOR_HIDDEN: val = GLFW_CURSOR_HIDDEN; break;
+	case InputModeValueType::CURSOR_DISABLED: val = GLFW_CURSOR_DISABLED;  break;
+	case InputModeValueType::TRUE: val = GLFW_TRUE; break;
+	case InputModeValueType::FALSE: val = GLFW_FALSE; break;
+	default:	break;
+	}
+	return val;
+}
+
 void windowResizeCallback(GLFWwindow * window, int width, int height)
 {
-	//auto app = static_cast<WindowEventHandler*>(glfwGetWindowUserPointer(window));
+	auto app = static_cast<WindowEventHandler*>(glfwGetWindowUserPointer(window));
 	//app->onWindowResizeCallback(width, height);
 }
 

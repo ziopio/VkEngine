@@ -1,5 +1,5 @@
 #pragma once
-
+#include <string>
 class Editor;
 struct UiDrawData;
 
@@ -23,6 +23,7 @@ public:
 	void updateScroll(double xoffset, double yoffset);
 	void updateCursor();
 	void setDeltaTime(double delta_time);
+	void showDebugString(std::string debug_info);
 	FontAtlas getDefaultFontAtlas();
 	inline bool wantCaptureMouse() { return _wantCaptureMouse; };
 	inline bool wantCaptureKeyboard() { return _wantCaptureKeyboard; };

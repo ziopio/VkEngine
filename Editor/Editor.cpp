@@ -36,7 +36,8 @@ void Editor::execute()
 	static double last_iteration;
 	double delta_time;
 	double now;
-	while (!this->window->windowShouldClose() || this->terminate) {
+	while (!this->window->windowShouldClose() || this->terminate) 
+	{
 		WindowManager::pollEvents();
 		now = WindowManager::getTime();
 		delta_time = now - last_iteration;
@@ -115,6 +116,11 @@ void * Editor::getSurface(void * vulkan_instance)
 void Editor::getFrameBufferSize(int * width, int * height)
 {
 	this->window->getFrameBufferSize(width, height);
+}
+
+void Editor::printDebug(std::string msg)
+{
+	this->UI->showDebugString(msg);
 }
 
 void Editor::waitEvents()

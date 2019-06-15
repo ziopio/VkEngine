@@ -2,9 +2,6 @@
 #include <thread>
 #include "Editor.h"
 
-
-
-
 int main(int argc, char* argv) {
 
 	std::thread editor_thread(
@@ -17,7 +14,7 @@ int main(int argc, char* argv) {
 	editor_thread.join();
 
 	std::cout << "Press enter to return from main()..." << std::endl;
-	while (getchar() != 10);
+	std::getchar();
 
 	return 0;
 }

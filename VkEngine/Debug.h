@@ -17,6 +17,6 @@ VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
 //Funzione "proxy" carica "vkDestroyDebugUtilsMessengerEXT" che distrugge l'estensione 
 void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator);
 
-void setupDebugCallback(VkInstance instance, VkDebugUtilsMessengerEXT* callback);
+void setupDebugCallback(VkInstance instance, VkDebugUtilsMessengerEXT* callback, void* pUser);
 
 

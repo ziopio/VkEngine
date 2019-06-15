@@ -148,17 +148,18 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 }
 
 VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes) {
-	VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
+	VkPresentModeKHR defaultMode = VK_PRESENT_MODE_FIFO_KHR;
 	// Se disponibile seleziono la modalità a triplo buffering che è la migliore
 	for (const auto& availablePresentMode : availablePresentModes) {
 		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
 			return availablePresentMode;
 		}
-		else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-			bestMode = availablePresentMode;
-		}
+		// I prefer not to use immediate for now
+		//else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+		//	defaultMode = availablePresentMode;
+		//}
 	}
-	return bestMode;
+	return defaultMode;
 }
 
 VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {

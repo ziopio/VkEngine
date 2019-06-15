@@ -7,7 +7,7 @@ class Instance
 public:
 	static void setAppName(std::string appName);
 	static void setEngineName(std::string engineName);
-	static void setRequiredExtensions(VulkanInstanceInitInfo info);
+	static void setSurfaceOwner( SurfaceOwner* surfaceOwner);
 	static VkInstance get();
 	static bool hasValidation();
 	static void destroyInstance();
@@ -19,6 +19,7 @@ private:
 	static std::string EngineName;
 	static const char ** surfaceExtensions;
 	static unsigned int surfaceExtCount;
+	static SurfaceOwner* surfaceOwner;
 	static VkInstance instance;
 	static VkDebugUtilsMessengerEXT messangerExtension;
 	static bool validation;

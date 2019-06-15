@@ -4,8 +4,6 @@
 
 class EditorUI;
 
-
-
 class Editor : WindowEventHandler, SurfaceOwner
 {
 public:
@@ -27,6 +25,7 @@ public:
 	VulkanInstanceInitInfo getInstanceExtInfo() override;
 	void *getSurface(void * vulkan_instance) override;
 	void getFrameBufferSize(int * width, int * height) override;
+	virtual void printDebug(std::string msg) override;
 	void waitEvents() override;
 private:
 	void load_demo_scene();

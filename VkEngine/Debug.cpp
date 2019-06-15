@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "Debug.h"
+#include "VkEngine.h"
 
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallbackFunction(
@@ -8,9 +9,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallbackFunction(
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData) {
-
-	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
+	std::string msg = "validation layer: ";
+	msg.append(pCallbackData->pMessage);
+	msg.append("\n");
+	std::cerr << msg.c_str() << std::endl;
+	auto user = (SurfaceOwner*)pUserData;
+	user->printDebug(msg);
 	return VK_FALSE;
 }
 
@@ -33,13 +37,19 @@ void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 }
 
 
-void setupDebugCallback(VkInstance instance, VkDebugUtilsMessengerEXT* callback) {
+void setupDebugCallback(VkInstance instance, VkDebugUtilsMessengerEXT* callback, void* pUser) {
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.messageSeverity = 
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	createInfo.messageType = 
+		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	createInfo.pfnUserCallback = debugCallbackFunction;
-	createInfo.pUserData = nullptr; // Optional
+	createInfo.pUserData = pUser; // Optional
 
 	if (createDebugUtilsMessengerEXT(instance, &createInfo, nullptr, callback) != VK_SUCCESS) {
 		throw std::runtime_error("failed to set up debug callback!");

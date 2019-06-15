@@ -45,6 +45,10 @@ public:
 		int getMouseButton(int button);
 		void setClipboardText(const char* text);
 		const char* getClipboardText();
+		InputModeValueType getInputMode(InputMode mode);
+		void setInputMode(InputMode mode, InputModeValueType value);
+		void setCursor(CursorType type);
+
 		void activateKeyCallBack();
 		void activateCharCallback();
 		void activateCursorPosCallback();

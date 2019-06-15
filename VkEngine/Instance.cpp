@@ -7,11 +7,10 @@ std::string Instance::EngineName = "...";
 const char ** Instance::surfaceExtensions;
 unsigned int Instance::surfaceExtCount;
 VkInstance Instance::instance;
+SurfaceOwner* Instance::surfaceOwner;
 VkDebugUtilsMessengerEXT Instance::messangerExtension;
 bool Instance::validation;
 bool Instance::ready;
-
-
 
 void Instance::setAppName(std::string appName)
 {
@@ -25,11 +24,9 @@ void Instance::setEngineName(std::string engineName)
 	Instance::EngineName = engineName;
 }
 
-void Instance::setRequiredExtensions(VulkanInstanceInitInfo info)
+void Instance::setSurfaceOwner(SurfaceOwner* surfaceOwner)
 {
-	Instance::surfaceExtensions = info.instanceExtensions;
-	Instance::surfaceExtCount = info.instance_extension_count;
-	Instance::validation = info.enableValidation;
+	Instance::surfaceOwner = surfaceOwner;
 }
 
 VkInstance Instance::get()
@@ -38,7 +35,7 @@ VkInstance Instance::get()
 		createInstance();
 		ready = true;
 		if (validation) {
-			setupDebugCallback( instance, &messangerExtension);
+			setupDebugCallback(instance, &messangerExtension,(void*)Instance::surfaceOwner);
 		}
 	}
 	return instance;
@@ -61,6 +58,7 @@ void Instance::destroyInstance()
 
 void Instance::createInstance()
 {
+
 	//Controllo a presenza dei validationLayers
 	if (validation && !checkValidationLayerSupport()) {
 		throw std::runtime_error("validation layers requested, but not available!");
@@ -80,7 +78,7 @@ void Instance::createInstance()
 	createInfo.pApplicationInfo = &appInfo;
 
 	// Chiedo a glfw di cercare tutte le estensioni richieste per GLFW 
-	std::vector<const char*> glfwExtensions = getRequiredExtensions();
+	std::vector<const char*> glfwExtensions = Instance::getRequiredExtensions();
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(glfwExtensions.size());
 	createInfo.ppEnabledExtensionNames = glfwExtensions.data();
 
@@ -137,6 +135,10 @@ std::vector<const char*> Instance::getRequiredExtensions() {
 	}
 
 	// Cerco tutte le estensioni richieste da GLFW
+	auto info = Instance::surfaceOwner->getInstanceExtInfo();
+	Instance::surfaceExtensions = info.instanceExtensions;
+	Instance::surfaceExtCount = info.instance_extension_count;
+	Instance::validation = info.enableValidation;
 	const char** surfaceRequiredExtensions = surfaceExtensions;
 	std::cout << surfaceExtCount << " required vulkan extensions for GLFW:" << std::endl;
 	std::vector<const char*> extensions(surfaceRequiredExtensions, surfaceRequiredExtensions + surfaceExtCount);

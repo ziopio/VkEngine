@@ -7,12 +7,22 @@ enum ActionType {
 	RELEASE,
 	REPEAT
 };
+enum class InputMode {
+	CURSOR, 
+	STICKY_KEYS, 
+	STICKY_MOUSE_BUTTONS,
+	LOCK_KEY_MODS,
+	RAW_MOUSE_MOTION
+};
 
-//enum class InputModeValueType {
-//	CURSOR_NORMAL = GLFW_CURSOR_NORMAL,
-//	CURSOR_HIDDEN = GLFW_CURSOR_HIDDEN,
-//	CURSOR_DISABLED = GLFW_CURSOR_DISABLED
-//};
+enum class InputModeValueType {
+	CURSOR_NORMAL,
+	CURSOR_HIDDEN,
+	CURSOR_DISABLED,
+	TRUE,
+	FALSE
+};
+
 enum ModifierKeyType {
 	MODIFIER_NONE,
 	MODIFIER_SHIFT,
@@ -37,6 +47,15 @@ enum MouseButtonType {
 	MOUSE_BUTTON_6,
 	MOUSE_BUTTON_7,
 	MOUSE_BUTTON_8
+};
+
+enum CursorType {
+	ARROW_CURSOR,
+	IBEAM_CURSOR,
+	CROSSHAIR_CURSOR,
+	HAND_CURSOR,
+	HRESIZE_CURSOR,
+	VRESIZE_CURSOR
 };
 
 enum KeyType {

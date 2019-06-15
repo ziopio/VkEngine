@@ -5,6 +5,7 @@
 
 static bool show_demo_window = true;
 static bool show_another_window = true;
+static std::string debug_logs = "";
 float clear_color[3] = {0,0,0};
 
 void setClipboardText(void* user_pointer, const char* text);
@@ -19,7 +20,6 @@ EditorUI::EditorUI(Editor* editor)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	//ImGuiIO& io = ImGui::GetIO();
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
 	io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
@@ -40,25 +40,17 @@ UiDrawData EditorUI::drawUI()
 	this->pollInputs();
 	ImGui::NewFrame();
 	this->setCaptureFlags();
-
 	if (show_demo_window) {
 		ImGui::ShowDemoWindow(&show_demo_window);
 	}
-	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-	{
-		static float f = 0.0f;
-		static int counter = 0;
-		ImGui::Begin("Hello, world!");                         // Create a window called "Hello, world!" and append into it.
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			counter++;
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	// Debug logging window
+	{	
+		int x, y;
+		this->editor->getWindow()->getWindowSize(&x,&y);
+		ImGui::SetNextWindowPos(ImVec2(0, y - y / 4), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(x , y / 4), ImGuiCond_Always);
+		ImGui::Begin("Validation Layers");
+		ImGui::Text(debug_logs.c_str());
 		ImGui::End();
 	}
 	ImGui::EndFrame();
@@ -128,12 +120,53 @@ void EditorUI::updateScroll(double xoffset, double yoffset)
 
 void EditorUI::updateCursor()
 {
+	auto win = this->editor->getWindow();
+	ImGuiIO& io = ImGui::GetIO();
+	if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) || 
+		win->getInputMode(InputMode::CURSOR) == InputModeValueType::CURSOR_DISABLED)
+		return;
+
+	ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
+	if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
+	{
+		// Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
+		win->setInputMode(InputMode::CURSOR, InputModeValueType::CURSOR_HIDDEN);
+	}
+	else
+	{
+		CursorType newCursor;
+		switch (imgui_cursor)
+		{
+			case ImGuiMouseCursor_Arrow: newCursor = CursorType::ARROW_CURSOR; break;
+				// When hovering over InputText, etc.
+			case ImGuiMouseCursor_TextInput: newCursor = CursorType::IBEAM_CURSOR; break;
+				// When hovering over an horizontal border
+			case ImGuiMouseCursor_ResizeNS:  newCursor = CursorType::VRESIZE_CURSOR; break;
+				// When hovering over a vertical border or a column
+			case ImGuiMouseCursor_ResizeEW: newCursor = CursorType::HRESIZE_CURSOR; break;
+			// (Unused by Dear ImGui functions. Use for e.g. hyperlinks)
+			case ImGuiMouseCursor_Hand: newCursor = CursorType::HAND_CURSOR; break;	
+				 //When hovering over the bottom-left corner of a window	
+			case ImGuiMouseCursor_ResizeNESW: newCursor = CursorType::CROSSHAIR_CURSOR; break;
+				// When hovering over the bottom-right corner of a window
+			case ImGuiMouseCursor_ResizeNWSE: newCursor = CursorType::CROSSHAIR_CURSOR; break;
+			default: newCursor = CursorType::ARROW_CURSOR; break;
+		}
+		// Show OS mouse cursor
+		win->setCursor(newCursor);
+		win->setInputMode(InputMode::CURSOR, InputModeValueType::CURSOR_NORMAL);
+	}
 }
 
 void EditorUI::setDeltaTime(double delta_time)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.DeltaTime = (float)delta_time > 0 ? (float)delta_time : 0;
+}
+
+void EditorUI::showDebugString(std::string debug_info)
+{
+	debug_logs.append(debug_info);
 }
 
 void EditorUI::mapWindowInput2ImGui()
@@ -186,6 +219,7 @@ void EditorUI::pollInputs()
 			this->editor->getWindow()->getMouseButton(i) != 0;
 		mouseButtonsHasBeenPressed[i] = false;
 	}
+	this->updateCursor();
 }
 
 void EditorUI::setCaptureFlags()

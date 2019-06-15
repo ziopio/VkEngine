@@ -30,7 +30,7 @@ void VkEngine::init()
 {
 	Instance::setAppName("Demo");
 	Instance::setEngineName("VkEngine");
-	Instance::setRequiredExtensions(surfaceOwner->getInstanceExtInfo());
+	Instance::setSurfaceOwner(surfaceOwner);
 	PhysicalDevice::setSurface(static_cast<VkSurfaceKHR>
 		(surfaceOwner->getSurface(Instance::get())));
 	PhysicalDevice::get();
