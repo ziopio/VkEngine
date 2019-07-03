@@ -33,14 +33,17 @@ class MaterialManager
 public:
 	static void init(SwapChain* swapchain, RenderPass* renderer);
 	static Material* getMaterial(MaterialType material);
-	static VkDescriptorSetLayout getImGuiDescriptorSetLayout();
+	static VkDescriptorSetLayout getImGuiTextureArrayDescSetLayout();
+	static VkDescriptorSetLayout getOffScreenTextureDescSetLayout();
+
 	static VkDescriptorSetLayout getTextureDescriptorSetLayout();
 	static VkDescriptorSetLayout getFrameDependentDescriptorSetLayout();
 	static void destroyAllMaterials();
 private:
 	static void loadMaterials();
 	static void createDescriptorSetLayouts();
-	static VkDescriptorSetLayout imGuiDescriptorSetLayout;
+	static VkDescriptorSetLayout imGuiTextureArrayDescSetLayout;
+	static VkDescriptorSetLayout offScreenTextureDescSetLayout;
 	static VkDescriptorSetLayout globalTextureDescriptorSetLayout;
 	static VkDescriptorSetLayout frameDependentDescriptorSetLayout;
 	static std::vector<Material*> materials;

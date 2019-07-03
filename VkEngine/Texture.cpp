@@ -23,6 +23,14 @@ Texture::Texture(unsigned char* pixels, int *width, int *height)
 	this->createTextureSampler();
 }
 
+Texture::Texture(int width, int height, VkFormat format)
+{
+	this->createTextureImage( width, height, format);
+	this->createTextureImageView();
+	this->createTextureSampler();
+}
+
+
 VkImageView Texture::getTextureImgView()
 {
 	return this->textureImageView;
@@ -51,6 +59,16 @@ unsigned char* Texture::readImageFile(std::string texturePath, int * width, int 
 	}
 	return pixels;
 }
+
+void Texture::createTextureImage(int width, int height, VkFormat format)
+{
+	createImage(PhysicalDevice::get(), Device::get(), width, height,
+		format, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		textureImage, textureImageMemory);
+}
+
 
 void Texture::createTextureImage(unsigned char * pixels, int width, int height)
 {	// load image to an accessible stage buffer

@@ -41,12 +41,12 @@ void VkEngine::init()
 	MaterialManager::init(swapChain, renderPass);
 	MeshManager::init(swapChain->getImageViews().size());
 	TextureManager::init();
-	DescriptorSetsFactory::init(swapChain);
 	int width, height;
 	surfaceOwner->getFrameBufferSize(&width,&height);
 	Direction::updateCamerasScreenSize(width, height);
 	Direction::initialize();
 	renderer = new Renderer(renderPass, swapChain);
+	DescriptorSetsFactory::init(swapChain, renderer);
 }
 
 void VkEngine::resizeSwapchain(int width, int height)
@@ -63,7 +63,6 @@ VkEngine::~VkEngine()
 {
 	Direction::cleanUp();
 	cleanupSwapChain();
-	DescriptorSetsFactory::cleanUp();
 	TextureManager::cleanUp();
 	MeshManager::cleanUp();
 	Device::destroy();
@@ -79,7 +78,7 @@ void VkEngine::loadTexture(std::string texture_file)
 {
 	DescriptorSetsFactory::cleanUp();
 	TextureManager::addTexture(texture_file);
-	DescriptorSetsFactory::init(this->swapChain);
+	DescriptorSetsFactory::init(this->swapChain, this->renderer);
 }
 
 void VkEngine::loadFontAtlas(unsigned char * pixels, int * width, int * height)
@@ -136,12 +135,14 @@ void VkEngine::recreateSwapChain() {
 	renderer = new Renderer(renderPass, swapChain);
 	renderer->setObjects(this->objects);
 	renderer->setLights(this->lights);
+	DescriptorSetsFactory::init(this->swapChain, this->renderer);
 }
 
 
 void VkEngine::cleanupSwapChain()
 {
 	vkDeviceWaitIdle(Device::get());
+	DescriptorSetsFactory::cleanUp();
 	delete renderer;
 	MaterialManager::destroyAllMaterials();
 	delete renderPass;

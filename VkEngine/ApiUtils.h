@@ -14,8 +14,6 @@ VkImageView createImageView(VkDevice device, VkImage image, VkFormat format, VkI
 
 void copyBufferToBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-
-
 void createImage(VkPhysicalDevice physicalDevice, VkDevice device, uint32_t width, uint32_t height,
 	VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
 	VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);

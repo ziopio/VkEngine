@@ -4,11 +4,12 @@
 #include <iostream>
 #include <ctime>
 
+#define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
+
 #define W_WIDTH 1366
 #define W_HEIGHT 768
 
 static bool show_demo_window = true;
-static std::string debug_logs = "";
 
 void setClipboardText(void* user_pointer, const char* text);
 const char* getClipboardText(void* user_pointer);
@@ -48,17 +49,48 @@ UiDrawData EditorUI::drawUI()
 	this->pollInputs();
 	ImGui::NewFrame();
 	this->setCaptureFlags();
+
+	int x, y;
+	this->window->getWindowSize(&x, &y);
+
 	if (show_demo_window) {
 		ImGui::ShowDemoWindow(&show_demo_window);
 	}
+	// 3D View
+	{
+		ImGui::SetNextWindowSize(ImVec2(x / 2, y / 2), ImGuiCond_Once);
+		ImGui::Begin("3D View");
+		ImVec2 size = ImGui::GetWindowSize(); size.x -= 25; size.y -= 40;
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Image((ImTextureID) VIEW_3D_TEXTURE_CODE, size,
+			ImVec2(0, 0), ImVec2(1, 1), 
+			ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 0.5f));
+		ImGui::End();
+	}
 	// Debug logging window
 	{	
-		int x, y;
-		this->window->getWindowSize(&x,&y);
 		ImGui::SetNextWindowPos(ImVec2(0, y - y / 4), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(x , y / 4), ImGuiCond_Always);
 		ImGui::Begin("Validation Layers");
 		ImGui::Text(debug_logs.c_str());
+		ImGui::End();
+	}
+	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+	{
+		static float f = 0.0f;
+		static int counter = 0;
+
+		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+
+		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			counter++;
+		ImGui::SameLine();
+		ImGui::Text("counter = %d", counter);
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
 	}
 	ImGui::EndFrame();

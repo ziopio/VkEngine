@@ -21,6 +21,7 @@ Editor::Editor()
 	}
 	catch (std::runtime_error err){
 		std::cout << err.what() << std::endl;
+		this->terminate = true;
 	}
 }
 

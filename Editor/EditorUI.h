@@ -53,4 +53,5 @@ private:
 	bool _wantCaptureKeyboard;
 	bool _wantTextInput;      
 	bool _wantSetMousePos;
+	std::string debug_logs = "";
 };

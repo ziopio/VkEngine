@@ -171,35 +171,41 @@ void Material::buildPipeline()
 	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // Optional
 	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // Optional
 	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // Optional
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
 	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
 	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+
+	std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachments = { colorBlendAttachment};
 
 	//Definizione del blending globale
 	VkPipelineColorBlendStateCreateInfo colorBlending = {};
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colorBlending.logicOpEnable = VK_FALSE;  // enable for color combination (this overwrites blendEnable for every framebuffer) 
 	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-	colorBlending.attachmentCount = 1;
-	colorBlending.pAttachments = &colorBlendAttachment; // info specifiche per ogni framebuffer
+	colorBlending.attachmentCount = colorBlendAttachments.size();
+	colorBlending.pAttachments = colorBlendAttachments.data(); // info specifiche per ogni framebuffer
 	colorBlending.blendConstants[0] = 0.0f; // Optional
 	colorBlending.blendConstants[1] = 0.0f; // Optional
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	// Definizione del layout per caricare le uniforms sugli shaders
-	std::array<VkDescriptorSetLayout, 2> layouts = { 
-		MaterialManager::getTextureDescriptorSetLayout(), 
-		MaterialManager::getFrameDependentDescriptorSetLayout() };
+	std::vector<VkDescriptorSetLayout> layouts;
+	if (this->type == MaterialType::UI)
+	{
+		layouts.push_back(MaterialManager::getImGuiTextureArrayDescSetLayout());
+		layouts.push_back(MaterialManager::getOffScreenTextureDescSetLayout());
 
+	} else 
+	{
+		layouts.push_back(MaterialManager::getTextureDescriptorSetLayout());
+		layouts.push_back(MaterialManager::getFrameDependentDescriptorSetLayout());
+	}
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = layouts.size();
 	pipelineLayoutInfo.pSetLayouts = layouts.data();
-	if (this->type == MaterialType::UI) 
-	{
-		pipelineLayoutInfo.setLayoutCount = 1;
-	}
+
 	VkPushConstantRange pushRange = {};
 	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	pushRange.size = sizeof(PushConstantBlock);
@@ -213,13 +219,13 @@ void Material::buildPipeline()
 	if ( result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
-	// Only for imgui
+	// Only for imgui --------------------------------------
 	VkDynamicState dynamic_states[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	VkPipelineDynamicStateCreateInfo dynamic_state = {};
 	dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	dynamic_state.dynamicStateCount = 2;
 	dynamic_state.pDynamicStates = dynamic_states;
-
+	//------------------------------------------------------
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2;
@@ -232,12 +238,13 @@ void Material::buildPipeline()
 	pipelineInfo.pDepthStencilState = &depthStencil; // Optional
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.layout = pipelineLayout;
+	pipelineInfo.renderPass = renderPass->get_OffScreenRenderPass();
 	if (this->type == MaterialType::UI) {
 		pipelineInfo.pDynamicState = &dynamic_state;
-	}
-	pipelineInfo.layout = pipelineLayout;
+		pipelineInfo.renderPass = renderPass->get_SimpleRenderPass();
 
-	pipelineInfo.renderPass = renderPass->get();
+	}
 	pipelineInfo.subpass = 0; // the index of the subpass in witch the graphic pipeline will be used
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional

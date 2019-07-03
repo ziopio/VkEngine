@@ -6,10 +6,11 @@
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
-struct DepthBufferResource {
-	VkImage depthImage;
-	VkDeviceMemory depthImageMemory;
-	VkImageView depthImageView;
+struct FrameAttachment {
+	VkImage image;
+	VkDeviceMemory Memory;
+	VkImageView imageView;
+	VkSampler Sampler;
 };
 
 struct ThreadData {
@@ -24,6 +25,7 @@ class Renderer
 public:
 	Renderer(RenderPass* renderPass,SwapChain* swapChain);
 	unsigned getNextFrameBufferIndex();
+	FrameAttachment getOffScreenFrameAttachment(unsigned frameIndex);
 	void setLights(std::vector<LightSource> lights);
 	void setObjects(std::vector<Object> objects);
 	/* 
@@ -34,27 +36,37 @@ public:
 	bool multithreading;
 private:
 	void createFramebuffers();
-	void createDepthResources();
+	void createOffScreenAttachments();
 	void prepareThreadedRendering();
-	void update_camera_infos(uint32_t frameBufferIndex);
-	void updateCommandBuffer(uint32_t frameBufferIndex);
-	void recordImGuiDrawCmds(uint32_t frameBufferIndex, VkCommandBufferInheritanceInfo inheritanceInfo);
+	void updateUniforms(uint32_t frameBufferIndex);
+	void updateOffScreenCommandBuffer(uint32_t frameBufferIndex);
+	void updateFinalPassCommandBuffer(uint32_t frameBufferIndex);
+
+	void recordImGuiDrawCmds(uint32_t frameBufferIndex);
 	void findObjXthreadDivision();
 	void createSyncObjects();
 
-	DepthBufferResource depth_buffer;
+	FrameAttachment depth_buffer;
+	std::vector<FrameAttachment> offScreenAttachments;
+
+
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	std::vector<VkFramebuffer> offScreenFramebuffers;
+
 	RenderPass* renderPass;
 	SwapChain* swapChain;
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
+	std::vector<VkSemaphore> offScreenRenderReadySemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
 
 	VkCommandPool primaryCommandPool;
+	std::vector<VkCommandBuffer> offScreenCmdBuffers;
 	std::vector<VkCommandBuffer> primaryCmdBuffers;
-	VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
-	std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
+	//VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
+	//std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
+
 	vks::ThreadPool thread_pool;
 	std::vector<ThreadData> per_thread_resources;
 
