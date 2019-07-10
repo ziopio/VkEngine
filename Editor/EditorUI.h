@@ -46,6 +46,7 @@ private:
 		ModifierKeyType mods) override;
 	void onScrollCallback(double xoffset, double yoffset) override;
 	void onDropCallback(int count, const char ** paths) override;
+	void setUpImGuiStyle();
 	Editor* editor;
 	WindowManager::Window* window;
 	bool mouseButtonsHaveBeenPressed[5];

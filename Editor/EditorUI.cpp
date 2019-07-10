@@ -6,8 +6,9 @@
 
 #define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
 
-#define W_WIDTH 1366
-#define W_HEIGHT 768
+#define DEFAULT_WIDTH 1366
+#define DEFAULT_HEIGHT 768
+static constexpr float DEF_ASPECT_RATIO = 16.f / 9.f;
 
 static bool show_demo_window = true;
 
@@ -19,7 +20,7 @@ UiDrawData out_put_draw_data(ImDrawData* data);
 EditorUI::EditorUI(Editor* editor)
 {   
 	this->editor = editor;
-	this->window = WindowManager::createWindow(W_WIDTH, W_HEIGHT, "Editor!!!");
+	this->window = WindowManager::createWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT, "Editor!!!");
 	this->window->registerEventHandler(this);
 	this->window->activateCharCallback();
 	this->window->activateKeyCallBack();
@@ -35,9 +36,7 @@ EditorUI::EditorUI(Editor* editor)
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
+	this->setUpImGuiStyle();
 	this->mapWindowInput2ImGui();
 	int f_width, f_height;
 	this->window->getFrameBufferSize(&f_width,&f_height);
@@ -50,27 +49,35 @@ UiDrawData EditorUI::drawUI()
 	ImGui::NewFrame();
 	this->setCaptureFlags();
 
-	int x, y;
-	this->window->getWindowSize(&x, &y);
+	int w_width, w_height;
+	this->window->getWindowSize(&w_width, &w_height);
 
 	if (show_demo_window) {
 		ImGui::ShowDemoWindow(&show_demo_window);
 	}
 	// 3D View
 	{
-		ImGui::SetNextWindowSize(ImVec2(x / 2, y / 2), ImGuiCond_Once);
+		ImGui::SetNextWindowSize(ImVec2(w_width / 2, w_height / 2), ImGuiCond_Once);
 		ImGui::Begin("3D View");
-		ImVec2 size = ImGui::GetWindowSize(); size.x -= 25; size.y -= 40;
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Image((ImTextureID) VIEW_3D_TEXTURE_CODE, size,
-			ImVec2(0, 0), ImVec2(1, 1), 
-			ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 0.5f));
+		//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImVec2 adjustment = {-28, -35};
+		ImVec2 frame_size = ImGui::GetWindowSize();	
+		frame_size.x += adjustment.x;
+		frame_size.y += adjustment.y;
+		ImVec2 width_padding = frame_size;
+		frame_size.x = frame_size.y * ((float)w_width / (float)w_height);
+		width_padding.x = (ImGui::GetWindowSize().x + adjustment.x - frame_size.x) / 2;
+		ImGui::Dummy(width_padding);		
+		ImGui::SameLine();
+		ImGui::Image((ImTextureID) VIEW_3D_TEXTURE_CODE, frame_size,
+			ImVec2(0, 0), ImVec2(1, 1),
+			ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 0.0f));
 		ImGui::End();
 	}
 	// Debug logging window
 	{	
-		ImGui::SetNextWindowPos(ImVec2(0, y - y / 4), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(x , y / 4), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(0, w_height - w_height / 4), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(w_width , w_height / 4), ImGuiCond_Always);
 		ImGui::Begin("Validation Layers");
 		ImGui::Text(debug_logs.c_str());
 		ImGui::End();
@@ -287,6 +294,7 @@ void EditorUI::onDropCallback(int count, const char ** paths)
 	std::cout << "Drop file callback" << std::endl;
 }
 
+
 VulkanInstanceInitInfo EditorUI::getInstanceExtInfo()
 {
 	VulkanInstanceInitInfo info = {};
@@ -355,4 +363,57 @@ UiDrawData out_put_draw_data(ImDrawData* data)
 		ui_data.drawLists.push_back(myList);
 	}
 	return ui_data;
+}
+
+
+void EditorUI::setUpImGuiStyle()
+{
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	// light style from Pacome Danhiez (user itamago)
+	//style.Alpha = 1.0f;
+	//style.FrameRounding = 3.0f;
+	//style.Colors[ImGuiCol_Text] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+	//style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
+	//style.Colors[ImGuiCol_WindowBg] = ImVec4(0.94f, 0.94f, 0.94f, 0.94f);
+	//style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	//style.Colors[ImGuiCol_PopupBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.94f);
+	//style.Colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.19f);
+	//style.Colors[ImGuiCol_BorderShadow] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
+	//style.Colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.29f, 0.48f, 0.54f);
+	//style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+	//style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+	//style.Colors[ImGuiCol_TitleBg] = ImVec4(0.96f, 0.96f, 0.96f, 1.00f);
+	//style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(1.00f, 1.00f, 1.00f, 0.51f);
+	//style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.82f, 0.82f, 0.82f, 1.00f);
+	//style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
+	//style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.98f, 0.98f, 0.98f, 0.53f);
+	//style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.69f, 0.69f, 0.69f, 1.00f);
+	//style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.59f, 0.59f, 0.59f, 1.00f);
+	//style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.49f, 0.49f, 0.49f, 1.00f);
+	//style.Colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+	//style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.52f, 0.88f, 1.00f);
+	//style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+	//style.Colors[ImGuiCol_Button] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+	//style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+	//style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
+	//style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.59f, 0.98f, 0.31f);
+	//style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+	//style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+	//style.Colors[ImGuiCol_Column] = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
+	//style.Colors[ImGuiCol_ColumnHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.78f);
+	//style.Colors[ImGuiCol_ColumnActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+	//style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f);
+	//style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+	//style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+	//style.Colors[ImGuiCol_PlotLines] = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
+	//style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+	//style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	//style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+	//style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+	//style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 }

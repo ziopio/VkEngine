@@ -1,5 +1,4 @@
 #pragma once
-#include <glm/glm.hpp>
 
 #define CAMERA_NORMAL_SPEED 10.0f 
 #define CAMERA_FASTER_SPEED 100.0f

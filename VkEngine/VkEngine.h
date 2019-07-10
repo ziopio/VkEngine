@@ -1,14 +1,20 @@
 #pragma once
 #include <vector>
 #include "MessageManager.h"
-#include "Camera.h"
+#include <glm/glm.hpp>
 
+class Camera;
 class Object;
 class LightSource;
 class Surface;
 class SwapChain;
 class RenderPass;
 class Renderer;
+
+enum class ScreenMode {
+	FULL_SCENE,
+	EDITOR
+};
 
 typedef struct {
 	unsigned int instance_extension_count;

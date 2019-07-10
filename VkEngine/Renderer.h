@@ -46,7 +46,8 @@ private:
 	void findObjXthreadDivision();
 	void createSyncObjects();
 
-	FrameAttachment depth_buffer;
+	FrameAttachment final_depth_buffer;
+	FrameAttachment offScreen_depth_buffer;
 	std::vector<FrameAttachment> offScreenAttachments;
 
 

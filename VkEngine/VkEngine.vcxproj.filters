@@ -193,7 +193,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="Shaders\phong_multi_light\phong.frag">
       <Filter>Resource Files</Filter>
     </None>
@@ -212,5 +211,6 @@
     <None Include="Shaders\imgui\ui.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

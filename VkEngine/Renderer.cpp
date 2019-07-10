@@ -124,9 +124,9 @@ Renderer::~Renderer()
 	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
 	primaryCmdBuffers.clear();
 
-	vkDestroyImageView(Device::get(), depth_buffer.imageView, nullptr);
-	vkDestroyImage(Device::get(), depth_buffer.image, nullptr);
-	vkFreeMemory(Device::get(), depth_buffer.Memory, nullptr);
+	vkDestroyImageView(Device::get(), final_depth_buffer.imageView, nullptr);
+	vkDestroyImage(Device::get(), final_depth_buffer.image, nullptr);
+	vkFreeMemory(Device::get(), final_depth_buffer.Memory, nullptr);
 
 	for (auto image : offScreenAttachments) {
 		vkDestroySampler(Device::get(), image.Sampler, nullptr);
@@ -161,7 +161,7 @@ void Renderer::createFramebuffers()
 
 		std::array<VkImageView, 2> attachments = {
 			swapChain->getImageViews()[i],
-			depth_buffer.imageView
+			final_depth_buffer.imageView
 		};
 
 		VkFramebufferCreateInfo framebufferInfo = {};
@@ -179,7 +179,7 @@ void Renderer::createFramebuffers()
 
 		attachments = {
 			offScreenAttachments[i].imageView,
-			depth_buffer.imageView
+			final_depth_buffer.imageView
 		};
 		framebufferInfo.renderPass = this->renderPass->get_OffScreenRenderPass();
 
@@ -196,12 +196,12 @@ void Renderer::createOffScreenAttachments() {
 		swapChain->getExtent().width, swapChain->getExtent().height,
 		depthFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		depth_buffer.image, depth_buffer.Memory);
+		final_depth_buffer.image, final_depth_buffer.Memory);
 	
-	depth_buffer.imageView = createImageView(Device::get(), depth_buffer.image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	final_depth_buffer.imageView = createImageView(Device::get(), final_depth_buffer.image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 	
 	transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
-		depth_buffer.image, depthFormat, 
+		final_depth_buffer.image, depthFormat, 
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 	// Offsreen Attachments
@@ -571,7 +571,6 @@ void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, 
 		throw std::runtime_error("Command buffer ending failed");
 	}
 }
-
 
 void Renderer::createSyncObjects() {
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
