@@ -11,7 +11,7 @@ class SwapChain;
 class RenderPass;
 class Renderer;
 
-enum class ScreenMode {
+enum class RenderMode {
 	FULL_SCENE,
 	EDITOR
 };

@@ -11,7 +11,9 @@ x86/*
 **/Meshes/*
 **/Textures/*
 
+#imgui
 imgui.ini
+imgui_log.txt
 
 # Ignore NuGet Packages
 *.nupkg

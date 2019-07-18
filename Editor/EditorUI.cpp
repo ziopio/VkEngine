@@ -2,6 +2,7 @@
 #include "Editor.h"
 #include "../ImGui/imgui.h"
 #include <iostream>
+#include <sstream> 
 #include <ctime>
 
 #define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
@@ -54,24 +55,50 @@ UiDrawData EditorUI::drawUI()
 
 	if (show_demo_window) {
 		ImGui::ShowDemoWindow(&show_demo_window);
+	}	
+	//MainMenuBar
+	{
+		ImGui::BeginMainMenuBar();
+		ImGui::EndMainMenuBar();
 	}
 	// 3D View
 	{
 		ImGui::SetNextWindowSize(ImVec2(w_width / 2, w_height / 2), ImGuiCond_Once);
-		ImGui::Begin("3D View");
+		ImGui::Begin("3D View", NULL, ImGuiWindowFlags_MenuBar |ImGuiWindowFlags_NoScrollbar);
+		ImGui::SetScrollHereY(0.5f);
+		ImGui::BeginMenuBar();
+		ImGui::Button("Go Full Window");
+		ImGui::EndMenuBar();
 		//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImVec2 adjustment = {-28, -35};
+		ImVec2 oldDrawingPos = ImGui::GetCursorPos();
 		ImVec2 frame_size = ImGui::GetWindowSize();	
-		frame_size.x += adjustment.x;
-		frame_size.y += adjustment.y;
+		frame_size.x -= oldDrawingPos.x;
+		frame_size.y -= oldDrawingPos.y;
 		ImVec2 width_padding = frame_size;
 		frame_size.x = frame_size.y * ((float)w_width / (float)w_height);
-		width_padding.x = (ImGui::GetWindowSize().x + adjustment.x - frame_size.x) / 2;
-		ImGui::Dummy(width_padding);		
-		ImGui::SameLine();
+		width_padding.x = (ImGui::GetWindowSize().x - frame_size.x) / 2;
+		ImVec2 newDrawingPos = { width_padding.x, oldDrawingPos.y - oldDrawingPos.x };
+		ImGui::SetCursorPos(newDrawingPos);
 		ImGui::Image((ImTextureID) VIEW_3D_TEXTURE_CODE, frame_size,
 			ImVec2(0, 0), ImVec2(1, 1),
-			ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 0.0f));
+			ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+		if (ImGui::IsWindowHovered() && 
+			ImGui::IsWindowFocused()) {
+			glm::vec2 absoluteMousePos = ImGui::GetMousePos();
+			glm::vec2 relativeToWinMousePos = absoluteMousePos -(glm::vec2)ImGui::GetWindowPos();
+			glm::vec2 renderTargetPosition = relativeToWinMousePos - (glm::vec2)newDrawingPos;
+
+			if (renderTargetPosition.x >= 0 &&
+				renderTargetPosition.y >= 0 &&
+				renderTargetPosition.x <= frame_size.x &&
+				renderTargetPosition.y <= frame_size.y) {
+				std::stringstream ss;
+				ss << "RenderTarget HIT! " << renderTargetPosition.x
+					<< " " << renderTargetPosition.y << std::endl;
+				debug_logs.push_back(ss.str());
+			}
+		}
 		ImGui::End();
 	}
 	// Debug logging window
@@ -79,7 +106,10 @@ UiDrawData EditorUI::drawUI()
 		ImGui::SetNextWindowPos(ImVec2(0, w_height - w_height / 4), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(w_width , w_height / 4), ImGuiCond_Always);
 		ImGui::Begin("Validation Layers");
-		ImGui::Text(debug_logs.c_str());
+		for(auto log : debug_logs){
+			ImGui::Text(log.c_str());
+		}
+		ImGui::SetScrollHereY(1.0f);
 		ImGui::End();
 	}
 	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
@@ -203,7 +233,7 @@ void EditorUI::mapWindowInput2ImGui()
 
 	io.SetClipboardTextFn = setClipboardText;
 	io.GetClipboardTextFn = getClipboardText;
-	io.ClipboardUserData = this->editor;
+	io.ClipboardUserData = this;
 //#if defined(_WIN32)
 //	io.ImeWindowHandle = (void*)glfwGetWin32Window(g_Window);
 //#endif
@@ -317,7 +347,7 @@ void EditorUI::getFrameBufferSize(int * width, int * height)
 
 void EditorUI::printDebug(std::string msg)
 {
-	debug_logs.append(msg);
+	debug_logs.push_back(msg);
 }
 
 void EditorUI::waitEvents()

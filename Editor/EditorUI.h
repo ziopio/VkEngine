@@ -1,7 +1,7 @@
 #pragma once
 #include "..\\Platform\WindowManager.h"
 #include "..\\VkEngine\VkEngine.h"
-#include <string>
+#include <sstream>
 
 class Editor;
 
@@ -54,5 +54,5 @@ private:
 	bool _wantCaptureKeyboard;
 	bool _wantTextInput;      
 	bool _wantSetMousePos;
-	std::string debug_logs = "";
+	std::vector<std::string> debug_logs;
 };
