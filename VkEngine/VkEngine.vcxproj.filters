@@ -36,81 +36,31 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Object.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VkEngine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ApiUtils.cpp">
-      <Filter>Source Files\ApiCore\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Debug.cpp">
-      <Filter>Source Files\ApiCore\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Direction.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InputControl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MessageManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderPass.cpp">
-      <Filter>Source Files\ApiCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer.cpp">
-      <Filter>Source Files\ApiCore</Filter>
-    </ClCompile>
-    <ClCompile Include="PhysicalDevice.cpp">
-      <Filter>Source Files\ApiCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Instance.cpp">
-      <Filter>Source Files\ApiCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Device.cpp">
-      <Filter>Source Files\ApiCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DescriptorSetsFactory.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="MaterialManager.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="Material.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="SwapChain.cpp">
-      <Filter>Source Files\ApiCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Texture.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="TextureManager.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="MeshManager.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
-    <ClCompile Include="LightSource.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="VkEngine.h">
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorSetsFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Direction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InputControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VkEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ApiUtils.h">
@@ -119,29 +69,14 @@
     <ClInclude Include="Debug.h">
       <Filter>Header Files\ApiCore\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Object.h">
+      <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
-    <ClInclude Include="OPEN_SOURCE_headers\stb_image.h">
-      <Filter>Header Files\Libraries</Filter>
+    <ClInclude Include="MeshManager.h">
+      <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
-    <ClInclude Include="OPEN_SOURCE_headers\threadpool.hpp">
-      <Filter>Header Files\Libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="OPEN_SOURCE_headers\tiny_obj_loader.h">
-      <Filter>Header Files\Libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="Direction.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InputControl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\frustum.hpp">
-      <Filter>Header Files\Libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="MessageManager.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
     <ClInclude Include="MaterialManager.h">
       <Filter>Header Files\AssetsManagement</Filter>
@@ -149,68 +84,109 @@
     <ClInclude Include="Material.h">
       <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
-    <ClInclude Include="Mesh.h">
-      <Filter>Header Files\AssetsManagement</Filter>
-    </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
-    <ClInclude Include="Instance.h">
-      <Filter>Header Files\ApiCore</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.h">
+    <ClInclude Include="TextureManager.h">
       <Filter>Header Files\AssetsManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="DescriptorSetsFactory.h">
-      <Filter>Header Files\AssetsManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="PhysicalDevice.h">
-      <Filter>Header Files\ApiCore</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderPass.h">
-      <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
     <ClInclude Include="SwapChain.h">
       <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
-    <ClInclude Include="Object.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer.h">
+    <ClInclude Include="Surface.h">
       <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
     <ClInclude Include="Device.h">
       <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
-    <ClInclude Include="TextureManager.h">
-      <Filter>Header Files\AssetsManagement</Filter>
+    <ClInclude Include="PhysicalDevice.h">
+      <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
-    <ClInclude Include="MeshManager.h">
+    <ClInclude Include="Shader.h">
       <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
     <ClInclude Include="LightSource.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\AssetsManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="Instance.h">
+      <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\phong_multi_light\phong.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\phong_multi_light\phong.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\sample\shader.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\sample\shader.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\imgui\ui.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\imgui\ui.vert">
-      <Filter>Resource Files</Filter>
-    </None>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VkEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MessageManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InputControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Direction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorSetsFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ApiUtils.cpp">
+      <Filter>Source Files\ApiCore\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug.cpp">
+      <Filter>Source Files\ApiCore\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialManager.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshManager.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="SwapChain.cpp">
+      <Filter>Source Files\ApiCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Surface.cpp">
+      <Filter>Source Files\ApiCore</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicalDevice.cpp">
+      <Filter>Source Files\ApiCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Instance.cpp">
+      <Filter>Source Files\ApiCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="LightSource.cpp">
+      <Filter>Source Files\AssetsManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="Device.cpp">
+      <Filter>Source Files\ApiCore</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
 </Project>

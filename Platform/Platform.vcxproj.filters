@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WindowManager.h">
+    <ClInclude Include="WindowInputEnums.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WindowInputEnums.h">
+    <ClInclude Include="WindowManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

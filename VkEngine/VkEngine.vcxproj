@@ -20,19 +20,19 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{AA022C31-19DA-41EF-88D3-A1C34EC88662}</ProjectGuid>
+    <ProjectGuid>{EF76991A-7873-4733-971A-EE8619030900}</ProjectGuid>
     <RootNamespace>VkEngine</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -69,21 +69,11 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\VulkanSDK\1.1.106.0\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.1.106.0\Lib32;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\VulkanSDK\1.1.106.0\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.1.106.0\Lib32;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\VulkanSDK\1.1.106.0\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.1.106.0\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\VulkanSDK\1.1.121.2\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\VulkanSDK\1.1.106.0\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.1.106.0\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\VulkanSDK\1.1.121.2\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -91,13 +81,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_$(PlatformTarget).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -105,13 +89,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_$(PlatformTarget).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -121,14 +99,10 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_$(PlatformTarget).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,16 +113,39 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_$(PlatformTarget).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="ApiUtils.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Debug.h" />
+    <ClInclude Include="DescriptorSetsFactory.h" />
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="Direction.h" />
+    <ClInclude Include="InputControl.h" />
+    <ClInclude Include="Instance.h" />
+    <ClInclude Include="LightSource.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="MaterialManager.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshManager.h" />
+    <ClInclude Include="MessageManager.h" />
+    <ClInclude Include="Object.h" />
+    <ClInclude Include="PhysicalDevice.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="RenderPass.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Surface.h" />
+    <ClInclude Include="SwapChain.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="VkEngine.h" />
+  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApiUtils.cpp" />
     <ClCompile Include="Camera.cpp" />
@@ -169,58 +166,23 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Surface.cpp" />
     <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="VkEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ApiUtils.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Debug.h" />
-    <ClInclude Include="DescriptorSetsFactory.h" />
-    <ClInclude Include="Device.h" />
-    <ClInclude Include="Direction.h" />
-    <ClInclude Include="InputControl.h" />
-    <ClInclude Include="Instance.h" />
-    <ClInclude Include="Libraries\frustum.hpp" />
-    <ClInclude Include="LightSource.h" />
-    <ClInclude Include="Material.h" />
-    <ClInclude Include="MaterialManager.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="MeshManager.h" />
-    <ClInclude Include="MessageManager.h" />
-    <ClInclude Include="Object.h" />
-    <ClInclude Include="OPEN_SOURCE_headers\stb_image.h" />
-    <ClInclude Include="OPEN_SOURCE_headers\threadpool.hpp" />
-    <ClInclude Include="OPEN_SOURCE_headers\tiny_obj_loader.h" />
-    <ClInclude Include="PhysicalDevice.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="RenderPass.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="SwapChain.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="TextureManager.h" />
-    <ClInclude Include="VkEngine.h" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Shaders\imgui\ui.frag" />
-    <None Include="Shaders\imgui\ui.vert" />
-    <None Include="Shaders\phong_multi_light\phong.frag" />
-    <None Include="Shaders\phong_multi_light\phong.vert" />
-    <None Include="Shaders\sample\shader.frag" />
-    <None Include="Shaders\sample\shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\glm.0.9.9.500\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.500\build\native\glm.targets')" />
+    <Import Project="..\packages\glm.0.9.9.600\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.600\build\native\glm.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>Questo progetto fa riferimento a uno o più pacchetti NuGet che non sono presenti in questo computer. Usare lo strumento di ripristino dei pacchetti NuGet per scaricarli. Per altre informazioni, vedere http://go.microsoft.com/fwlink/?LinkID=322105. Il file mancante è {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\glm.0.9.9.500\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.500\build\native\glm.targets'))" />
+    <Error Condition="!Exists('..\packages\glm.0.9.9.600\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.600\build\native\glm.targets'))" />
   </Target>
 </Project>

@@ -58,12 +58,12 @@ Editor::~Editor()
 void Editor::load_demo_scene()
 {
 
-	this->renderingEngine->loadMesh("VkEngine/Meshes/axis.obj");
-	this->renderingEngine->loadMesh("VkEngine/Meshes/icosphere.obj");
-	this->renderingEngine->loadMesh("VkEngine/Meshes/sphere.obj");
-	this->renderingEngine->loadTexture("VkEngine/Textures/cube1.png");
-	this->renderingEngine->loadTexture("VkEngine/Textures/AXIS_TEX.png");
-	this->renderingEngine->loadTexture("VkEngine/Textures/.png");
+	this->renderingEngine->loadMesh("VkEngine/Meshes/cube.obj");
+	//this->renderingEngine->loadMesh("VkEngine/Meshes/icosphere.obj");
+	//this->renderingEngine->loadMesh("VkEngine/Meshes/sphere.obj");
+	this->renderingEngine->loadTexture("VkEngine/Textures/cubeTex.png");
+	//this->renderingEngine->loadTexture("VkEngine/Textures/AXIS_TEX.png");
+	//this->renderingEngine->loadTexture("VkEngine/Textures/.png");
 
 	PointLightInfo l = {
 		3,3,3,
@@ -89,24 +89,24 @@ void Editor::load_demo_scene()
 		cube.transformation = t;
 		this->renderingEngine->addObject(cube);
 	}
-	{
-		float position[] = { 0,0,0 };
-		float rotation_vector[] = { 1,1,1 };
-		float scale_vector[] = { 1,1,1 };
-		ObjTransformation  t = {};
-		t.angularSpeed = 0.0f;
-		std::copy(std::begin(position), std::end(position), std::begin(t.position));
-		std::copy(std::begin(rotation_vector), std::end(rotation_vector), std::begin(t.rotation_vector));
-		t.scale_factor = 1.;
-		std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
+	//{
+	//	float position[] = { 0,0,0 };
+	//	float rotation_vector[] = { 1,1,1 };
+	//	float scale_vector[] = { 1,1,1 };
+	//	ObjTransformation  t = {};
+	//	t.angularSpeed = 0.0f;
+	//	std::copy(std::begin(position), std::end(position), std::begin(t.position));
+	//	std::copy(std::begin(rotation_vector), std::end(rotation_vector), std::begin(t.rotation_vector));
+	//	t.scale_factor = 1.;
+	//	std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
 
-		ObjectInitInfo axis = {};
-		axis.mesh_id = 1;
-		axis.texture_id = 2;
-		axis.material_id = 0;
-		axis.transformation = t;
-		this->renderingEngine->addObject(axis);
-	}
+	//	ObjectInitInfo axis = {};
+	//	axis.mesh_id = 1;
+	//	axis.texture_id = 2;
+	//	axis.material_id = 0;
+	//	axis.transformation = t;
+	//	this->renderingEngine->addObject(axis);
+	//}
 
 }
 
