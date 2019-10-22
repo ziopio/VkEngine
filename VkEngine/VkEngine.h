@@ -66,6 +66,8 @@ struct UiDrawData {
 
 
 class SurfaceOwner {
+protected:
+	void* surface = nullptr;
 public:
 	virtual VulkanInstanceInitInfo getInstanceExtInfo() = 0;
 	virtual void* getSurface(void* vulkan_instance) = 0;

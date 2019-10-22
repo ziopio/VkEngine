@@ -335,9 +335,9 @@ VulkanInstanceInitInfo EditorUI::getInstanceExtInfo()
 
 void * EditorUI::getSurface(void * vulkan_instance)
 {
-	void* surface;
-	this->window->createWindowSurface(vulkan_instance, &surface);
-	return surface;
+	if (!this->surface)
+		this->window->createWindowSurface(vulkan_instance, &this->surface);
+	return this->surface;
 }
 
 void EditorUI::getFrameBufferSize(int * width, int * height)

@@ -51,7 +51,8 @@ void Instance::destroyInstance()
 	if(!ready) throw std::runtime_error("Instance Not Ready!!");
 	if (validation) {
 		destroyDebugUtilsMessengerEXT(instance, messangerExtension, nullptr);
-	}
+	}	
+	vkDestroySurfaceKHR(Instance::get(), (VkSurfaceKHR)Instance::surfaceOwner->getSurface(instance), nullptr);
 	vkDestroyInstance(instance, nullptr);
 	ready = false;
 }
