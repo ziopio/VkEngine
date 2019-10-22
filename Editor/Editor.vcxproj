@@ -125,12 +125,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Editor.h" />
+    <ClInclude Include="EditorComponent.h" />
     <ClInclude Include="EditorUI.h" />
+    <ClInclude Include="View3D.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
+    <ClCompile Include="View3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

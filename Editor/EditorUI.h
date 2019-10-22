@@ -3,7 +3,10 @@
 #include "..\\VkEngine\VkEngine.h"
 #include <sstream>
 
+#define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
+
 class Editor;
+class EditorComponent;
 
 typedef struct {
 	unsigned char* pixels;
@@ -48,6 +51,7 @@ private:
 	void onDropCallback(int count, const char ** paths) override;
 	void setUpImGuiStyle();
 	Editor* editor;
+	std::vector<EditorComponent*> editorComponents;
 	WindowManager::Window* window;
 	bool mouseButtonsHaveBeenPressed[5];
 	bool _wantCaptureMouse;   
