@@ -2,7 +2,7 @@
 #include "..\\Platform\WindowManager.h"
 #include "..\\VkEngine\VkEngine.h"
 #include <sstream>
-
+#include <vector>
 #define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
 
 class Editor;
@@ -37,7 +37,7 @@ private:
 	void mapWindowInput2ImGui();
 	void pollInputs();
 	void updateCursor();
-	void updateImguiDisplay(int width, int height);
+	void updateImguiDisplay();
 	void setCaptureFlags();
 	// Ereditato tramite WindowEventHandler
 	void onFrameBufferResizeCallBack(int width, int height) override;

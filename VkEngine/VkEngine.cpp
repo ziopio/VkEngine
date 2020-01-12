@@ -18,7 +18,7 @@
 
 VkEngine::VkEngine()
 {
-	msgManager.registerListener(this);
+	//msgManager.registerListener(this);
 }
 
 void VkEngine::setSurfaceOwner(SurfaceOwner * surfaceOwner)
@@ -49,7 +49,7 @@ void VkEngine::init()
 	DescriptorSetsFactory::init(swapChain, renderer);
 }
 
-void VkEngine::resizeSwapchain(int width, int height)
+void VkEngine::resizeSwapchain()
 {
 	this->recreateSwapChain();
 }
@@ -111,7 +111,7 @@ void VkEngine::addObject(ObjectInitInfo _obj)
 void VkEngine::renderFrame()
 {
 	//InputControl::processInput();
-	this->msgManager.dispatchMessages();	
+	//this->msgManager.dispatchMessages();	
 	if (!renderer->renderScene()) {
 		this->recreateSwapChain();
 	}
@@ -149,20 +149,20 @@ void VkEngine::cleanupSwapChain()
 	delete swapChain;
 }
 
-void VkEngine::receiveMessage(Message msg)
-{
-	switch (msg) {
-	case Message::MULTITHREADED_RENDERING_ON_OFF: 
-		if (renderer->multithreading) {
-			renderer->multithreading = false;
-			printf("\nCommandBuffers generation ON MAIN THREAD");
-		}
-		else {
-			renderer->multithreading = true;
-			printf("\nCommandBuffers generation ON ALL AVAILABLE THREADS");
-		}			
-		break;
-	default:
-		break;
-	}
-}
+//void VkEngine::receiveMessage(Message msg)
+//{
+//	switch (msg) {
+//	case Message::MULTITHREADED_RENDERING_ON_OFF: 
+//		if (renderer->multithreading) {
+//			renderer->multithreading = false;
+//			printf("\nCommandBuffers generation ON MAIN THREAD");
+//		}
+//		else {
+//			renderer->multithreading = true;
+//			printf("\nCommandBuffers generation ON ALL AVAILABLE THREADS");
+//		}			
+//		break;
+//	default:
+//		break;
+//	}
+//}

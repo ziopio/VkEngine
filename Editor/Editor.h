@@ -8,7 +8,7 @@ class Editor
 public:
 	Editor();
 	void execute();
-	void resizeSwapChain(int width, int height);
+	void resizeSwapChain();
 	~Editor();
 private:
 	void load_demo_scene();

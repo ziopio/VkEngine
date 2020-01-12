@@ -43,9 +43,7 @@ EditorUI::EditorUI(Editor* editor)
 
 	this->setUpImGuiStyle();
 	this->mapWindowInput2ImGui();
-	int f_width, f_height;
-	this->window->getFrameBufferSize(&f_width,&f_height);
-	this->updateImguiDisplay(f_width, f_height);
+	this->updateImguiDisplay();
 }
 
 UiDrawData EditorUI::drawUI()
@@ -152,7 +150,7 @@ void EditorUI::updateCursor()
 	}
 }
 
-void EditorUI::updateImguiDisplay(int width, int height)
+void EditorUI::updateImguiDisplay()
 {
 	int w_width, w_height;
 	this->window->getWindowSize(&w_width, &w_height);
@@ -161,8 +159,8 @@ void EditorUI::updateImguiDisplay(int width, int height)
 	if (io.DisplaySize.x > 0 && io.DisplaySize.y > 0)
 	{
 		io.DisplayFramebufferScale =
-			ImVec2((float)width / io.DisplaySize.x,
-			(float)height / io.DisplaySize.y);
+			ImVec2((float)w_width / (float)io.DisplaySize.x,
+			(float)w_height / (float)io.DisplaySize.y);
 	}
 }
 
@@ -245,8 +243,11 @@ FontAtlas EditorUI::getDefaultFontAtlas()
 
 void EditorUI::onFrameBufferResizeCallBack(int width, int height)
 {
-	this->editor->resizeSwapChain(width, height);
-	this->updateImguiDisplay(width, height);
+	// width and height are not used due to a side effect of using GLFW on Windows
+	// basically they are correct ...
+	// but become too old when window is re-opened after minimization giving 0 0
+	this->editor->resizeSwapChain();
+	this->updateImguiDisplay();
 }
 
 void EditorUI::onKeyCallBack(KeyType key, int scancode, ActionType action, ModifierKeyType mods)

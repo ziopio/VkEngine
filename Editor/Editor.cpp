@@ -43,9 +43,9 @@ void Editor::execute()
 	}
 }
 
-void Editor::resizeSwapChain(int width, int height)
+void Editor::resizeSwapChain()
 {
-	this->renderingEngine->resizeSwapchain( width, height);
+	this->renderingEngine->resizeSwapchain();
 }
 
 Editor::~Editor()

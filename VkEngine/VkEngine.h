@@ -1,11 +1,12 @@
 #pragma once
-#include <vector>
-#include "MessageManager.h"
 #include <glm/glm.hpp>
+#include <string>
+#include <vector>
 
 class Camera;
 class Object;
 class LightSource;
+
 class Surface;
 class SwapChain;
 class RenderPass;
@@ -27,6 +28,7 @@ typedef struct {
 	float color[3];
 	float power;
 } PointLightInfo;
+
 typedef struct {
 	float position[3];
 	/* Axis of the rotation	*/
@@ -42,12 +44,13 @@ typedef struct {
 	ObjTransformation transformation;
 }ObjectInitInfo;
 
-// This structs serve to remove depencdencies from imgui types
+// This structs serve to remove dependencies from imgui types
 typedef struct  {
 	uint32_t elementCount;
 	glm::vec4 clipRectangle;
 	uint32_t textureID;
 }UiDrawCmd;
+
 typedef struct  {
 	std::vector<UiDrawCmd> drawCommands;
 	void* vertexBuffer;
@@ -76,13 +79,13 @@ public:
 	virtual void waitEvents() = 0;
 };
 
-class VkEngine : MsgReceiver
+class VkEngine //: MsgReceiver
 {
 public:
 	VkEngine();
 	void setSurfaceOwner(SurfaceOwner* surface_owner);
 	void init();
-	void resizeSwapchain(int width, int height);
+	void resizeSwapchain();
 	Camera* getCurrentCamera();
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
@@ -95,9 +98,9 @@ public:
 private:
 	void recreateSwapChain();
 	void cleanupSwapChain();
-	void receiveMessage(Message msg);
+	//void receiveMessage(Message msg);
 	SurfaceOwner* surfaceOwner;
-	MessageManager msgManager;
+	//MessageManager msgManager;
 	std::vector<Object> objects;
 	std::vector<LightSource> lights;
 	SwapChain* swapChain;
