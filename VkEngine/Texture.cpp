@@ -55,7 +55,7 @@ unsigned char* Texture::readImageFile(std::string texturePath, int * width, int 
 	int channels;
 	unsigned char * pixels = stbi_load(texturePath.c_str(), width, height, &channels, STBI_rgb_alpha); // STBI_rgb_alpha RGBA forced
 	if (!pixels) {
-		throw std::runtime_error("failed to load texture image!");
+		throw std::runtime_error("failed to load texture image: " + texturePath);
 	}
 	return pixels;
 }

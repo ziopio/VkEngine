@@ -1,3 +1,3 @@
-C:/VulkanSDK/1.1.106.0/Bin/glslangValidator.exe -V ui.vert
-C:/VulkanSDK/1.1.106.0/Bin/glslangValidator.exe -V ui.frag
+C:/VulkanSDK/1.2.131.2/Bin/glslangValidator.exe -V ui.vert
+C:/VulkanSDK/1.2.131.2/Bin/glslangValidator.exe -V ui.frag
 pause
