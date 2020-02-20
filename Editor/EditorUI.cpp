@@ -18,7 +18,7 @@ static bool show_demo_window = true;
 void setClipboardText(void* user_pointer, const char* text);
 const char* getClipboardText(void* user_pointer);
 //Takes data and pointers from ImDrawData and copies those to UiDrawData
-UiDrawData out_put_draw_data(ImDrawData* data);
+vkengine::UiDrawData out_put_draw_data(ImDrawData* data);
 
 EditorUI::EditorUI(Editor* editor)
 {   
@@ -46,7 +46,7 @@ EditorUI::EditorUI(Editor* editor)
 	this->updateImguiDisplay();
 }
 
-UiDrawData EditorUI::drawUI()
+vkengine::UiDrawData EditorUI::drawUI()
 {
 	this->pollInputs();
 	ImGui::NewFrame();
@@ -297,9 +297,9 @@ void EditorUI::onDropCallback(int count, const char ** paths)
 }
 
 
-VulkanInstanceInitInfo EditorUI::getInstanceExtInfo()
+vkengine::VulkanInstanceInitInfo EditorUI::getInstanceExtInfo()
 {
-	VulkanInstanceInitInfo info = {};
+	vkengine::VulkanInstanceInitInfo info = {};
 	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
 	info.enableValidation = true;
 	return info;
@@ -340,9 +340,9 @@ const char * getClipboardText(void * user_pointer)
 	return UI->getWindow()->getClipboardText();
 }
 
-UiDrawData out_put_draw_data(ImDrawData* data)
+vkengine::UiDrawData out_put_draw_data(ImDrawData* data)
 {
-	UiDrawData ui_data = {};
+	vkengine::UiDrawData ui_data = {};
 	ui_data.display_pos = data->DisplayPos;
 	ui_data.display_size = data->DisplaySize;
 	ui_data.totalIdxCount = data->TotalIdxCount;
@@ -350,13 +350,13 @@ UiDrawData out_put_draw_data(ImDrawData* data)
 	ui_data.frame_buffer_scale = data->FramebufferScale;
 	for (int i = 0; i < data->CmdListsCount; i++) {
 		ImDrawList* list = data->CmdLists[i];
-		UiDrawList myList = {};
+		vkengine::UiDrawList myList = {};
 		myList.vertexBuffer = list->VtxBuffer.Data;
 		myList.vertexBufferSize = list->VtxBuffer.Size;
 		myList.indexBuffer = list->IdxBuffer.Data;
 		myList.indexBufferSize = list->IdxBuffer.Size;
 		for (ImDrawCmd cmd : list->CmdBuffer) {
-			UiDrawCmd my_cmd = {};
+			vkengine::UiDrawCmd my_cmd = {};
 			my_cmd.elementCount = cmd.ElemCount;
 			my_cmd.clipRectangle = cmd.ClipRect;
 			my_cmd.textureID = reinterpret_cast<uint32_t>(cmd.TextureId);

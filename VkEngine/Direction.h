@@ -1,7 +1,8 @@
 #pragma once
+#include "VkEngine.h"
 #include "Camera.h"
 
-class SurfaceOwner;
+using namespace vkengine;
 
 class Direction
 {

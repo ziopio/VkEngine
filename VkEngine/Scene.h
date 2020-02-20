@@ -1,8 +1,7 @@
 #pragma once
 #include <vector>
-
-class Object;
-class Camera;
+#include "Camera.h"
+#include "Object.h"
 
 class Scene
 {

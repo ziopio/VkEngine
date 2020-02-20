@@ -11,12 +11,11 @@ Editor::Editor()
 	WindowManager::init();
 	WindowManager::setDebugCallBack(window_system_debug_callback);
 	this->UI = new EditorUI(this);
-	this->renderingEngine = new VkEngine();
 	try {
-		this->renderingEngine->setSurfaceOwner(this->UI);
-		this->renderingEngine->init();
+		vkengine::setSurfaceOwner(this->UI);
+		vkengine::init();
 		FontAtlas f = UI->getDefaultFontAtlas();
-		this->renderingEngine->loadFontAtlas(f.pixels, &f.width, &f.height);
+		vkengine::loadFontAtlas(f.pixels, &f.width, &f.height);
 		this->load_demo_scene();
 	}
 	catch (std::runtime_error err){
@@ -38,19 +37,19 @@ void Editor::execute()
 		this->UI->setDeltaTime(delta_time);
 		last_iteration = now;
 
-		renderingEngine->updateImGuiData(this->UI->drawUI());
-		renderingEngine->renderFrame();
+		vkengine::updateImGuiData(this->UI->drawUI());
+		vkengine::renderFrame();
 	}
 }
 
 void Editor::resizeSwapChain()
 {
-	this->renderingEngine->resizeSwapchain();
+	vkengine::resizeSwapchain();
 }
 
 Editor::~Editor()
 {
-	delete renderingEngine;
+	vkengine::shutdown();
 	delete UI;
 	WindowManager::terminate();
 }
@@ -58,36 +57,36 @@ Editor::~Editor()
 void Editor::load_demo_scene()
 {
 
-	this->renderingEngine->loadMesh("VkEngine/Meshes/cube.obj");
+	vkengine::loadMesh("VkEngine/Meshes/cube.obj");
 	//this->renderingEngine->loadMesh("VkEngine/Meshes/icosphere.obj");
 	//this->renderingEngine->loadMesh("VkEngine/Meshes/sphere.obj");
-	this->renderingEngine->loadTexture("VkEngine/Textures/cubeTex.png");
+	vkengine::loadTexture("VkEngine/Textures/cubeTex.png");
 	//this->renderingEngine->loadTexture("VkEngine/Textures/AXIS_TEX.png");
 	//this->renderingEngine->loadTexture("VkEngine/Textures/.png");
 
-	PointLightInfo l = {
+	vkengine::PointLightInfo l = {
 		3,3,3,
 		1,1,1,
 		2
 	};
-	this->renderingEngine->addLight(l);
+	vkengine::addLight(l);
 	{
 		float position[] = { 0,0,0 };
 		float rotation_vector[] = { -1,1,-1 };
 		float scale_vector[] = { 1,1,1 };
-		ObjTransformation  t = {};
+		vkengine::ObjTransformation  t = {};
 		t.angularSpeed = 30.0f;
 		std::copy(std::begin(position), std::end(position), std::begin(t.position));
 		std::copy(std::begin(rotation_vector), std::end(rotation_vector), std::begin(t.rotation_vector));
 		t.scale_factor = 1.;
 		std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
 
-		ObjectInitInfo cube = {};
+		vkengine::ObjectInitInfo cube = {};
 		cube.mesh_id = 0;
 		cube.texture_id = 1;
 		cube.material_id = 1;
 		cube.transformation = t;
-		this->renderingEngine->addObject(cube);
+		vkengine::addObject(cube);
 	}
 	//{
 	//	float position[] = { 0,0,0 };

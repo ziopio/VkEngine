@@ -2,6 +2,7 @@
 #include "Material.h"
 
 constexpr auto MAX_TEXTURE_COUNT = 32;
+using namespace vkengine;
 
 
 struct Light {

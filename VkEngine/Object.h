@@ -3,6 +3,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Texture.h"
+using namespace vkengine;
 
 
 class Object

@@ -13,7 +13,6 @@ public:
 private:
 	void load_demo_scene();
 	EditorUI* UI;
-	VkEngine* renderingEngine;
 	bool terminate;
 };
 

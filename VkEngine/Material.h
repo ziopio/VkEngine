@@ -2,13 +2,14 @@
 #include "Shader.h"
 #include "RenderPass.h"
 
+using namespace vkengine;
+
 enum MaterialType {
 	SAMPLE,
 	PHONG,
 	UI,
 	LAST // DUMMY TOKEN leave at END!
 };
-
 
 class Material
 {

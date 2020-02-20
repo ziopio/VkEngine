@@ -2,6 +2,8 @@
 #include "MeshManager.h"
 #include "VkEngine.h"
 
+using namespace vkengine;
+
 std::vector<Mesh*> MeshManager::scene_meshes;
 std::vector<GuiMesh*> MeshManager::per_frame_imguis;
 

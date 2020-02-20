@@ -14,13 +14,13 @@ typedef struct {
 	int height;
 } FontAtlas;
 
-class EditorUI : WindowEventHandler, public SurfaceOwner
+class EditorUI : WindowEventHandler, public vkengine::SurfaceOwner
 {
 public:
 	EditorUI(Editor* editor);
 	FontAtlas getDefaultFontAtlas();
 	void setDeltaTime(double delta_time);
-	UiDrawData drawUI();
+	vkengine::UiDrawData drawUI();
 	~EditorUI();
 	inline WindowManager::Window* getWindow() { return this->window; }
 	inline bool wantCaptureMouse() { return _wantCaptureMouse; };
@@ -28,7 +28,7 @@ public:
 	inline bool wantTextInput() { return _wantTextInput; };
 	inline bool wantSetMousePos() {	return _wantSetMousePos;};
 	// Ereditato tramite SurfaceOwner
-	VulkanInstanceInitInfo getInstanceExtInfo() override;
+	vkengine::VulkanInstanceInitInfo getInstanceExtInfo() override;
 	void *getSurface(void * vulkan_instance) override;
 	void getFrameBufferSize(int * width, int * height) override;
 	virtual void printDebug(std::string msg) override;

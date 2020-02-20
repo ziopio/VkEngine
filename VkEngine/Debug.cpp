@@ -3,6 +3,7 @@
 #include "Debug.h"
 #include "VkEngine.h"
 
+using namespace vkengine;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallbackFunction(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

@@ -1,8 +1,11 @@
 #pragma once
 #include "RenderPass.h"
 #include "Object.h"
+#include "LightSource.h"
 #include "Libraries/threadpool.hpp"
 #include "Libraries/frustum.hpp"
+
+using namespace vkengine;
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 

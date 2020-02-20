@@ -6,7 +6,7 @@
 #include "VkEngine.h"
 
 
-SwapChain::SwapChain(SurfaceOwner * surface_owner)
+SwapChain::SwapChain(vkengine::SurfaceOwner * surface_owner)
 {
 	this->surface_owner = surface_owner;
 	this->createSwapChain();

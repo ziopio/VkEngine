@@ -1,6 +1,8 @@
 #pragma once
 #include "VkEngine.h"
 
+using namespace vkengine;
+
 struct Vertex3D {
 	glm::vec3 pos;
 	glm::vec3 normal;

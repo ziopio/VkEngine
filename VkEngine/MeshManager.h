@@ -1,7 +1,7 @@
 #pragma once
 #include "Mesh.h"
 
-struct UiDrawData;
+using namespace vkengine;
 
 class MeshManager
 {

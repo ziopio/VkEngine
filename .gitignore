@@ -10,6 +10,7 @@ x86/*
 **/Models/*
 **/Meshes/*
 **/Textures/*
+Data/
 
 #imgui
 imgui.ini

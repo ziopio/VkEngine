@@ -455,7 +455,7 @@ void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex)
 		imgui->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 
-	UiDrawData data = imgui->getData();
+	vkengine::UiDrawData data = imgui->getData();
 	ImGuiPushConstantBlock pushBlock = {};
 	pushBlock.uScale = 2.0f / data.display_size;
 	pushBlock.uTranslate = -1.0f - data.display_pos * pushBlock.uScale;

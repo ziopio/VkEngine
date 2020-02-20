@@ -16,153 +16,163 @@
 #include "Direction.h"
 #include "LightSource.h"
 
-VkEngine::VkEngine()
-{
-	//msgManager.registerListener(this);
-}
 
-void VkEngine::setSurfaceOwner(SurfaceOwner * surfaceOwner)
+namespace vkengine
 {
-	this->surfaceOwner = surfaceOwner;
-}
 
-void VkEngine::init()
-{
-	Instance::setAppName("Demo");
-	Instance::setEngineName("VkEngine");
-	Instance::setSurfaceOwner(surfaceOwner);
-	PhysicalDevice::setSurface(static_cast<VkSurfaceKHR>
-		(surfaceOwner->getSurface(Instance::get())));
-	PhysicalDevice::get();
-	if (Instance::hasValidation()) Device::enableDeviceValidation();
-	Device::get();
-	swapChain = new SwapChain(this->surfaceOwner);
-	renderPass = new RenderPass(swapChain);
-	MaterialManager::init(swapChain, renderPass);
-	MeshManager::init(swapChain->getImageViews().size());
-	TextureManager::init();
-	int width, height;
-	surfaceOwner->getFrameBufferSize(&width,&height);
-	Direction::updateCamerasScreenSize(width, height);
-	Direction::initialize();
-	renderer = new Renderer(renderPass, swapChain);
-	DescriptorSetsFactory::init(swapChain, renderer);
-}
+	SurfaceOwner* surfaceOwner;
+	std::vector<Object> objects;
+	std::vector<LightSource> lights;
+	SwapChain* swapChain;
+	RenderPass* renderPass;
+	Renderer* renderer;
 
-void VkEngine::resizeSwapchain()
-{
-	this->recreateSwapChain();
-}
+	void recreateSwapChain();
+	void cleanupSwapChain();
 
-Camera * VkEngine::getCurrentCamera()
-{
-	return Direction::getCurrentCamera();
-}
-
-VkEngine::~VkEngine()
-{
-	Direction::cleanUp();
-	cleanupSwapChain();
-	TextureManager::cleanUp();
-	MeshManager::cleanUp();
-	Device::destroy();
-	Instance::destroyInstance();
-}
-
-void VkEngine::loadMesh(std::string mesh_file)
-{
-	MeshManager::addMesh(mesh_file);
-}
-
-void VkEngine::loadTexture(std::string texture_file)
-{
-	DescriptorSetsFactory::cleanUp();
-	TextureManager::addTexture(texture_file);
-	DescriptorSetsFactory::init(this->swapChain, this->renderer);
-}
-
-void VkEngine::loadFontAtlas(unsigned char * pixels, int * width, int * height)
-{
-	TextureManager::loadFontAtlasTexture(pixels,width,height);
-}
-
-void VkEngine::updateImGuiData(UiDrawData draw_data)
-{
-	MeshManager::updateImGuiBuffers(draw_data, 
-		renderer->getNextFrameBufferIndex());
-}
-
-void VkEngine::addLight(PointLightInfo light_info)
-{
-	LightSource light(glm::make_vec3(light_info.position), glm::make_vec3(light_info.color),light_info.power);
-	if (lights.size() < 10)
-		this->lights.push_back(light);
-	renderer->setLights(lights);
-}
-
-void VkEngine::addObject(ObjectInitInfo _obj)
-{
-	Object obj(_obj.mesh_id,(MaterialType)_obj.material_id,
-		_obj.texture_id,_obj.transformation);
-	this->objects.push_back(obj);
-	renderer->setObjects(objects);
-}
-
-void VkEngine::renderFrame()
-{
-	//InputControl::processInput();
-	//this->msgManager.dispatchMessages();	
-	if (!renderer->renderScene()) {
-		this->recreateSwapChain();
+	void setSurfaceOwner(SurfaceOwner * surface_owner)
+	{
+		surfaceOwner = surface_owner;
 	}
-	//vkDeviceWaitIdle(Device::get());
-}
 
-void VkEngine::recreateSwapChain() { 
-	// TODO: comporre la nuova swapchain riagganciando la vecchia
-	int width = 0, height = 0;
-	this->surfaceOwner->getFrameBufferSize(&width, &height);
-	while (width == 0 || height == 0) {
-		this->surfaceOwner->waitEvents();// window is minimized so application stops
-		this->surfaceOwner->getFrameBufferSize(&width, &height);
+	void init()
+	{
+		Instance::setAppName("Demo");
+		Instance::setEngineName("VkEngine");
+		Instance::setSurfaceOwner(surfaceOwner);
+		PhysicalDevice::setSurface(static_cast<VkSurfaceKHR>
+			(surfaceOwner->getSurface(Instance::get())));
+		PhysicalDevice::get();
+		if (Instance::hasValidation()) Device::enableDeviceValidation();
+		Device::get();
+		swapChain = new SwapChain(surfaceOwner);
+		renderPass = new RenderPass(swapChain);
+		MaterialManager::init(swapChain, renderPass);
+		MeshManager::init(swapChain->getImageViews().size());
+		TextureManager::init();
+		int width, height;
+		surfaceOwner->getFrameBufferSize(&width, &height);
+		Direction::updateCamerasScreenSize(width, height);
+		Direction::initialize();
+		renderer = new Renderer(renderPass, swapChain);
+		DescriptorSetsFactory::init(swapChain, renderer);
 	}
-	cleanupSwapChain();
 
-	Direction::updateCamerasScreenSize(width, height);
-	swapChain = new SwapChain(this->surfaceOwner);
-	renderPass = new RenderPass(swapChain);
-	MaterialManager::init(swapChain, renderPass);
-	renderer = new Renderer(renderPass, swapChain);
-	renderer->setObjects(this->objects);
-	renderer->setLights(this->lights);
-	DescriptorSetsFactory::init(this->swapChain, this->renderer);
+	void resizeSwapchain()
+	{
+		recreateSwapChain();
+	}
+
+	Camera * getCurrentCamera()
+	{
+		return Direction::getCurrentCamera();
+	}
+
+	void shutdown()
+	{
+		Direction::cleanUp();
+		cleanupSwapChain();
+		TextureManager::cleanUp();
+		MeshManager::cleanUp();
+		Device::destroy();
+		Instance::destroyInstance();
+	}
+
+	void loadMesh(std::string mesh_file)
+	{
+		MeshManager::addMesh(mesh_file);
+	}
+
+	void loadTexture(std::string texture_file)
+	{
+		DescriptorSetsFactory::cleanUp();
+		TextureManager::addTexture(texture_file);
+		DescriptorSetsFactory::init(swapChain, renderer);
+	}
+
+	void loadFontAtlas(unsigned char * pixels, int * width, int * height)
+	{
+		TextureManager::loadFontAtlasTexture(pixels, width, height);
+	}
+
+	void updateImGuiData(UiDrawData draw_data)
+	{
+		MeshManager::updateImGuiBuffers(draw_data,
+			renderer->getNextFrameBufferIndex());
+	}
+
+	void addLight(PointLightInfo light_info)
+	{
+		LightSource light(glm::make_vec3(light_info.position), glm::make_vec3(light_info.color), light_info.power);
+		if (lights.size() < 10)
+			lights.push_back(light);
+		renderer->setLights(lights);
+	}
+
+	void addObject(ObjectInitInfo _obj)
+	{
+		Object obj(_obj.mesh_id, (MaterialType)_obj.material_id,
+			_obj.texture_id, _obj.transformation);
+		objects.push_back(obj);
+		renderer->setObjects(objects);
+	}
+
+	void renderFrame()
+	{
+		//InputControl::processInput();
+		//msgManager.dispatchMessages();	
+		if (!renderer->renderScene()) {
+			recreateSwapChain();
+		}
+		//vkDeviceWaitIdle(Device::get());
+	}
+
+	void recreateSwapChain() {
+		// TODO: comporre la nuova swapchain riagganciando la vecchia
+		int width = 0, height = 0;
+		surfaceOwner->getFrameBufferSize(&width, &height);
+		while (width == 0 || height == 0) {
+			surfaceOwner->waitEvents();// window is minimized so application stops
+			surfaceOwner->getFrameBufferSize(&width, &height);
+		}
+		cleanupSwapChain();
+
+		Direction::updateCamerasScreenSize(width, height);
+		swapChain = new SwapChain(surfaceOwner);
+		renderPass = new RenderPass(swapChain);
+		MaterialManager::init(swapChain, renderPass);
+		renderer = new Renderer(renderPass, swapChain);
+		renderer->setObjects(objects);
+		renderer->setLights(lights);
+		DescriptorSetsFactory::init(swapChain, renderer);
+	}
+
+
+	void cleanupSwapChain()
+	{
+		vkDeviceWaitIdle(Device::get());
+		DescriptorSetsFactory::cleanUp();
+		delete renderer;
+		MaterialManager::destroyAllMaterials();
+		delete renderPass;
+		delete swapChain;
+	}
+
+	//void receiveMessage(Message msg)
+	//{
+	//	switch (msg) {
+	//	case Message::MULTITHREADED_RENDERING_ON_OFF: 
+	//		if (renderer->multithreading) {
+	//			renderer->multithreading = false;
+	//			printf("\nCommandBuffers generation ON MAIN THREAD");
+	//		}
+	//		else {
+	//			renderer->multithreading = true;
+	//			printf("\nCommandBuffers generation ON ALL AVAILABLE THREADS");
+	//		}			
+	//		break;
+	//	default:
+	//		break;
+	//	}
+	//}
 }
-
-
-void VkEngine::cleanupSwapChain()
-{
-	vkDeviceWaitIdle(Device::get());
-	DescriptorSetsFactory::cleanUp();
-	delete renderer;
-	MaterialManager::destroyAllMaterials();
-	delete renderPass;
-	delete swapChain;
-}
-
-//void VkEngine::receiveMessage(Message msg)
-//{
-//	switch (msg) {
-//	case Message::MULTITHREADED_RENDERING_ON_OFF: 
-//		if (renderer->multithreading) {
-//			renderer->multithreading = false;
-//			printf("\nCommandBuffers generation ON MAIN THREAD");
-//		}
-//		else {
-//			renderer->multithreading = true;
-//			printf("\nCommandBuffers generation ON ALL AVAILABLE THREADS");
-//		}			
-//		break;
-//	default:
-//		break;
-//	}
-//}

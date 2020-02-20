@@ -1,6 +1,7 @@
 #pragma once
-
 #include "VkEngine.h"
+
+using namespace vkengine;
 
 class Instance
 {

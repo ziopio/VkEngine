@@ -1,7 +1,9 @@
 #pragma once
 #include "MaterialManager.h"
 #include "Object.h"
+#include "Renderer.h"
 
+using namespace vkengine;
 
 class DescriptorSetsFactory
 {
