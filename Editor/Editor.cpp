@@ -4,6 +4,8 @@
 #include "Editor.h"
 #include "EditorUI.h"
 
+constexpr const char* default_proj = "Data/default_proj";
+
 void window_system_debug_callback(int error, const char *description);
 
 Editor::Editor() 
@@ -16,10 +18,10 @@ Editor::Editor()
 		vkengine::init();
 		FontAtlas f = UI->getDefaultFontAtlas();
 		vkengine::loadFontAtlas(f.pixels, &f.width, &f.height);
-		this->load_demo_scene();
+		this->load_project(default_proj);
 	}
 	catch (std::runtime_error err){
-		std::cout << err.what() << std::endl;
+		std::cout << "Engine Initialization FAILED: " << err.what() << std::endl;
 		this->terminate = true;
 	}
 }
@@ -54,7 +56,7 @@ Editor::~Editor()
 	WindowManager::terminate();
 }
 
-void Editor::load_demo_scene()
+void Editor::load_project(const char* project_dir)
 {
 
 	vkengine::loadMesh("VkEngine/Meshes/cube.obj");

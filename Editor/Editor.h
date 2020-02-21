@@ -11,7 +11,7 @@ public:
 	void resizeSwapChain();
 	~Editor();
 private:
-	void load_demo_scene();
+	void  load_project(const char* project_dir);
 	EditorUI* UI;
 	bool terminate;
 };

@@ -182,6 +182,11 @@ void WindowManager::Window::setCursor(CursorType type)
 	glfwSetCursor(this->pimpl->window, cursors[type]);
 }
 
+void WindowManager::Window::changeTitle(const char * new_title)
+{
+	glfwSetWindowTitle(this->pimpl->window, new_title);
+}
+
 void WindowManager::Window::activateKeyCallBack()
 {
 	glfwSetKeyCallback(this->pimpl->window, keyCallBack);

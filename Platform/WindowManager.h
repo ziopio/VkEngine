@@ -48,6 +48,7 @@ public:
 		InputModeValueType getInputMode(InputMode mode);
 		void setInputMode(InputMode mode, InputModeValueType value);
 		void setCursor(CursorType type);
+		void changeTitle(const char* new_title);
 
 		void activateKeyCallBack();
 		void activateCharCallback();

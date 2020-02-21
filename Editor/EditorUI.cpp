@@ -3,6 +3,7 @@
 #include "EditorComponent.h"
 #include "View3D.h"
 #include "../ImGui/imgui.h"
+#include <string>
 #include <iostream>
 #include <sstream> 
 #include <ctime>
@@ -23,7 +24,7 @@ vkengine::UiDrawData out_put_draw_data(ImDrawData* data);
 EditorUI::EditorUI(Editor* editor)
 {   
 	this->editor = editor;
-	this->window = WindowManager::createWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT, "Editor!!!");
+	this->window = WindowManager::createWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT, win_title);
 	this->window->registerEventHandler(this);
 	this->window->activateCharCallback();
 	this->window->activateKeyCallBack();
@@ -31,6 +32,7 @@ EditorUI::EditorUI(Editor* editor)
 	this->window->activateCursorPosCallback();
 	this->window->activateScrollCallback();
 	// High Level UI Components
+	//3D view with current scene
 	this->editorComponents.push_back(new View3D(this));
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -55,16 +57,21 @@ vkengine::UiDrawData EditorUI::drawUI()
 	int w_width, w_height;
 	this->window->getWindowSize(&w_width, &w_height);
 
+	std::ostringstream s(win_title); 
+	s << win_title << " FPS: " << ImGui::GetIO().Framerate;
+	this->window->changeTitle(s.str().c_str());
+
 	if (show_demo_window) {
 		ImGui::ShowDemoWindow(&show_demo_window);
 	}	
 	//MainMenuBar
 	{
-		ImGui::BeginMainMenuBar();
+		ImGui::BeginMainMenuBar();		
+		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
 		ImGui::EndMainMenuBar();
 	}
 	
-
 	for (auto comp : editorComponents)
 	{
 		comp->draw();
@@ -79,24 +86,6 @@ vkengine::UiDrawData EditorUI::drawUI()
 			ImGui::Text(log.c_str());
 		}
 		ImGui::SetScrollHereY(1.0f);
-		ImGui::End();
-	}
-	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-	{
-		static float f = 0.0f;
-		static int counter = 0;
-
-		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-
-		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			counter++;
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
-
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
 	}
 	ImGui::EndFrame();

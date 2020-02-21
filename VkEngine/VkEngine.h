@@ -70,6 +70,9 @@ namespace vkengine
 	void setSurfaceOwner(SurfaceOwner* surface_owner);
 	void init();
 	void resizeSwapchain();
+
+	
+	void loadScene(const char* scene_file);
 	void loadMesh(std::string mesh_file);
 	void loadTexture(std::string texture_file);
 	void loadFontAtlas(unsigned char* pixels, int * width, int * height);

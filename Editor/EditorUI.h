@@ -14,6 +14,8 @@ typedef struct {
 	int height;
 } FontAtlas;
 
+constexpr const char* win_title = "Editor";
+
 class EditorUI : WindowEventHandler, public vkengine::SurfaceOwner
 {
 public:
