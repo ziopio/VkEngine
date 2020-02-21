@@ -3,6 +3,7 @@
 #include "..\\VkEngine\VkEngine.h"
 #include <sstream>
 #include <vector>
+#include <deque>
 #define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
 
 class Editor;
@@ -60,5 +61,5 @@ private:
 	bool _wantCaptureKeyboard;
 	bool _wantTextInput;      
 	bool _wantSetMousePos;
-	std::vector<std::string> debug_logs;
+	std::deque<std::string> debug_logs;
 };

@@ -309,6 +309,7 @@ void EditorUI::getFrameBufferSize(int * width, int * height)
 void EditorUI::printDebug(std::string msg)
 {
 	debug_logs.push_back(msg);
+	if (debug_logs.size() > 100) debug_logs.pop_front();
 }
 
 void EditorUI::waitEvents()
