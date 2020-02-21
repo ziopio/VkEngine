@@ -25,6 +25,7 @@ public:
 	void setDeltaTime(double delta_time);
 	vkengine::UiDrawData drawUI();
 	~EditorUI();
+	// WindowEventHandler
 	inline WindowManager::Window* getWindow() { return this->window; }
 	inline bool wantCaptureMouse() { return _wantCaptureMouse; };
 	inline bool wantCaptureKeyboard() { return _wantCaptureKeyboard; };

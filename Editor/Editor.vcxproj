@@ -127,6 +127,7 @@
     <ClInclude Include="Editor.h" />
     <ClInclude Include="EditorComponent.h" />
     <ClInclude Include="EditorUI.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="View3D.h" />
   </ItemGroup>
   <ItemGroup>

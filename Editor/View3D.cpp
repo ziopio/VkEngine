@@ -15,8 +15,15 @@ void View3D::draw()
 	if (!visible) { return; }
 	int w_width, w_height;
 	this->UI->getWindow()->getWindowSize(&w_width, &w_height);
+	
+
+
+
 	ImGui::SetNextWindowSize(ImVec2(w_width / 2, w_height / 2), ImGuiCond_Once);
-	ImGui::Begin("3D View", &visible, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar);
+	ImGui::SetNextWindowPos(ImVec2(0, 20));
+	ImGui::Begin("3D View", &visible, 
+		ImGuiWindowFlags_MenuBar |
+		ImGuiWindowFlags_NoScrollbar);
 	ImGui::SetScrollHereY(0.5f);
 	ImGui::BeginMenuBar();
 	ImGui::Button("Go Full Window");
@@ -45,10 +52,10 @@ void View3D::draw()
 			renderTargetPosition.y >= 0 &&
 			renderTargetPosition.x <= frame_size.x &&
 			renderTargetPosition.y <= frame_size.y) {
-			std::stringstream ss;
-			ss << "RenderTarget HIT! " << renderTargetPosition.x
-				<< " " << renderTargetPosition.y << std::endl;
-			this->UI->printDebug(ss.str());
+			//std::stringstream ss;
+			//ss << "RenderTarget HIT! " << renderTargetPosition.x
+			//	<< " " << renderTargetPosition.y << std::endl;
+			//this->UI->printDebug(ss.str());
 		}
 	}
 	ImGui::End();

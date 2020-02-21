@@ -1,10 +1,15 @@
-#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Editor.h"
 #include "EditorUI.h"
+#include <iostream>
+#include <fstream>
+// nlohmann/json.hpp
+#include "json.hpp"
+// for convenience
+using json = nlohmann::json;
 
-constexpr const char* default_proj = "Data/default_proj";
+constexpr const char* default_proj = "Data/default_project/";
 
 void window_system_debug_callback(int error, const char *description);
 
@@ -58,6 +63,11 @@ Editor::~Editor()
 
 void Editor::load_project(const char* project_dir)
 {
+	json project;
+
+	std::ifstream i((std::string(project_dir) + "proj_config.json").c_str());
+	i >> project;
+	this->UI->printDebug("Project JSON: \n" + project.dump());
 
 	vkengine::loadMesh("VkEngine/Meshes/cube.obj");
 	//this->renderingEngine->loadMesh("VkEngine/Meshes/icosphere.obj");
@@ -90,24 +100,6 @@ void Editor::load_project(const char* project_dir)
 		cube.transformation = t;
 		vkengine::addObject(cube);
 	}
-	//{
-	//	float position[] = { 0,0,0 };
-	//	float rotation_vector[] = { 1,1,1 };
-	//	float scale_vector[] = { 1,1,1 };
-	//	ObjTransformation  t = {};
-	//	t.angularSpeed = 0.0f;
-	//	std::copy(std::begin(position), std::end(position), std::begin(t.position));
-	//	std::copy(std::begin(rotation_vector), std::end(rotation_vector), std::begin(t.rotation_vector));
-	//	t.scale_factor = 1.;
-	//	std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
-
-	//	ObjectInitInfo axis = {};
-	//	axis.mesh_id = 1;
-	//	axis.texture_id = 2;
-	//	axis.material_id = 0;
-	//	axis.transformation = t;
-	//	this->renderingEngine->addObject(axis);
-	//}
 
 }
 
