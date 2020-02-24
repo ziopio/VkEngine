@@ -561,7 +561,7 @@ void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, 
 
 	PushConstantBlock pushConsts = {};
 	pushConsts.model_transform = obj->getMatrix();
-	pushConsts.textureIndex = obj->getTextureId();
+	pushConsts.textureIndex = TextureManager::getTextureIndex(obj->getTextureId());
 	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConsts), &pushConsts);
 
 

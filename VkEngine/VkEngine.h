@@ -27,9 +27,9 @@ namespace vkengine
 		float scale_factor;
 	}ObjTransformation;
 	typedef struct {
-		int mesh_id;
+		std::string mesh_id;
 		int material_id;
-		int texture_id;
+		std::string texture_id;
 		ObjTransformation transformation;
 	}ObjectInitInfo;
 
@@ -73,8 +73,8 @@ namespace vkengine
 
 	
 	void loadScene(const char* scene_file);
-	void loadMesh(std::string mesh_file);
-	void loadTexture(std::string texture_file);
+	void loadMesh(std::string id, std::string mesh_file);
+	void loadTexture(std::string id, std::string texture_file);
 	void loadFontAtlas(unsigned char* pixels, int * width, int * height);
 	void updateImGuiData(UiDrawData draw_data);
 	void addLight(PointLightInfo light);

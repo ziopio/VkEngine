@@ -6,7 +6,7 @@
 
 using namespace glm;
 
-Object::Object(int mesh_id, MaterialType material, int texture_id, ObjTransformation transform)
+Object::Object(std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform)
 {
 	this->mesh_id = mesh_id;
 	this->texture_id = texture_id;
@@ -38,7 +38,7 @@ glm::vec3 Object::getPos()
 	return this->position;
 }
 
-int Object::getMeshId()
+std::string Object::getMeshId()
 {
 	return mesh_id;
 }
@@ -48,7 +48,7 @@ MaterialType Object::getMatType()
 	return this->material;
 }
 
-int Object::getTextureId()
+std::string Object::getTextureId()
 {
 	return texture_id;
 }

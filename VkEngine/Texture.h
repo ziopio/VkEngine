@@ -2,6 +2,8 @@
 class Texture
 {
 public:
+	// default texture loading
+	Texture();
 	//Texture loading from file
 	Texture(std::string texturePath);
 	//User must free memory pointed by pixels

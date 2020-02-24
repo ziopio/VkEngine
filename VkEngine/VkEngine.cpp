@@ -78,15 +78,15 @@ namespace vkengine
 		Instance::destroyInstance();
 	}
 
-	void loadMesh(std::string mesh_file)
+	void loadMesh(std::string id, std::string mesh_file)
 	{
-		MeshManager::addMesh(mesh_file);
+		MeshManager::addMesh(id, mesh_file);
 	}
 
-	void loadTexture(std::string texture_file)
+	void loadTexture(std::string id, std::string texture_file)
 	{
 		DescriptorSetsFactory::cleanUp();
-		TextureManager::addTexture(texture_file);
+		TextureManager::addTexture(id, texture_file);
 		DescriptorSetsFactory::init(swapChain, renderer);
 	}
 

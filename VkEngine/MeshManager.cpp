@@ -4,7 +4,7 @@
 
 using namespace vkengine;
 
-std::vector<Mesh*> MeshManager::scene_meshes;
+std::unordered_map<std::string, Mesh*> MeshManager::scene_meshes;
 std::vector<GuiMesh*> MeshManager::per_frame_imguis;
 
 void MeshManager::init(unsigned swapchain_image_count)
@@ -13,15 +13,14 @@ void MeshManager::init(unsigned swapchain_image_count)
 	for (int i = 0; i < swapchain_image_count; i++) {
 		MeshManager::per_frame_imguis[i] = new GuiMesh();
 	}
-	MeshManager::addMesh("VkEngine/Meshes/cube.obj");
 }
 
-void MeshManager::addMesh(std::string mesh_path)
+void MeshManager::addMesh(std::string id, std::string mesh_path)
 {
-	scene_meshes.push_back(new Mesh(mesh_path));
+	scene_meshes[id] = new Mesh(mesh_path);
 }
 
-BaseMesh * MeshManager::getMesh(int id)
+BaseMesh * MeshManager::getMesh(std::string id)
 {
 	return scene_meshes[id];
 }
@@ -39,7 +38,7 @@ void MeshManager::updateImGuiBuffers(UiDrawData imgui, unsigned imageIndex)
 void MeshManager::cleanUp()
 {
 	for (auto mesh : scene_meshes) {
-		delete mesh;
+		delete mesh.second;
 	}
 	for (auto imgui : per_frame_imguis) {
 		delete imgui;

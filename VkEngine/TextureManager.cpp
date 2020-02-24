@@ -3,12 +3,13 @@
 
 
 std::vector<Texture*> TextureManager::textures;
+std::unordered_map<std::string, int> TextureManager::textures_indices;
 std::vector<Texture*> TextureManager::dynamicTextures;
 Texture* TextureManager::fontAtlas;
 
 void TextureManager::init()
 {
-	TextureManager::addTexture("VkEngine/Textures/default_texture.png");
+	textures.push_back(new Texture());
 }
 
 void TextureManager::loadFontAtlasTexture(unsigned char * pixels, 
@@ -30,9 +31,10 @@ Texture * TextureManager::getFontAtlasTexture()
 	return TextureManager::fontAtlas;
 }
 
-void TextureManager::addTexture(std::string texture_path)
+void TextureManager::addTexture(std::string id, std::string texture_path)
 {
 	textures.push_back(new Texture(texture_path));
+	textures_indices[id] = textures.size() - 1;
 }
 
 void TextureManager::addDynamicTexture(int width, int heigth, VkFormat format)
@@ -40,9 +42,19 @@ void TextureManager::addDynamicTexture(int width, int heigth, VkFormat format)
 	dynamicTextures.push_back(new Texture(width, heigth, format));
 }
 
-Texture * TextureManager::getTexture(int id)
+Texture * TextureManager::getTexture(std::string id)
 {
-	return textures[id];
+	return textures[textures_indices[id]];
+}
+
+Texture * TextureManager::getTexture(unsigned int index)
+{
+	return textures[index];
+}
+
+unsigned int TextureManager::getTextureIndex(std::string id)
+{
+	return textures_indices[id];
 }
 
 int TextureManager::getTextureCount()
@@ -55,5 +67,6 @@ void TextureManager::cleanUp()
 	for (auto text : textures) {
 		delete text;
 	}
+	textures_indices.clear();
 	delete fontAtlas;
 }

@@ -89,6 +89,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -116,6 +117,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -128,12 +130,14 @@
     <ClInclude Include="EditorComponent.h" />
     <ClInclude Include="EditorUI.h" />
     <ClInclude Include="json.hpp" />
+    <ClInclude Include="Project.h" />
     <ClInclude Include="View3D.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
+    <ClCompile Include="Project.cpp" />
     <ClCompile Include="View3D.cpp" />
   </ItemGroup>
   <ItemGroup>
