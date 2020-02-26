@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "LightSource.h"
 
+using namespace vkengine;
 
 LightSource::LightSource(glm::vec3 pos, glm::vec3 color, float power)
 {
@@ -9,7 +10,7 @@ LightSource::LightSource(glm::vec3 pos, glm::vec3 color, float power)
 	this->light_data.power = glm::vec4(power);
 }
 
-Light LightSource::getData()
+LightData LightSource::getData()
 {
 	return this->light_data;
 }

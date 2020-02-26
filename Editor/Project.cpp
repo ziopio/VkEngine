@@ -66,7 +66,7 @@ void Project::load()
 		vkengine::ObjectInitInfo obj_info = {};
 		obj_info.mesh_id = obj["mesh"];
 		obj_info.texture_id = obj["texture"];
-		obj_info.material_id = 1;
+		obj_info.material_id = vkengine::MaterialType::PHONG;
 		obj_info.transformation = t;
 		vkengine::addObject(obj_info);
 	}

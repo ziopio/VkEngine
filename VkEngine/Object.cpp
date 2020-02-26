@@ -1,10 +1,8 @@
 #include "stdafx.h"
 #include "Object.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
-using namespace glm;
+using namespace glm; 
+using namespace vkengine;
 
 Object::Object(std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform)
 {
@@ -28,9 +26,9 @@ glm::mat4 Object::getMatrix()
 	return this->ObjMatrix;
 }
 
-ObjTransformation Object::getInfo()
+float Object::getScale()
 {
-	return this->transform;
+	return this->transform.scale_factor;
 }
 
 glm::vec3 Object::getPos()

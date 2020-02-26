@@ -4,17 +4,10 @@
 constexpr auto MAX_TEXTURE_COUNT = 32;
 using namespace vkengine;
 
-
-struct Light {
-	glm::vec4 position;
-	glm::vec4 color;
-	glm::vec4 power;
-};
-
 struct uniformBlockDefinition {
 	glm::mat4 P_matrix;
 	glm::mat4 V_matrix;
-	Light lights[10];
+	LightData lights[10];
 	uint32_t light_count;
 };
 

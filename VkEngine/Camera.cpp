@@ -2,7 +2,7 @@
 #include "Camera.h"
 
 using namespace glm;
-
+using namespace vkengine;
 
 Camera::Camera(float height, float width, ViewSetup view, PerspectiveSetup perspective)
 {

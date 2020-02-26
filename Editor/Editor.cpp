@@ -1,5 +1,4 @@
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "..\\VkEngine\VkEngine.h"
 #include "Editor.h"
 #include "EditorUI.h"
 #include "Project.h"

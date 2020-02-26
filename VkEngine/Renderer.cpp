@@ -528,7 +528,7 @@ void Renderer::findObjXthreadDivision()
 void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
 	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSets)
 {
-	obj->visible = frustum.checkSphere(obj->getPos(), obj->getInfo().scale_factor );
+	obj->visible = frustum.checkSphere(obj->getPos(), obj->getScale());
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

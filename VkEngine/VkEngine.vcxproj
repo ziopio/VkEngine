@@ -127,6 +127,10 @@
     <ClInclude Include="Device.h" />
     <ClInclude Include="Direction.h" />
     <ClInclude Include="Instance.h" />
+    <ClInclude Include="Libraries\frustum.hpp" />
+    <ClInclude Include="Libraries\stb_image.h" />
+    <ClInclude Include="Libraries\threadpool.hpp" />
+    <ClInclude Include="Libraries\tiny_obj_loader.h" />
     <ClInclude Include="LightSource.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="MaterialManager.h" />
@@ -136,7 +140,6 @@
     <ClInclude Include="PhysicalDevice.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
-    <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Surface.h" />
@@ -162,7 +165,6 @@
     <ClCompile Include="PhysicalDevice.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
-    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Surface.cpp" />
     <ClCompile Include="SwapChain.cpp" />

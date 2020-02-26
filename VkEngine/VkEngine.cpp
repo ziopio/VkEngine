@@ -158,21 +158,4 @@ namespace vkengine
 		delete swapChain;
 	}
 
-	//void receiveMessage(Message msg)
-	//{
-	//	switch (msg) {
-	//	case Message::MULTITHREADED_RENDERING_ON_OFF: 
-	//		if (renderer->multithreading) {
-	//			renderer->multithreading = false;
-	//			printf("\nCommandBuffers generation ON MAIN THREAD");
-	//		}
-	//		else {
-	//			renderer->multithreading = true;
-	//			printf("\nCommandBuffers generation ON ALL AVAILABLE THREADS");
-	//		}			
-	//		break;
-	//	default:
-	//		break;
-	//	}
-	//}
 }
