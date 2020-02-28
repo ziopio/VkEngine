@@ -60,7 +60,7 @@ void Project::load()
 				{
 				  glm::vec3(camera["position"][0], camera["position"][1], camera["position"][2]),
 				  glm::vec3(camera["target"][0], camera["target"][1], camera["target"][2]),
-				  glm::vec3(camera["up-vector"][0], camera["up-vector"][2], camera["up-vector"][2])
+				  glm::vec3(camera["up-vector"][0], camera["up-vector"][1], camera["up-vector"][2])
 				},
 				{ camera["fovY"],
 				  16.f/9.f, // fixed value for now..
@@ -69,17 +69,19 @@ void Project::load()
 		}
 		for (const auto obj : scene["objects"])
 		{
-			float position[] = { 0,0,0 };
-			float rotation_vector[] = { -1,1,-1 };
-			float scale_vector[] = { 1,1,1 };
+			json trans = obj["transformation"];
+			float position[] = { trans["pos"][0], trans["pos"][1], trans["pos"][2] };
+			float rotation_vector[] = { trans["rot-axis"][0], trans["rot-axis"][1], trans["rot-axis"][2] };
+			float scale_vector[] = { trans["scale"][0], trans["scale"][1], trans["scale"][2] };
 			vkengine::ObjTransformation  t = {};
-			t.angularSpeed = 30.0f; // just for testing
+			t.angularSpeed = trans["rotation"]; // just for testing
 			std::copy(std::begin(position), std::end(position), std::begin(t.position));
 			std::copy(std::begin(rotation_vector), std::end(rotation_vector), std::begin(t.rotation_vector));
 			t.scale_factor = 1.;
 			std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
 
 			vkengine::ObjectInitInfo obj_info = {};
+			obj_info.id = obj["name"];
 			obj_info.mesh_id = obj["mesh"];
 			obj_info.texture_id = obj["texture"];
 			obj_info.material_id = vkengine::MaterialType::PHONG;
