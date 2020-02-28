@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include "Object.h"
+#include "Object3D.h"
 
 using namespace glm; 
 using namespace vkengine;
 
-Object::Object(std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform)
+Object3D::Object3D(std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform)
 {
 	this->mesh_id = mesh_id;
 	this->texture_id = texture_id;
@@ -16,7 +16,7 @@ Object::Object(std::string mesh_id, MaterialType material, std::string texture_i
 	this->ObjMatrix = traslation * scale;
 }
 
-glm::mat4 Object::getMatrix()
+glm::mat4 Object3D::getMatrix()
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
@@ -26,31 +26,31 @@ glm::mat4 Object::getMatrix()
 	return this->ObjMatrix;
 }
 
-float Object::getScale()
+float Object3D::getScale()
 {
 	return this->transform.scale_factor;
 }
 
-glm::vec3 Object::getPos()
+glm::vec3 Object3D::getPos()
 {
 	return this->position;
 }
 
-std::string Object::getMeshId()
+std::string Object3D::getMeshId()
 {
 	return mesh_id;
 }
 
-MaterialType Object::getMatType()
+MaterialType Object3D::getMatType()
 {
 	return this->material;
 }
 
-std::string Object::getTextureId()
+std::string Object3D::getTextureId()
 {
 	return texture_id;
 }
 
-Object::~Object()
+Object3D::~Object3D()
 {
 }

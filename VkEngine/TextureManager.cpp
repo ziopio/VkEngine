@@ -9,7 +9,7 @@ Texture* TextureManager::fontAtlas;
 
 void TextureManager::init()
 {
-	textures.push_back(new Texture());
+	textures.push_back(new Texture()); // default / "place holder" texture
 }
 
 void TextureManager::loadFontAtlasTexture(unsigned char * pixels, 

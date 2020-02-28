@@ -1,6 +1,6 @@
 #pragma once
 #include "MaterialManager.h"
-#include "Object.h"
+#include "Object3D.h"
 #include "Renderer.h"
 
 using namespace vkengine;

@@ -9,23 +9,21 @@
 #include "MeshManager.h"
 #include "TextureManager.h"
 #include "DescriptorSetsFactory.h"
-#include "Object.h"
+#include "Scene3D.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
 #include "Renderer.h"
-#include "Direction.h"
-#include "LightSource.h"
 
 
 namespace vkengine
 {
 
 	SurfaceOwner* surfaceOwner;
-	std::vector<Object> objects;
-	std::vector<LightSource> lights;
 	SwapChain* swapChain;
 	RenderPass* renderPass;
 	Renderer* renderer;
+	std::string active_scene;
+	std::unordered_map<std::string, Scene3D> scenes;
 
 	void recreateSwapChain();
 	void cleanupSwapChain();
@@ -52,8 +50,8 @@ namespace vkengine
 		TextureManager::init();
 		int width, height;
 		surfaceOwner->getFrameBufferSize(&width, &height);
-		Direction::updateCamerasScreenSize(width, height);
-		Direction::initialize();
+		//Direction::updateCamerasScreenSize(width, height);
+		//Direction::initialize();
 		renderer = new Renderer(renderPass, swapChain);
 		DescriptorSetsFactory::init(swapChain, renderer);
 	}
@@ -63,14 +61,9 @@ namespace vkengine
 		recreateSwapChain();
 	}
 
-	Camera * getCurrentCamera()
-	{
-		return Direction::getCurrentCamera();
-	}
-
 	void shutdown()
 	{
-		Direction::cleanUp();
+		//Direction::cleanUp();
 		cleanupSwapChain();
 		TextureManager::cleanUp();
 		MeshManager::cleanUp();
@@ -90,6 +83,21 @@ namespace vkengine
 		DescriptorSetsFactory::init(swapChain, renderer);
 	}
 
+	void createScene(std::string scene_id)
+	{
+		scenes.insert( { scene_id, Scene3D(scene_id) } );
+	}
+
+	Scene3D& getScene(std::string scene_id)
+	{
+		return scenes.at(scene_id);
+	}
+
+	void removeScene(std::string scene_id)
+	{
+		scenes.erase(scene_id);
+	}
+
 	void loadFontAtlas(unsigned char * pixels, int * width, int * height)
 	{
 		TextureManager::loadFontAtlasTexture(pixels, width, height);
@@ -101,30 +109,17 @@ namespace vkengine
 			renderer->getNextFrameBufferIndex());
 	}
 
-	void addLight(PointLightInfo light_info)
+	void loadScene(std::string scene_id)
 	{
-		LightSource light(glm::make_vec3(light_info.position), glm::make_vec3(light_info.color), light_info.power);
-		if (lights.size() < 10)
-			lights.push_back(light);
-		renderer->setLights(lights);
-	}
-
-	void addObject(ObjectInitInfo _obj)
-	{
-		Object obj(_obj.mesh_id, (MaterialType)_obj.material_id,
-			_obj.texture_id, _obj.transformation);
-		objects.push_back(obj);
-		renderer->setObjects(objects);
+		active_scene = scene_id;
+		renderer->prepareScene(&scenes.at(active_scene));
 	}
 
 	void renderFrame()
 	{
-		//InputControl::processInput();
-		//msgManager.dispatchMessages();	
 		if (!renderer->renderScene()) {
 			recreateSwapChain();
 		}
-		//vkDeviceWaitIdle(Device::get());
 	}
 
 	void recreateSwapChain() {
@@ -137,13 +132,15 @@ namespace vkengine
 		}
 		cleanupSwapChain();
 
-		Direction::updateCamerasScreenSize(width, height);
+		for (auto s : scenes) {
+			scenes.at(s.first).getCurrentCamera()->updateAspectRatio(width, height);
+		}
+
 		swapChain = new SwapChain(surfaceOwner);
 		renderPass = new RenderPass(swapChain);
 		MaterialManager::init(swapChain, renderPass);
 		renderer = new Renderer(renderPass, swapChain);
-		renderer->setObjects(objects);
-		renderer->setLights(lights);
+		renderer->prepareScene(&scenes.at(active_scene));
 		DescriptorSetsFactory::init(swapChain, renderer);
 	}
 

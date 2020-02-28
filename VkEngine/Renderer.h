@@ -1,9 +1,8 @@
 #pragma once
 #include "RenderPass.h"
-#include "Object.h"
+#include "Scene3D.h"
 #include "LightSource.h"
 #include "Libraries/threadpool.hpp"
-#include "Libraries/frustum.hpp"
 
 using namespace vkengine;
 
@@ -29,8 +28,7 @@ public:
 	Renderer(RenderPass* renderPass,SwapChain* swapChain);
 	unsigned getNextFrameBufferIndex();
 	FrameAttachment getOffScreenFrameAttachment(unsigned frameIndex);
-	void setLights(std::vector<LightSource> lights);
-	void setObjects(std::vector<Object> objects);
+	void prepareScene(Scene3D* scene);
 	/* 
 	 * true means OK, false means SWAPCHAIN CHANGED!!!
 	*/
@@ -46,7 +44,7 @@ private:
 	void updateFinalPassCommandBuffer(uint32_t frameBufferIndex);
 
 	void recordImGuiDrawCmds(uint32_t frameBufferIndex);
-	void findObjXthreadDivision();
+	void findObjXthreadDivision(unsigned obj_num);
 	void createSyncObjects();
 
 	FrameAttachment final_depth_buffer;
@@ -71,12 +69,10 @@ private:
 	//VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
 	//std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
 
+	Scene3D* scene;
+
 	vks::ThreadPool thread_pool;
 	std::vector<ThreadData> per_thread_resources;
-
-	vks::Frustum frustum;
-	std::vector<Object> objects;
-	std::vector<LightSource> lights;
 
 	uint32_t numThreads;
 	uint32_t objXthread;

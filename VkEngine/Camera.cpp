@@ -4,10 +4,8 @@
 using namespace glm;
 using namespace vkengine;
 
-Camera::Camera(float height, float width, ViewSetup view, PerspectiveSetup perspective)
+Camera::Camera( ViewSetup view, PerspectiveSetup perspective)
 {
-	screenCenter = vec2(width/2,height/2);
-	oldMousePos = screenCenter;
 	camera_timer = clock();
 	debug_timer = clock();
 	this->view = view;
@@ -18,15 +16,15 @@ Camera::Camera(float height, float width, ViewSetup view, PerspectiveSetup persp
 
 mat4 Camera::setCamera()
 {
-	double debug_time = (clock() - debug_timer) / (double)CLOCKS_PER_SEC;
-	manageMotion((clock() - camera_timer) / (double)CLOCKS_PER_SEC);
-	camera_timer = clock();
+	//double debug_time = (clock() - debug_timer) / (double)CLOCKS_PER_SEC;
+	//manageMotion((clock() - camera_timer) / (double)CLOCKS_PER_SEC);
+	//camera_timer = clock();
 
-	if (oldMousePos != screenCenter)
-	{ 
-		//glfwSetCursorPos(window, screenCenter.x, screenCenter.y);
-		oldMousePos = screenCenter;
-	}
+	//if (oldMousePos != screenCenter)
+	//{ 
+	//	//glfwSetCursorPos(window, screenCenter.x, screenCenter.y);
+	//	oldMousePos = screenCenter;
+	//}
 	//
 	//if (debug_time > 1.0) {
 	//	debug_timer = clock();
@@ -36,7 +34,9 @@ mat4 Camera::setCamera()
 	//	printf("UP: %f,%f,%f\n", view.upVector.x, view.upVector.y, view.upVector.z);
 	//	printf("SPEED: %f\n",this->camera_speed);
 	//}
-	return lookAt(view.position,view.target,view.upVector);
+	glm::mat4 V = lookAt(view.position,view.target,view.upVector);
+	this->frustum.update(this->getProjection() * V );
+	return V;
 }
 
 mat4 Camera::getProjection()
@@ -44,20 +44,26 @@ mat4 Camera::getProjection()
 	return glm::perspective(glm::radians(projection.fovY), projection.aspect, projection.near, projection.far);
 }
 
-void Camera::updateScreenCenter(float height, float width)
+bool vkengine::Camera::checkFrustum(glm::vec3 pos, float radius)
+{
+	return this->frustum.checkSphere(pos, radius);
+}
+
+void Camera::updateAspectRatio(float width, float height)
 {
 	this->projection.aspect = width / height;
-	this->screenCenter = vec2(width / 2, height / 2);
+	//this->screenCenter = vec2(width / 2, height / 2);
 }
 
 void Camera::mouseRotation(float x, float y)
 {
+	throw std::runtime_error("Rotation not available, FIX needed!");
 	if (wasd_movement_mutex) { 
 		return; 
 	}
 	const float ROTATION_CONSTANT = 0.001f;
 	oldMousePos = { x, y };
-
+	/*
 	vec2 motionVec = vec2(x - screenCenter.x,y - screenCenter.y);
 
 	//Rotazione orizzontale
@@ -82,6 +88,7 @@ void Camera::mouseRotation(float x, float y)
 	view.target = view.position + vertical_ROT_MATRIX * direction;
 	//devo applicare la rotazione verticale anche al vettore UP
 	view.upVector = normalize(vertical_ROT_MATRIX * view.upVector);
+	*/
 }
 
 void Camera::moveCameraForeward()

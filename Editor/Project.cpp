@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 
 // nlohmann/json.hpp
 #include "json.hpp"
@@ -18,6 +19,7 @@ constexpr const char* TEXTURE_DIR = "/Textures";
 //pimpl idiom
 struct Project::_data {
 	std::string project_dir;
+	std::string active_scene;
 	json project;
 	std::vector<json> scenes;
 };
@@ -42,41 +44,60 @@ void Project::load()
 	for (const auto & entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + TEXTURE_DIR))
 		vkengine::loadTexture(entry.path().filename().string(), entry.path().string());
 
-	// Fix demo light
-	vkengine::PointLightInfo l = {
-		3,3,3,
-		1,1,1,
-		2
-	};
-	vkengine::addLight(l);
-	
-	// Just first scene is supported for now
-	for ( const auto obj : data->scenes[0]["objects"] )
-	{
-		float position[] = { 0,0,0 };
-		float rotation_vector[] = { -1,1,-1 };
-		float scale_vector[] = { 1,1,1 };
-		vkengine::ObjTransformation  t = {};
-		t.angularSpeed = 30.0f; // just for testing
-		std::copy(std::begin(position), std::end(position), std::begin(t.position));
-		std::copy(std::begin(rotation_vector), std::end(rotation_vector), std::begin(t.rotation_vector));
-		t.scale_factor = 1.;
-		std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
+	for (const auto scene : this->data->scenes) {
+		vkengine::createScene(scene["id"]);
+		vkengine::Scene3D& s = vkengine::getScene(scene["id"]);
 
-		vkengine::ObjectInitInfo obj_info = {};
-		obj_info.mesh_id = obj["mesh"];
-		obj_info.texture_id = obj["texture"];
-		obj_info.material_id = vkengine::MaterialType::PHONG;
-		obj_info.transformation = t;
-		vkengine::addObject(obj_info);
+		for (const auto light : scene["lights"]) {
+			vkengine::PointLightInfo i = { light["name"], 
+				{light["position"][0], light["position"][1], light["position"][2]},
+				{light["color"][0], light["color"][1], light["color"][2]},
+				light["power"] };
+			s.addLight(i);
+		}
+		for (const auto camera : scene["cameras"]) {
+			s.addCamera(camera["name"], 
+				{
+				  glm::vec3(camera["position"][0], camera["position"][1], camera["position"][2]),
+				  glm::vec3(camera["target"][0], camera["target"][1], camera["target"][2]),
+				  glm::vec3(camera["up-vector"][0], camera["up-vector"][2], camera["up-vector"][2])
+				},
+				{ camera["fovY"],
+				  16.f/9.f, // fixed value for now..
+				  camera["near"],
+				  camera["far"]});
+		}
+		for (const auto obj : scene["objects"])
+		{
+			float position[] = { 0,0,0 };
+			float rotation_vector[] = { -1,1,-1 };
+			float scale_vector[] = { 1,1,1 };
+			vkengine::ObjTransformation  t = {};
+			t.angularSpeed = 30.0f; // just for testing
+			std::copy(std::begin(position), std::end(position), std::begin(t.position));
+			std::copy(std::begin(rotation_vector), std::end(rotation_vector), std::begin(t.rotation_vector));
+			t.scale_factor = 1.;
+			std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
+
+			vkengine::ObjectInitInfo obj_info = {};
+			obj_info.mesh_id = obj["mesh"];
+			obj_info.texture_id = obj["texture"];
+			obj_info.material_id = vkengine::MaterialType::PHONG;
+			obj_info.transformation = t;
+			s.addObject(obj_info);
+		}
+		this->data->active_scene = scene["id"];
+		vkengine::loadScene(scene["id"]);
 	}
+}
+
+std::string Project::getActiveScene()
+{
+	return this->data->active_scene;
 }
 
 void Project::save()
 {
 }
 
-Project::~Project()
-{
-	delete data;
-}
+Project::~Project() = default;

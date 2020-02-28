@@ -4,9 +4,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
-#include "Object.h"
-#include "Camera.h"
-#include "LightSource.h"
+#include "Scene3D.h"
 
 namespace vkengine
 {
@@ -58,12 +56,14 @@ namespace vkengine
 	void loadMesh(std::string id, std::string mesh_file);
 	void loadTexture(std::string id, std::string texture_file);
 
-	void createScene(const char* scene_id);
+	void createScene(std::string scene_id);
+	Scene3D& getScene(std::string scene_id);
+	void removeScene(std::string scene_id);
 
 	void loadFontAtlas(unsigned char* pixels, int * width, int * height);
 	void updateImGuiData(UiDrawData draw_data);
-	void addLight(PointLightInfo light);
-	void addObject(ObjectInitInfo obj_info);
+
+	void loadScene(std::string scene_id);
 	void renderFrame();
 	void shutdown();
 

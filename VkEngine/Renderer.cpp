@@ -7,12 +7,11 @@
 #include "DescriptorSetsFactory.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
-#include "Direction.h"
 #include "LightSource.h"
 #include "ApiUtils.h"
 
 // function to feed a thread job
-void threadRenderCode(Object* obj, vks::Frustum frustum, 
+void threadRenderCode(Object3D* obj, Camera* cam, 
 	ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex, 
 	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSet);
 
@@ -24,8 +23,8 @@ Renderer::Renderer(RenderPass* renderPass, SwapChain* swapChain)
 	createOffScreenAttachments();
 	createFramebuffers();
 	createSyncObjects();
-	this->findObjXthreadDivision();
-	prepareThreadedRendering();
+	//this->findObjXthreadDivision();
+	//prepareThreadedRendering();
 }
 
 unsigned Renderer::getNextFrameBufferIndex()
@@ -39,19 +38,14 @@ FrameAttachment Renderer::getOffScreenFrameAttachment(unsigned frameIndex)
 	return this->offScreenAttachments[frameIndex];
 }
 
-void Renderer::setLights(std::vector<LightSource> lights)
+void Renderer::prepareScene(Scene3D* scene)
 {
-	this->lights = lights;
-}
-
-void Renderer::setObjects(std::vector<Object> objects)
-{
+	this->scene = scene;
 	for (auto threadResource : this->per_thread_resources) {
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
 	}
 	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
-	this->objects = objects;
-	this->findObjXthreadDivision();
+	this->findObjXthreadDivision( this->scene->get_object_num());
 	prepareThreadedRendering();
 }
 
@@ -112,8 +106,6 @@ bool Renderer::renderScene()
 
 Renderer::~Renderer()
 {
-	this->objects.clear();
-	this->lights.clear();
 
 	for (auto threadResource : this->per_thread_resources) {
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
@@ -300,7 +292,7 @@ void Renderer::prepareThreadedRendering()
 				if (vkAllocateCommandBuffers(Device::get(), &allocInfo, 
 					&per_thread_resources[t].commandBuffers[f][i]) != VK_SUCCESS) 
 				{
-					throw std::runtime_error("failed to allocate primary command buffer!");
+					throw std::runtime_error("failed to allocate secondary command buffer!");
 				}
 			}
 		}
@@ -309,17 +301,16 @@ void Renderer::prepareThreadedRendering()
 
 void Renderer::updateUniforms(uint32_t frameBufferIndex)
 {
+	auto lights = scene->listLights();
 	uniformBlockDefinition uniforms = {};
-	uniforms.V_matrix = Direction::getCurrentCamera()->setCamera();
-	uniforms.P_matrix = Direction::getCurrentCamera()->getProjection();
+	uniforms.V_matrix = this->scene->getCurrentCamera()->setCamera();
+	uniforms.P_matrix = this->scene->getCurrentCamera()->getProjection();
 	uniforms.P_matrix[1][1] *= -1; // invert openGL Y sign
 	uniforms.light_count = lights.size();
-	for (int i = 0; i < lights.size(); i++) {
-		uniforms.lights[i] = this->lights[i].getData();
+	for (int i = 0; i < uniforms.light_count; i++) {
+		uniforms.lights[i] = this->scene->getLight(lights[i])->getData();
 	}
 	DescriptorSetsFactory::updateUniformBuffer(uniforms, frameBufferIndex);
-
-	this->frustum.update(uniforms.P_matrix * uniforms.V_matrix);
 }
 
 void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
@@ -332,22 +323,23 @@ void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
 	inheritanceInfo.renderPass = renderPass->get_OffScreenRenderPass();
 	inheritanceInfo.framebuffer = offScreenFramebuffers[frameBufferIndex];
 	// work is divided between the available threads
-	vks::Frustum frustum_ = frustum;
 	std::array<VkDescriptorSet,2> descriptor_sets = 
 	{ 
 		DescriptorSetsFactory::getStaticGlobalDescriptorSet(),
 		DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex) 
 	};
+
+	auto obj_list = this->scene->listObjects();
 	for (uint32_t t = 0, objIndex = 0; t < numThreads; t++)
 	{
-		for (uint32_t i = 0; i < objXthread && objIndex < objects.size(); i++, objIndex++)
+		for (uint32_t i = 0; i < objXthread && objIndex < this->scene->get_object_num(); i++, objIndex++)
 		{
 			if (multithreading) {
-				thread_pool.threads[t]->addJob([=] { threadRenderCode(&objects[objIndex], frustum_, &per_thread_resources[t], 
+				thread_pool.threads[t]->addJob([=] { threadRenderCode(scene->getObject(obj_list[objIndex]), this->scene->getCurrentCamera(), &per_thread_resources[t],
 					frameBufferIndex, i, inheritanceInfo, descriptor_sets); });
 			}
 			else {
-				threadRenderCode(&objects[objIndex], frustum_, &per_thread_resources[t], frameBufferIndex, i, 
+				threadRenderCode(scene->getObject(obj_list[objIndex]), this->scene->getCurrentCamera(), &per_thread_resources[t], frameBufferIndex, i,
 					inheritanceInfo, descriptor_sets);
 			}
 		}
@@ -379,9 +371,9 @@ void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
 	// i draw only the command buffers related to visible objects
 	for (uint32_t t = 0, objIndex = 0; t < numThreads; t++)
 	{
-		for (uint32_t i = 0;  i < objXthread && objIndex < objects.size(); i++, objIndex++)
+		for (uint32_t i = 0;  i < objXthread && objIndex < this->scene->get_object_num(); i++, objIndex++)
 		{
-			if (objects[objIndex].visible)
+			if (scene->getObject(obj_list[objIndex])->visible)
 			{
 				secondaryCmdBuffers.push_back(per_thread_resources[t].commandBuffers[frameBufferIndex][i]);
 			}
@@ -502,33 +494,33 @@ void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex)
 	}
 }
 
-void Renderer::findObjXthreadDivision()
+void Renderer::findObjXthreadDivision(unsigned obj_num)
 {
 	// Trovo il numero di thread disponibili
 	numThreads = std::thread::hardware_concurrency();
 	// Se i thread superano il numero degli oggetti, 
 	// riduco il numero di thread e imposto 1 oggetto per thread.
-	if (objects.size() < numThreads) {
+	if (obj_num < numThreads) {
 		numThreads = 1;
-		objXthread = objects.size();
+		objXthread = obj_num;
 	}
 	else {
-		this->objXthread = objects.size() / numThreads;
+		this->objXthread = obj_num / numThreads;
 	}
 	//Imposto il numero di thread che la libreria deve utilizzare
 	thread_pool.setThreadCount(numThreads);
 	std::cout << "\nRendering impostato su " << numThreads 
 		<<" threads, " << objXthread << " oggetti ciascuno. Totale: " 
-		<< objects.size() << " oggetti." << std::endl;
+		<< obj_num << " oggetti." << std::endl;
 }
 
 /*
 	This function assembles a command buffer for 1 object running on 1 thread
 */
-void threadRenderCode(Object* obj, vks::Frustum frustum,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
+void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
 	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSets)
 {
-	obj->visible = frustum.checkSphere(obj->getPos(), obj->getScale());
+	obj->visible = cam->checkFrustum(obj->getPos(), obj->getScale());
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

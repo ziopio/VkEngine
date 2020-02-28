@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Libraries/frustum.hpp"
+
 namespace vkengine
 {
 	constexpr const float CAMERA_NORMAL_SPEED = 10.0f;
@@ -24,11 +26,12 @@ namespace vkengine
 	class Camera
 	{
 	public:
-		Camera(float height, float width, ViewSetup view, PerspectiveSetup perspective);
+		Camera(ViewSetup view, PerspectiveSetup perspective);
 		//updates camera values and returns its lookAt matrix
 		glm::mat4 setCamera();
 		glm::mat4 getProjection();
-		void updateScreenCenter(float height, float width);
+		bool checkFrustum(glm::vec3 pos, float radius);
+		void updateAspectRatio(float width, float height);
 		void mouseRotation(float x, float y);
 		void moveCameraForeward();
 		void moveCameraLeft();
@@ -47,9 +50,9 @@ namespace vkengine
 	private:
 		CameraMode status = CameraMode::FREE_CAM;
 		glm::vec2 oldMousePos;
-		glm::vec2 screenCenter;
 		PerspectiveSetup projection;
 		ViewSetup view;
+		vks::Frustum frustum;
 		bool foreward = false, back = false, left = false, right = false;
 		bool wasd_movement_mutex = false;
 		float camera_speed;

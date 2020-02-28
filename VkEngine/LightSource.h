@@ -1,9 +1,11 @@
 #pragma once
+#include <string>
 
 namespace vkengine 
 {
 
 	typedef struct {
+		std::string id;
 		float position[3];
 		float color[3];
 		float power;
