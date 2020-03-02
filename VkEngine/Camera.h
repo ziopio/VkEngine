@@ -1,9 +1,10 @@
 #pragma once
-
+#include "SceneElement.h"
 #include "Libraries/frustum.hpp"
 
 namespace vkengine
 {
+
 	constexpr const float CAMERA_NORMAL_SPEED = 10.0f;
 	constexpr const float CAMERA_FASTER_SPEED = 100.0f;
 
@@ -23,10 +24,10 @@ namespace vkengine
 		float fovY, aspect, near, far;
 	};
 
-	class Camera
+	class Camera : public SceneElement
 	{
 	public:
-		Camera(ViewSetup view, PerspectiveSetup perspective);
+		Camera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective);
 		//updates camera values and returns its lookAt matrix
 		glm::mat4 setCamera();
 		glm::mat4 getProjection();

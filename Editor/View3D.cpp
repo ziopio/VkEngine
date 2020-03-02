@@ -1,28 +1,23 @@
 #include "View3D.h"
 #include "EditorUI.h"
-#include "../ImGui/imgui.h"
-
+#include "ToolsPanel.h"
 
 
 View3D::View3D(EditorUI* UI) : EditorComponent(UI)
 {
-	this->name = "View3D";
+	this->name = "3D View";
 	this->visible = true;
 }
 
-void View3D::draw()
+void View3D::draw(int w_width, int w_height)
 {
 	if (!visible) { return; }
-	int w_width, w_height;
-	this->UI->getWindow()->getWindowSize(&w_width, &w_height);
-	
 
-
-
-	ImGui::SetNextWindowSize(ImVec2(w_width / 2, w_height / 2), ImGuiCond_Once);
-	ImGui::SetNextWindowPos(ImVec2(0, 20));
-	ImGui::Begin("3D View", &visible, 
+	ImGui::SetNextWindowSize(ImVec2(w_width - w_width / 4 - tools_panel_width, w_height - w_height / 4 - main_menu_shift), ImGuiCond_Always);
+	ImGui::SetNextWindowPos(ImVec2(tools_panel_width, main_menu_shift));
+	ImGui::Begin(this->name, &visible, 
 		ImGuiWindowFlags_MenuBar |
+		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoScrollbar);
 	ImGui::SetScrollHereY(0.5f);
 	ImGui::BeginMenuBar();
@@ -62,6 +57,4 @@ void View3D::draw()
 }
 
 
-View3D::~View3D()
-{
-}
+View3D::~View3D() = default;

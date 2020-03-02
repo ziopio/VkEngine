@@ -1,4 +1,5 @@
 #pragma once
+#include "SceneElement.h"
 #include <string>
 
 namespace vkengine
@@ -20,6 +21,7 @@ namespace vkengine
 	} ObjTransformation;
 
 	typedef struct {
+		std::string name;
 		std::string id;
 		std::string mesh_id;
 		MaterialType material_id;
@@ -27,10 +29,10 @@ namespace vkengine
 		ObjTransformation transformation;
 	} ObjectInitInfo;
 
-	class Object3D
+	class Object3D : public SceneElement
 	{
 	public:
-		Object3D(std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform);
+		Object3D(std::string id, std::string name, std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform);
 		glm::mat4 getMatrix();
 		float getScale();
 		glm::vec3 getPos();

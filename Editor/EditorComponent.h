@@ -1,4 +1,5 @@
 #pragma once
+#include "../ImGui/imgui.h"
 class EditorUI;
 
 class EditorComponent
@@ -9,9 +10,9 @@ protected:
 	EditorUI* UI;
 public:
 	EditorComponent(EditorUI* UI) { this->UI = UI; };
-	const char* getName() { return name; }
-	bool isVisible() { return visible; }
-	void hide() { visible = false; }
-	void show() { visible = true; }
-	virtual void draw() = 0;
+	inline const char* getName() { return name; }
+	inline bool isVisible() { return visible; }
+	inline void hide() { visible = false; }
+	inline void show() { visible = true; }
+	virtual void draw(int w_width, int w_height) = 0;
 };

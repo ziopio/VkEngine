@@ -303,8 +303,8 @@ void Renderer::updateUniforms(uint32_t frameBufferIndex)
 {
 	auto lights = scene->listLights();
 	uniformBlockDefinition uniforms = {};
-	uniforms.V_matrix = this->scene->getCurrentCamera()->setCamera();
-	uniforms.P_matrix = this->scene->getCurrentCamera()->getProjection();
+	uniforms.V_matrix = this->scene->getCamera(this->scene->current_camera)->setCamera();
+	uniforms.P_matrix = this->scene->getCamera(this->scene->current_camera)->getProjection();
 	uniforms.P_matrix[1][1] *= -1; // invert openGL Y sign
 	uniforms.light_count = lights.size();
 	for (int i = 0; i < uniforms.light_count; i++) {
@@ -335,12 +335,13 @@ void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
 		for (uint32_t i = 0; i < objXthread && objIndex < this->scene->get_object_num(); i++, objIndex++)
 		{
 			if (multithreading) {
-				thread_pool.threads[t]->addJob([=] { threadRenderCode(scene->getObject(obj_list[objIndex]), this->scene->getCurrentCamera(), &per_thread_resources[t],
+				thread_pool.threads[t]->addJob([=] { threadRenderCode(scene->getObject(obj_list[objIndex]), 
+					this->scene->getCamera(this->scene->current_camera), &per_thread_resources[t],	
 					frameBufferIndex, i, inheritanceInfo, descriptor_sets); });
 			}
 			else {
-				threadRenderCode(scene->getObject(obj_list[objIndex]), this->scene->getCurrentCamera(), &per_thread_resources[t], frameBufferIndex, i,
-					inheritanceInfo, descriptor_sets);
+				threadRenderCode(scene->getObject(obj_list[objIndex]), this->scene->getCamera(this->scene->current_camera), 
+					&per_thread_resources[t], frameBufferIndex, i, inheritanceInfo, descriptor_sets);
 			}
 		}
 	}

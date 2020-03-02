@@ -133,7 +133,7 @@ namespace vkengine
 		cleanupSwapChain();
 
 		for (auto s : scenes) {
-			scenes.at(s.first).getCurrentCamera()->updateAspectRatio(width, height);
+			scenes.at(s.first).getCamera(scenes.at(s.first).current_camera)->updateAspectRatio(width, height);
 		}
 
 		swapChain = new SwapChain(surfaceOwner);

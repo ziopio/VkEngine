@@ -2,6 +2,8 @@
 #include "Editor.h"
 #include "EditorComponent.h"
 #include "View3D.h"
+#include "Outliner.h"
+#include "ToolsPanel.h"
 #include "../ImGui/imgui.h"
 #include <string>
 #include <iostream>
@@ -14,7 +16,7 @@
 #define DEFAULT_HEIGHT 768
 static constexpr float DEF_ASPECT_RATIO = 16.f / 9.f;
 
-static bool show_demo_window = true;
+static bool show_demo_window = false;
 
 void setClipboardText(void* user_pointer, const char* text);
 const char* getClipboardText(void* user_pointer);
@@ -34,6 +36,8 @@ EditorUI::EditorUI(Editor* editor)
 	// High Level UI Components
 	//3D view with current scene
 	this->editorComponents.push_back(new View3D(this));
+	this->editorComponents.push_back(new Outliner(this));
+	this->editorComponents.push_back(new ToolsPanel(this));
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -74,7 +78,7 @@ vkengine::UiDrawData EditorUI::drawUI()
 	
 	for (auto comp : editorComponents)
 	{
-		comp->draw();
+		comp->draw(w_width, w_height);
 	}
 
 	// Debug logging window
@@ -98,6 +102,9 @@ EditorUI::~EditorUI()
 {
 	ImGui::DestroyContext();
 	WindowManager::destroyWindow(this->window);
+	for (auto comp : this->editorComponents) {
+		delete comp;
+	}
 }
 
 void EditorUI::updateCursor()

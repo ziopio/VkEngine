@@ -140,6 +140,7 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Scene3D.h" />
+    <ClInclude Include="SceneElement.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Surface.h" />

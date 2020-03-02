@@ -84,9 +84,6 @@
     <ClInclude Include="Shader.h">
       <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
-    <ClInclude Include="LightSource.h">
-      <Filter>Header Files\AssetsManagement</Filter>
-    </ClInclude>
     <ClInclude Include="Instance.h">
       <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
@@ -115,6 +112,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Object3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LightSource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneElement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -164,9 +167,6 @@
     <ClCompile Include="Shader.cpp">
       <Filter>Source Files\AssetsManagement</Filter>
     </ClCompile>
-    <ClCompile Include="LightSource.cpp">
-      <Filter>Source Files\AssetsManagement</Filter>
-    </ClCompile>
     <ClCompile Include="Device.cpp">
       <Filter>Source Files\ApiCore</Filter>
     </ClCompile>
@@ -183,6 +183,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Object3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LightSource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

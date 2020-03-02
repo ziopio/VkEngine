@@ -49,14 +49,14 @@ void Project::load()
 		vkengine::Scene3D& s = vkengine::getScene(scene["id"]);
 
 		for (const auto light : scene["lights"]) {
-			vkengine::PointLightInfo i = { light["name"], 
+			vkengine::PointLightInfo i = { light["id"], light["name"], 
 				{light["position"][0], light["position"][1], light["position"][2]},
 				{light["color"][0], light["color"][1], light["color"][2]},
 				light["power"] };
 			s.addLight(i);
 		}
 		for (const auto camera : scene["cameras"]) {
-			s.addCamera(camera["name"], 
+			s.addCamera(camera["id"],camera["name"], 
 				{
 				  glm::vec3(camera["position"][0], camera["position"][1], camera["position"][2]),
 				  glm::vec3(camera["target"][0], camera["target"][1], camera["target"][2]),
@@ -81,7 +81,8 @@ void Project::load()
 			std::copy(std::begin(scale_vector), std::end(scale_vector), std::begin(t.scale_vector));
 
 			vkengine::ObjectInitInfo obj_info = {};
-			obj_info.id = obj["name"];
+			obj_info.id = obj["id"];
+			obj_info.name = obj["name"];
 			obj_info.mesh_id = obj["mesh"];
 			obj_info.texture_id = obj["texture"];
 			obj_info.material_id = vkengine::MaterialType::PHONG;

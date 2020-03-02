@@ -4,7 +4,9 @@
 using namespace glm;
 using namespace vkengine;
 
-Camera::Camera( ViewSetup view, PerspectiveSetup perspective)
+
+vkengine::Camera::Camera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective) : 
+	SceneElement( id,  name)
 {
 	camera_timer = clock();
 	debug_timer = clock();
@@ -13,6 +15,7 @@ Camera::Camera( ViewSetup view, PerspectiveSetup perspective)
 	this->camera_speed = CAMERA_NORMAL_SPEED;
 	this->status = CameraMode::FREE_CAM;
 }
+
 
 mat4 Camera::setCamera()
 {

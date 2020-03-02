@@ -1,4 +1,5 @@
 #pragma once
+#include "SceneElement.h"
 #include <string>
 
 namespace vkengine 
@@ -6,6 +7,7 @@ namespace vkengine
 
 	typedef struct {
 		std::string id;
+		std::string name;
 		float position[3];
 		float color[3];
 		float power;
@@ -18,10 +20,11 @@ namespace vkengine
 		glm::vec4 power;
 	};
 
-	class LightSource
+	class LightSource : public SceneElement
 	{
 	public:
-		LightSource(glm::vec3 pos, glm::vec3 color, float power);
+		LightSource(std::string id, std::string name, 
+			glm::vec3 pos, glm::vec3 color, float power);
 		LightData getData();
 		~LightSource();
 	private:

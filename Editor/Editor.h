@@ -12,9 +12,9 @@ public:
 	void execute();
 	void resizeSwapChain();
 	~Editor();
+std::unique_ptr<Project> loadedProject;
 private:
 	void load_project(const char* project_dir);
-	std::unique_ptr<Project> loadedProject;
 	EditorUI* UI;
 	bool terminate;
 };

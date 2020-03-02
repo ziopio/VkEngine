@@ -4,7 +4,9 @@
 using namespace glm; 
 using namespace vkengine;
 
-Object3D::Object3D(std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform)
+Object3D::Object3D(std::string id, std::string name, std::string mesh_id, 
+	MaterialType material, std::string texture_id, ObjTransformation transform)
+	: SceneElement(id, name)
 {
 	this->mesh_id = mesh_id;
 	this->texture_id = texture_id;

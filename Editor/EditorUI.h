@@ -16,11 +16,13 @@ typedef struct {
 } FontAtlas;
 
 constexpr const char* win_title = "Editor";
+constexpr const unsigned main_menu_shift = 18;
 
 class EditorUI : WindowEventHandler, public vkengine::SurfaceOwner
 {
 public:
 	EditorUI(Editor* editor);
+	inline Editor* getEditor() { return editor; };
 	FontAtlas getDefaultFontAtlas();
 	void setDeltaTime(double delta_time);
 	vkengine::UiDrawData drawUI();
