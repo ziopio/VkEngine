@@ -250,9 +250,10 @@ void EditorUI::onKeyCallBack(KeyType key, int scancode, ActionType action, Modif
 {
 	bool pressed = false;
 	ImGuiIO& io = ImGui::GetIO();
-	if (action == ActionType::PRESS) {
+	if (action == ActionType::PRESS || action == ActionType::REPEAT) {
 		pressed = true;
 	}
+
 	io.KeysDown[key] = pressed;
 	// Modifiers are not reliable across systems
 	io.KeyCtrl = io.KeysDown[KeyType::KEY_LEFT_CTRL] || io.KeysDown[KeyType::KEY_RIGHT_CTRL];

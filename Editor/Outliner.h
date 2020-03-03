@@ -3,11 +3,11 @@
 #include <string>
 #include <vector>
 
-//enum NodeType {
-//	OBJECT,
-//	CAMERA,
-//	LIGHT
-//};
+enum NodeType {
+	OBJECT,
+	CAMERA,
+	LIGHT
+};
 //
 //struct SceneNode {
 //	std::string name;
@@ -26,5 +26,6 @@ public:
 private:
 	//std::vector<SceneNode> scenes;
 	std::string selected_element;
+	NodeType selected_elem_type;
 };
 

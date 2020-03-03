@@ -17,7 +17,7 @@
 
 namespace vkengine
 {
-
+	double unified_delta_time;
 	SurfaceOwner* surfaceOwner;
 	SwapChain* swapChain;
 	RenderPass* renderPass;
@@ -50,8 +50,6 @@ namespace vkengine
 		TextureManager::init();
 		int width, height;
 		surfaceOwner->getFrameBufferSize(&width, &height);
-		//Direction::updateCamerasScreenSize(width, height);
-		//Direction::initialize();
 		renderer = new Renderer(renderPass, swapChain);
 		DescriptorSetsFactory::init(swapChain, renderer);
 	}
@@ -88,9 +86,9 @@ namespace vkengine
 		scenes.insert( { scene_id, Scene3D(scene_id) } );
 	}
 
-	Scene3D& getScene(std::string scene_id)
+	Scene3D* getScene(std::string scene_id)
 	{
-		return scenes.at(scene_id);
+		return &scenes.at(scene_id);
 	}
 
 	void removeScene(std::string scene_id)

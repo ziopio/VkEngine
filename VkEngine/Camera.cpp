@@ -1,9 +1,13 @@
 #include "stdafx.h"
 #include "Camera.h"
+#include "VkEngine.h"
 
 using namespace glm;
 using namespace vkengine;
 
+constexpr const float NORMAL_SPEED = 10.0f;
+constexpr const float FASTER_SPEED = 100.0f;
+constexpr const float ROTATION_CONSTANT = 0.005f;
 
 vkengine::Camera::Camera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective) : 
 	SceneElement( id,  name)
@@ -12,31 +16,50 @@ vkengine::Camera::Camera(std::string id, std::string name, ViewSetup view, Persp
 	debug_timer = clock();
 	this->view = view;
 	this->projection = perspective;
-	this->camera_speed = CAMERA_NORMAL_SPEED;
+	this->camera_speed = NORMAL_SPEED;
 	this->status = CameraMode::FREE_CAM;
 }
 
+ViewSetup & Camera::getViewSetup()
+{
+	return this->view;
+}
+
+void vkengine::Camera::rotate_FPS_style(glm::vec2 delta)
+{
+	if (wasd_movement_mutex) {
+		return;
+	}
+	
+
+	//Rotazione orizzontale
+	vec3 direction = view.target - view.position;
+	switch (status)
+	{
+	case CameraMode::UNLOCKED: // imposto una matrice di rotazione orizzontale attorno al vettore UP
+		view.target = view.position + normalize(glm::mat3(glm::rotate(glm::mat4(1.0f), -delta.x * ROTATION_CONSTANT, view.upVector)) * direction);
+		break;
+	case CameraMode::FREE_CAM: 	// imposto una matrice di rotazione orizzontale attorno all'azimut
+		view.target = view.position + normalize(glm::mat3(glm::rotate(glm::mat4(1.0f), -delta.x * ROTATION_CONSTANT, vec3(0.0f,1.0f,0.0f))) * direction);
+		view.upVector = normalize(glm::mat3(glm::rotate(glm::mat4(1.0f), -delta.x * ROTATION_CONSTANT, vec3(0.0f, 1.0f, 0.0f))) * view.upVector); // allineo l'up vector
+		break;
+	}
+
+	//Rotazione Verticale
+	direction = view.target - view.position;
+	//Attorno al Vettore: prodotto vettoriale tra upVector e direzione
+	vec3 horizontalVec = glm::cross(direction, view.upVector);
+
+	glm::mat3 vertical_ROT_MATRIX = glm::mat3(glm::rotate(glm::mat4(1.0f), -delta.y * ROTATION_CONSTANT, horizontalVec));
+	view.target = view.position + vertical_ROT_MATRIX * direction;
+	//devo applicare la rotazione verticale anche al vettore UP
+	view.upVector = normalize(vertical_ROT_MATRIX * view.upVector);
+	
+}
 
 mat4 Camera::setCamera()
 {
-	//double debug_time = (clock() - debug_timer) / (double)CLOCKS_PER_SEC;
-	//manageMotion((clock() - camera_timer) / (double)CLOCKS_PER_SEC);
-	//camera_timer = clock();
-
-	//if (oldMousePos != screenCenter)
-	//{ 
-	//	//glfwSetCursorPos(window, screenCenter.x, screenCenter.y);
-	//	oldMousePos = screenCenter;
-	//}
-	//
-	//if (debug_time > 1.0) {
-	//	debug_timer = clock();
-	//	printf("DEBUG_CAMERA:\n");
-	//	printf("Target vector: %f,%f,%f\n",view.target.x, view.target.y, view.target.z);
-	//	printf("Camera Position: %f,%f,%f\n", view.position.x, view.position.y, view.position.z);
-	//	printf("UP: %f,%f,%f\n", view.upVector.x, view.upVector.y, view.upVector.z);
-	//	printf("SPEED: %f\n",this->camera_speed);
-	//}
+	this->manageMotion(vkengine::unified_delta_time);
 	glm::mat4 V = lookAt(view.position,view.target,view.upVector);
 	this->frustum.update(this->getProjection() * V );
 	return V;
@@ -56,42 +79,6 @@ void Camera::updateAspectRatio(float width, float height)
 {
 	this->projection.aspect = width / height;
 	//this->screenCenter = vec2(width / 2, height / 2);
-}
-
-void Camera::mouseRotation(float x, float y)
-{
-	throw std::runtime_error("Rotation not available, FIX needed!");
-	if (wasd_movement_mutex) { 
-		return; 
-	}
-	const float ROTATION_CONSTANT = 0.001f;
-	oldMousePos = { x, y };
-	/*
-	vec2 motionVec = vec2(x - screenCenter.x,y - screenCenter.y);
-
-	//Rotazione orizzontale
-	vec3 direction = view.target - view.position;
-	switch (status)
-	{
-	case CameraMode::UNLOCKED: // imposto una matrice di rotazione orizzontale attorno al vettore UP
-		view.target = view.position + normalize(glm::mat3(glm::rotate(glm::mat4(1.0f), -motionVec.x * ROTATION_CONSTANT, view.upVector)) * direction);
-		break;
-	case CameraMode::FREE_CAM: 	// imposto una matrice di rotazione orizzontale attorno all'azimut
-		view.target = view.position + normalize(glm::mat3(glm::rotate(glm::mat4(1.0f), -motionVec.x * ROTATION_CONSTANT, vec3(0.0f,1.0f,0.0f))) * direction);
-		view.upVector = normalize(glm::mat3(glm::rotate(glm::mat4(1.0f), -motionVec.x * ROTATION_CONSTANT, vec3(0.0f, 1.0f, 0.0f))) * view.upVector); // allineo l'up vector
-		break;
-	}
-	
-	//Rotazione Verticale
-	direction = view.target - view.position;
-	//Attorno al Vettore: prodotto vettoriale tra upVector e direzione
-	vec3 horizontalVec = glm::cross(direction, view.upVector);
-
-	glm::mat3 vertical_ROT_MATRIX = glm::mat3(glm::rotate(glm::mat4(1.0f), -motionVec.y * ROTATION_CONSTANT, horizontalVec));
-	view.target = view.position + vertical_ROT_MATRIX * direction;
-	//devo applicare la rotazione verticale anche al vettore UP
-	view.upVector = normalize(vertical_ROT_MATRIX * view.upVector);
-	*/
 }
 
 void Camera::moveCameraForeward()
@@ -129,19 +116,19 @@ void Camera::stopCameraRight()
 	right = false;
 }
 
-void Camera::stopmoveCameraBack()
+void Camera::stopCameraBack()
 {
 	back = false;
 }
 
 void Camera::fastSpeedCamera()
 {
-	this->camera_speed = CAMERA_FASTER_SPEED;
+	this->camera_speed = FASTER_SPEED;
 }
 
 void Camera::normalSpeedCamera()
 {
-	this->camera_speed = CAMERA_NORMAL_SPEED;
+	this->camera_speed = NORMAL_SPEED;
 }
 
 void Camera::reset()

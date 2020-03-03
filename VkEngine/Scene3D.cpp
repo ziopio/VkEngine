@@ -24,7 +24,7 @@ Camera* vkengine::Scene3D::getCamera(std::string id)
 std::vector<std::string> vkengine::Scene3D::listCameras()
 {
 	std::vector<std::string> keys;
-	for (auto entry : objects) {
+	for (auto entry : cameras) {
 		keys.push_back(entry.first);
 	}
 	return keys;

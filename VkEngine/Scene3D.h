@@ -24,8 +24,8 @@ namespace vkengine
 		void addObject(vkengine::ObjectInitInfo obj_info);
 		Object3D* getObject(std::string id);
 		std::vector<std::string> listObjects();
-		inline unsigned get_object_num() { return objects.size(); }
 		void removeObject(std::string id);
+		inline unsigned get_object_num() { return objects.size(); }
 
 		void addLight(vkengine::PointLightInfo);
 		LightSource* getLight(std::string id);		

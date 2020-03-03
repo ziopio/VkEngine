@@ -1,6 +1,8 @@
 #include "View3D.h"
 #include "EditorUI.h"
 #include "ToolsPanel.h"
+#include "Editor.h"
+#include "Project.h"
 
 
 View3D::View3D(EditorUI* UI) : EditorComponent(UI)
@@ -16,6 +18,7 @@ void View3D::draw(int w_width, int w_height)
 	ImGui::SetNextWindowSize(ImVec2(w_width - w_width / 4 - tools_panel_width, w_height - w_height / 4 - main_menu_shift), ImGuiCond_Always);
 	ImGui::SetNextWindowPos(ImVec2(tools_panel_width, main_menu_shift));
 	ImGui::Begin(this->name, &visible, 
+		ImGuiWindowFlags_NoScrollWithMouse |
 		ImGuiWindowFlags_MenuBar |
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoScrollbar);
@@ -41,16 +44,27 @@ void View3D::draw(int w_width, int w_height)
 		ImGui::IsWindowFocused()) {
 		glm::vec2 absoluteMousePos = ImGui::GetMousePos();
 		glm::vec2 relativeToWinMousePos = absoluteMousePos - (glm::vec2)ImGui::GetWindowPos();
-		glm::vec2 renderTargetPosition = relativeToWinMousePos - (glm::vec2)newDrawingPos;
+		glm::vec2 relativeToRenderTargetPos = relativeToWinMousePos - (glm::vec2)newDrawingPos;
 
-		if (renderTargetPosition.x >= 0 &&
-			renderTargetPosition.y >= 0 &&
-			renderTargetPosition.x <= frame_size.x &&
-			renderTargetPosition.y <= frame_size.y) {
-			//std::stringstream ss;
-			//ss << "RenderTarget HIT! " << renderTargetPosition.x
-			//	<< " " << renderTargetPosition.y << std::endl;
-			//this->UI->printDebug(ss.str());
+	
+		
+		if (relativeToRenderTargetPos.x >= 0 &&
+			relativeToRenderTargetPos.y >= 0 &&
+			relativeToRenderTargetPos.x <= frame_size.x &&
+			relativeToRenderTargetPos.y <= frame_size.y) 
+		{
+			auto delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Middle, 0.f);
+			ImGui::GetIO().MouseClickedPos[ImGuiMouseButton_Middle] = ImGui::GetMousePos();
+			auto scene = vkengine::getScene(UI->getEditor()->loadedProject.get()->getActiveScene());
+			auto cam = scene->getCamera(scene->current_camera);
+			cam->rotate_FPS_style(delta);
+
+
+			auto io = ImGui::GetIO();
+			io.KeysDown[KeyType::KEY_W] ? cam->moveCameraForeward() : cam->stopCameraForeward();
+			io.KeysDown[KeyType::KEY_A] ? cam->moveCameraLeft() : cam->stopCameraLeft();
+			io.KeysDown[KeyType::KEY_S] ? cam->moveCameraBack() : cam->stopCameraBack();
+			io.KeysDown[KeyType::KEY_D] ? cam->moveCameraRight() : cam->stopCameraRight();
 		}
 	}
 	ImGui::End();

@@ -12,12 +12,11 @@ namespace vkengine
 	};
 
 	typedef struct {
-		float position[3];
+		glm::vec3 position;
 		/* Axis of the rotation	*/
-		float rotation_vector[3];
+		glm::vec3 rotation_vector;
 		float angularSpeed;
-		float scale_vector[3];
-		float scale_factor;
+		glm::vec3 scale_vector;
 	} ObjTransformation;
 
 	typedef struct {
@@ -34,15 +33,17 @@ namespace vkengine
 	public:
 		Object3D(std::string id, std::string name, std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform);
 		glm::mat4 getMatrix();
-		float getScale();
-		glm::vec3 getPos();
+		glm::vec3& getScale();
+		glm::vec3& getPos();
+		// this is dumb and fake
+		float getBoundingRadius();
 		std::string getMeshId();
 		MaterialType getMatType();
 		std::string getTextureId();
 		~Object3D();
 		bool visible = true;
 	private:
-		glm::mat4 ObjMatrix;
+		glm::mat4 rotMatrix;
 		glm::vec3 position;
 		std::string mesh_id;
 		std::string texture_id;

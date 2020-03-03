@@ -5,8 +5,7 @@
 namespace vkengine
 {
 
-	constexpr const float CAMERA_NORMAL_SPEED = 10.0f;
-	constexpr const float CAMERA_FASTER_SPEED = 100.0f;
+
 
 	enum CameraMode {
 		UNLOCKED,
@@ -29,11 +28,12 @@ namespace vkengine
 	public:
 		Camera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective);
 		//updates camera values and returns its lookAt matrix
+		ViewSetup& getViewSetup();
+		void rotate_FPS_style(glm::vec2 delta);
 		glm::mat4 setCamera();
 		glm::mat4 getProjection();
 		bool checkFrustum(glm::vec3 pos, float radius);
 		void updateAspectRatio(float width, float height);
-		void mouseRotation(float x, float y);
 		void moveCameraForeward();
 		void moveCameraLeft();
 		void moveCameraRight();
@@ -41,7 +41,7 @@ namespace vkengine
 		void stopCameraForeward();
 		void stopCameraLeft();
 		void stopCameraRight();
-		void stopmoveCameraBack();
+		void stopCameraBack();
 		void fastSpeedCamera();
 		void normalSpeedCamera();
 		void reset();

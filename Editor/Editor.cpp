@@ -37,6 +37,7 @@ void Editor::execute()
 		now = WindowManager::getTime();
 		delta_time = now - last_iteration;
 		this->UI->setDeltaTime(delta_time);
+		vkengine::unified_delta_time = delta_time;
 		last_iteration = now;
 
 		vkengine::updateImGuiData(this->UI->drawUI());

@@ -8,6 +8,10 @@
 
 namespace vkengine
 {
+	// Global delta time used inside the engine in each iteration
+	extern double unified_delta_time;
+
+
 	typedef struct {
 		unsigned int instance_extension_count;
 		const char** instanceExtensions;
@@ -57,7 +61,7 @@ namespace vkengine
 	void loadTexture(std::string id, std::string texture_file);
 
 	void createScene(std::string scene_id);
-	Scene3D& getScene(std::string scene_id);
+	Scene3D* getScene(std::string scene_id);
 	void removeScene(std::string scene_id);
 
 	void loadFontAtlas(unsigned char* pixels, int * width, int * height);

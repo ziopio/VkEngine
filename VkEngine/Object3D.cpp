@@ -13,9 +13,7 @@ Object3D::Object3D(std::string id, std::string name, std::string mesh_id,
 	this->material = material;
 	this->transform = transform;
 	this->position = glm::make_vec3(transform.position);
-	glm::mat4 traslation = glm::translate(glm::mat4(1.f), this->position);
-	glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::make_vec3(transform.scale_vector) * transform.scale_factor);
-	this->ObjMatrix = traslation * scale;
+	this->rotMatrix = glm::mat4(1.f);
 }
 
 glm::mat4 Object3D::getMatrix()
@@ -24,18 +22,25 @@ glm::mat4 Object3D::getMatrix()
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	startTime = currentTime;
-	this->ObjMatrix = glm::rotate(ObjMatrix, time * glm::radians(transform.angularSpeed), glm::make_vec3(transform.rotation_vector));
-	return this->ObjMatrix;
+	this->rotMatrix = glm::rotate(rotMatrix, time * glm::radians(transform.angularSpeed), transform.rotation_vector);
+	return glm::translate(glm::mat4(1), this->position) * this->rotMatrix * glm::scale(glm::mat4(1.f), transform.scale_vector);
 }
 
-float Object3D::getScale()
+glm::vec3& Object3D::getScale()
 {
-	return this->transform.scale_factor;
+	return this->transform.scale_vector;
 }
 
-glm::vec3 Object3D::getPos()
+glm::vec3& Object3D::getPos()
 {
 	return this->position;
+}
+
+float vkengine::Object3D::getBoundingRadius()
+{ // big brain code...
+	return (this->transform.scale_vector.x +
+		this->transform.scale_vector.y +
+	this->transform.scale_vector.z) / 3.0f;
 }
 
 std::string Object3D::getMeshId()

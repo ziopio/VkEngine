@@ -12,7 +12,7 @@ LightSource::LightSource(std::string id, std::string name,
 	this->light_data.power = glm::vec4(power);
 }
 
-LightData LightSource::getData()
+LightData& LightSource::getData()
 {
 	return this->light_data;
 }

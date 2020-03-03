@@ -25,7 +25,7 @@ namespace vkengine
 	public:
 		LightSource(std::string id, std::string name, 
 			glm::vec3 pos, glm::vec3 color, float power);
-		LightData getData();
+		LightData& getData();
 		~LightSource();
 	private:
 		LightData light_data;
