@@ -521,7 +521,7 @@ void Renderer::findObjXthreadDivision(unsigned obj_num)
 void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
 	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSets)
 {
-	obj->visible = cam->checkFrustum(obj->getPos(), obj->getBoundingRadius());
+	obj->visible = cam->checkFrustum(obj->getObjTransform().position, obj->getBoundingRadius());
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

@@ -81,9 +81,9 @@ namespace vkengine
 		DescriptorSetsFactory::init(swapChain, renderer);
 	}
 
-	void createScene(std::string scene_id)
+	void createScene(std::string scene_id, std::string name)
 	{
-		scenes.insert( { scene_id, Scene3D(scene_id) } );
+		scenes.insert( { scene_id, Scene3D(scene_id, name) } );
 	}
 
 	Scene3D* getScene(std::string scene_id)

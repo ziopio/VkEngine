@@ -33,8 +33,7 @@ namespace vkengine
 	public:
 		Object3D(std::string id, std::string name, std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform);
 		glm::mat4 getMatrix();
-		glm::vec3& getScale();
-		glm::vec3& getPos();
+		ObjTransformation & getObjTransform();
 		// this is dumb and fake
 		float getBoundingRadius();
 		std::string getMeshId();
@@ -44,7 +43,6 @@ namespace vkengine
 		bool visible = true;
 	private:
 		glm::mat4 rotMatrix;
-		glm::vec3 position;
 		std::string mesh_id;
 		std::string texture_id;
 		MaterialType material;

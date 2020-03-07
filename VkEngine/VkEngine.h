@@ -60,7 +60,7 @@ namespace vkengine
 	void loadMesh(std::string id, std::string mesh_file);
 	void loadTexture(std::string id, std::string texture_file);
 
-	void createScene(std::string scene_id);
+	void createScene(std::string scene_id, std::string name );
 	Scene3D* getScene(std::string scene_id);
 	void removeScene(std::string scene_id);
 

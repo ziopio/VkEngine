@@ -4,6 +4,8 @@
 #include "View3D.h"
 #include "Outliner.h"
 #include "ToolsPanel.h"
+#include "AssetsViewer.h"
+#include "Console.h"
 #include "../ImGui/imgui.h"
 #include <string>
 #include <iostream>
@@ -33,11 +35,14 @@ EditorUI::EditorUI(Editor* editor)
 	this->window->activateMouseButtonCallback();
 	this->window->activateCursorPosCallback();
 	this->window->activateScrollCallback();
+	this->window->activateDropCallback();
 	// High Level UI Components
 	//3D view with current scene
 	this->editorComponents.push_back(new View3D(this));
 	this->editorComponents.push_back(new Outliner(this));
 	this->editorComponents.push_back(new ToolsPanel(this));
+	this->editorComponents.push_back(new AssetsViewer(this));
+	this->editorComponents.push_back(new Console(this));
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -82,12 +87,25 @@ vkengine::UiDrawData EditorUI::drawUI()
 	}
 
 	// Debug logging window
-	{	
+	{					
 		ImGui::SetNextWindowPos(ImVec2(0, w_height - w_height / 4), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(w_width , w_height / 4), ImGuiCond_Always);
-		ImGui::Begin("Validation Layers");
-		for(auto log : debug_logs){
-			ImGui::Text(log.c_str());
+		ImGui::SetNextWindowSize(ImVec2(w_width, w_height / 4), ImGuiCond_Always);
+		ImGui::Begin("Temprergetegtge", NULL, ImGuiWindowFlags_NoTitleBar);
+		if (ImGui::BeginTabBar("MyTabBar", 0))
+		{
+			if (ImGui::BeginTabItem("Assets"))
+			{
+				ImGui::Text("This is the Assets tab!\nblah blah blah blah blah");
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Console"))
+			{
+				for (auto log : debug_logs) {
+					ImGui::Text(log.c_str());
+				}
+				ImGui::EndTabItem();
+			}
+			ImGui::EndTabBar();
 		}
 		ImGui::SetScrollHereY(1.0f);
 		ImGui::End();
@@ -290,7 +308,8 @@ void EditorUI::onScrollCallback(double xoffset, double yoffset)
 
 void EditorUI::onDropCallback(int count, const char ** paths)
 {
-	std::cout << "Drop file callback" << std::endl;
+	for (int i = 0; i < count; i++)
+		this->debug_logs.push_back(paths[i]);	
 }
 
 

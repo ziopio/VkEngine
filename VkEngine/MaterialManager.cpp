@@ -12,6 +12,7 @@ VkDescriptorSetLayout MaterialManager::imGuiTextureArrayDescSetLayout;
 VkDescriptorSetLayout MaterialManager::offScreenTextureDescSetLayout;
 
 VkDescriptorSetLayout MaterialManager::globalTextureDescriptorSetLayout;
+// this is the descriptor set of the uniform block in the shader
 VkDescriptorSetLayout MaterialManager::frameDependentDescriptorSetLayout;
 
 

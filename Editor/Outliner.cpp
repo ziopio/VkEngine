@@ -44,7 +44,7 @@ void Outliner::draw(int w_width, int w_height)
 		ImGuiWindowFlags_NoMove);
 
 	ImGui::SetNextItemOpen(true);
-	if (ImGui::TreeNode(scene_id.c_str())) {
+	if (ImGui::TreeNode(scene->name.c_str())) {
 		ImGui::SetNextItemOpen(true);
 		if (ImGui::TreeNode("Oggetti")) {
 			for (auto o : objs) {
@@ -116,8 +116,8 @@ void showOjectProperties(std::string scene, std::string obj_id)
 {
 	auto obj = vkengine::getScene(scene)->getObject(obj_id);
 	ImGui::Text(obj->name.c_str()); 
-	showVectorControls("Position", &obj->getPos());
-	showVectorControls("Scale", &obj->getScale());
+	showVectorControls("Position", &obj->getObjTransform().position);
+	showVectorControls("Scale", &obj->getObjTransform().scale_vector);
 }
 
 void showLightProperties(std::string scene, std::string light_id)

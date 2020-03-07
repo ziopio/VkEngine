@@ -52,6 +52,7 @@ void Editor::resizeSwapChain()
 
 Editor::~Editor()
 {
+	this->loadedProject->save();
 	vkengine::shutdown();
 	delete UI;
 	WindowManager::terminate();

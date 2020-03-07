@@ -11,7 +11,6 @@ public:
 	void save();
 	~Project();
 private:
-	const char* project_dir;
 	struct _data;
 	std::unique_ptr<_data> data;
 };

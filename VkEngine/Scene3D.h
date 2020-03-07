@@ -15,7 +15,7 @@ namespace vkengine
 	class Scene3D
 	{
 	public:
-		Scene3D(std::string id);
+		Scene3D(std::string id, std::string name);
 
 		void addCamera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective);
 		Camera* getCamera(std::string id);
@@ -37,6 +37,7 @@ namespace vkengine
 		~Scene3D();
 	public:
 		std::string current_camera;
+		std::string name;
 	private:
 		std::string id;
 		std::unordered_map<std::string, Camera> cameras;

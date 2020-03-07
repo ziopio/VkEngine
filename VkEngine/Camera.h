@@ -29,6 +29,7 @@ namespace vkengine
 		Camera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective);
 		//updates camera values and returns its lookAt matrix
 		ViewSetup& getViewSetup();
+		PerspectiveSetup& getPerspectiveSetup();
 		void rotate_FPS_style(glm::vec2 delta);
 		glm::mat4 setCamera();
 		glm::mat4 getProjection();

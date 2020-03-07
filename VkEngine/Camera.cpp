@@ -25,6 +25,11 @@ ViewSetup & Camera::getViewSetup()
 	return this->view;
 }
 
+PerspectiveSetup & vkengine::Camera::getPerspectiveSetup()
+{
+	return this->projection;
+}
+
 void vkengine::Camera::rotate_FPS_style(glm::vec2 delta)
 {
 	if (wasd_movement_mutex) {

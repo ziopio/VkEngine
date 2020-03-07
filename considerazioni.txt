@@ -1,0 +1,10 @@
+Pipeline compatibili ---->  YEEEEEEEEEEEE
+
+L'idea è creare famiglie di pipeline,
+Ogni famiglia ha il suo pipeline-layout che descrive le risorse ed i propri descriptor sets.
+
+
+
+Questo permette di condividere uno stesso set di descrittori ( 1 sola azione di binding) per tutte le pipeline compatibili
+
+Oppure cambiare set di descrittori ( con stesso layout ) e mantenere la stessa pipeline , se dovesse servire.

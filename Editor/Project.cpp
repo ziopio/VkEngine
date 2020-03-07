@@ -20,43 +20,46 @@ constexpr const char* TEXTURE_DIR = "/Textures";
 //pimpl idiom
 struct Project::_data {
 	std::string project_dir;
+	std::string name;
 	std::string active_scene;
-	json project;
-	std::vector<json> scenes;
+	std::vector<std::string> scenes;
 };
 
 Project::Project(const char* project_dir) : data(new Project::_data())
 {
+	json project;
 	this->data->project_dir = project_dir;
 	std::ifstream i((std::string(project_dir) + "proj_config.json").c_str());
-	i >> this->data->project;
-	std::cout << "Project JSON: \n" << this->data->project << std::endl;
-	for (auto scene : this->data->project["scenes"]) {
-		std::ifstream s((std::string(project_dir) + scene.get<std::string>() + ".json" ).c_str());
-		s >> scene;
-		data->scenes.push_back(scene);
+	i >> project;
+	this->data->name = project["name"];
+	//std::cout << "Project JSON: \n" << this->data->project << std::endl;
+	for (auto scene_id : project["scenes"]) {
+		data->scenes.push_back(scene_id);
 	}
 }
 
 void Project::load()
 {
-	for (const auto entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + MESH_DIR))
+	for (const auto & entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + MESH_DIR))
 		vkengine::loadMesh(entry.path().filename().string(), entry.path().string());
 	for (const auto & entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + TEXTURE_DIR))
 		vkengine::loadTexture(entry.path().filename().string(), entry.path().string());
 
-	for (const auto scene : this->data->scenes) {
-		vkengine::createScene(scene["id"]);
+	for (const auto & scene_id : this->data->scenes) {
+		json scene;
+		std::ifstream str((std::string(this->data->project_dir) + scene_id + ".json").c_str());
+		str >> scene;
+		vkengine::createScene(scene["id"], scene["title"]);
 		vkengine::Scene3D* s = vkengine::getScene(scene["id"]);
 
-		for (const auto light : scene["lights"]) {
+		for (const auto & light : scene["lights"]) {
 			vkengine::PointLightInfo i = { light["id"], light["name"], 
 				{light["position"][0], light["position"][1], light["position"][2]},
 				{light["color"][0], light["color"][1], light["color"][2]},
 				light["power"] };
 			s->addLight(i);
 		}
-		for (const auto camera : scene["cameras"]) {
+		for (const auto & camera : scene["cameras"]) {
 			s->addCamera(camera["id"],camera["name"], 
 				{
 				  glm::vec3(camera["position"][0], camera["position"][1], camera["position"][2]),
@@ -68,7 +71,7 @@ void Project::load()
 				  camera["near"],
 				  camera["far"]});
 		}
-		for (const auto obj : scene["objects"])
+		for (const auto & obj : scene["objects"])
 		{
 			json trans = obj["transformation"];
 
@@ -102,6 +105,101 @@ std::string Project::getActiveScene()
 
 void Project::save()
 {
+	// Main project settings
+	json save;
+	save["name"] = this->data->name;
+	save["active-scene"] = this->data->active_scene;
+	save["scenes"] = this->data->scenes;
+	std::ofstream save_file((std::string(this->data->project_dir) + "proj_config.json").c_str());
+	save_file << std::setw(4) << save << std::endl;
+
+	// scene files
+	for (auto & s : data->scenes) {
+		auto scene = vkengine::getScene(s);
+		json s_save;
+		s_save["id"] = s;
+		s_save["title"] = scene->name;
+		s_save["def-camera"] = scene->current_camera;
+		// Dumping cameras
+		auto cams_ids = scene->listCameras();
+		std::vector<json> cams;
+		for (auto & id : cams_ids) {
+			float *vertex;
+			std::vector<float> v;
+			auto cam = scene->getCamera(id);
+			json j;
+			j["id"] = id;
+			j["name"] = cam->name;
+			vertex = glm::value_ptr(cam->getViewSetup().position);
+			v.assign(vertex, vertex + 3);
+			j["position"] = v;
+			vertex = glm::value_ptr(cam->getViewSetup().target);
+			v.assign(vertex, vertex + 3);
+			j["target"] = v; 
+			vertex = glm::value_ptr(cam->getViewSetup().upVector);
+			v.assign(vertex, vertex + 3);
+			j["up-vector"] = v;
+			j["aspect"] = cam->getPerspectiveSetup().aspect;
+			j["fovY"] = cam->getPerspectiveSetup().fovY;
+			j["near"] = cam->getPerspectiveSetup().near;
+			j["far"] = cam->getPerspectiveSetup().far;
+			cams.push_back(j);
+		}
+		s_save["cameras"] = cams;
+
+		// Dumping lights
+		auto lights_ids = scene->listLights();
+		std::vector<json> lights;
+		for (auto & id : lights_ids) {
+			float *vertex;
+			std::vector<float> v;
+			auto light = scene->getLight(id);
+			json j;
+			j["id"] = id;
+			j["name"] = light->name;
+			vertex = glm::value_ptr(light->getData().position);
+			v.assign(vertex, vertex + 3);
+			j["position"] = v;
+			vertex = glm::value_ptr(light->getData().color);
+			v.assign(vertex, vertex + 3);
+			j["color"] = v;
+			j["power"] = light->getData().power[0];
+			lights.push_back(j);
+		}
+		s_save["lights"] = lights;
+
+		// Dumping Objects		
+		auto objs_ids = scene->listObjects();
+		std::vector<json> objects;
+		for (auto & id : objs_ids) {
+			float *vertex;
+			std::vector<float> v;
+			auto obj = scene->getObject(id);
+			json j, trans;
+			j["id"] = id;
+			j["name"] = obj->name;
+			j["mesh"] = obj->getMeshId();
+			j["texture"] = obj->getTextureId();
+			// transformation info			
+				vertex = glm::value_ptr(obj->getObjTransform().position);
+				v.assign(vertex, vertex + 3);
+				trans["pos"] = v;
+				vertex = glm::value_ptr(obj->getObjTransform().scale_vector);
+				v.assign(vertex, vertex + 3);
+				trans["scale"] = v;
+				vertex = glm::value_ptr(obj->getObjTransform().rotation_vector);
+				v.assign(vertex, vertex + 3);
+				trans["rot-axis"] = v;
+				trans["rotation"] = obj->getObjTransform().angularSpeed;
+				j["transformation"] = trans;
+			objects.push_back(j);
+		}
+		s_save["objects"] = objects;
+
+		// Write on file
+		std::ofstream save_file((std::string(this->data->project_dir) + s + ".json").c_str());
+		save_file << std::setw(4) << s_save << std::endl;
+	}
 }
 
 Project::~Project() = default;

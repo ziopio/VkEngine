@@ -5,9 +5,10 @@
 using namespace glm;
 using namespace vkengine;
 
-Scene3D::Scene3D(std::string id)
+Scene3D::Scene3D(std::string id, std::string name)
 {
 	this->id = id;
+	this->name = name;
 }
 
 void Scene3D:: addCamera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective)
