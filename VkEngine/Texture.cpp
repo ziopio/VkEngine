@@ -9,7 +9,7 @@
 
 Texture::Texture()
 {
-	unsigned char pixels[] = { 255,0.,255.,255. }; // purple default
+	unsigned char pixels[] = { 255, 0., 255., 255. }; // purple default
 	int width = 1, height = 1;
 	this->Texture::Texture(pixels, &width, &height);
 }

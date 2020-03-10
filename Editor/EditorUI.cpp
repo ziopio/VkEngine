@@ -1,18 +1,16 @@
 #include "EditorUI.h"
 #include "Editor.h"
+#include "Project.h"
 #include "EditorComponent.h"
 #include "View3D.h"
 #include "Outliner.h"
 #include "ToolsPanel.h"
-#include "AssetsViewer.h"
-#include "Console.h"
 #include "../ImGui/imgui.h"
 #include <string>
 #include <iostream>
 #include <sstream> 
 #include <ctime>
 
-#define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
 
 #define DEFAULT_WIDTH 1366
 #define DEFAULT_HEIGHT 768
@@ -41,8 +39,6 @@ EditorUI::EditorUI(Editor* editor)
 	this->editorComponents.push_back(new View3D(this));
 	this->editorComponents.push_back(new Outliner(this));
 	this->editorComponents.push_back(new ToolsPanel(this));
-	this->editorComponents.push_back(new AssetsViewer(this));
-	this->editorComponents.push_back(new Console(this));
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -75,10 +71,30 @@ vkengine::UiDrawData EditorUI::drawUI()
 	}	
 	//MainMenuBar
 	{
-		ImGui::BeginMainMenuBar();		
+		ImGui::BeginMainMenuBar();	
 		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+		ImGui::SameLine(ImGui::GetWindowWidth() - 400);
+		ImGui::Text("Test performance:");
+		ImGui::Checkbox("Multithreaded Rendering", vkengine::multithreadedRendering());
+		if (ImGui::Button("KILL ENGINE")) this->editor->spawnHell();
 		ImGui::EndMainMenuBar();
+	}
+
+	// Exit check
+	if (this->getWindow()->windowShouldClose()) 
+		ImGui::OpenPopup("Save??");
+	if (ImGui::BeginPopupModal("Save??", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+		ImGui::Text("Do you want to save the \n current state of the scene?");
+		if (ImGui::Button("YES!")) { 
+			this->editor->loadedProject->save();
+			this->editor->terminate = true;
+		}
+		ImGui::SameLine(ImGui::GetWindowWidth() - 60);
+		if (ImGui::Button("NOPE!")) {
+			this->editor->terminate = true;
+		}
+		ImGui::EndPopup();
 	}
 	
 	for (auto comp : editorComponents)
@@ -317,7 +333,9 @@ vkengine::VulkanInstanceInitInfo EditorUI::getInstanceExtInfo()
 {
 	vkengine::VulkanInstanceInitInfo info = {};
 	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
+#ifdef DEBUG
 	info.enableValidation = true;
+#endif // DEBUG
 	return info;
 }
 

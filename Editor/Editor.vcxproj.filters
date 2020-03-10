@@ -42,12 +42,6 @@
     <ClInclude Include="ToolsPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Console.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AssetsViewer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Editor.cpp">
@@ -69,12 +63,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ToolsPanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Console.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="AssetsViewer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

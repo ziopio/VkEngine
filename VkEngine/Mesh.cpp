@@ -13,20 +13,28 @@ VkBuffer BaseMesh::getVkVertexBuffer(){return this->vertexBuffer;}
 
 VkBuffer BaseMesh::getVkIndexBuffer(){return this->indexBuffer;}
 
-Mesh::Mesh(std::string modelPath)
+//Mesh3D::Mesh3D(Primitive3D primitive)
+//{
+//	this->vertices = primitive.vertices;
+//	this->indices = primitive.indices;
+//	this->createVertexBuffer();
+//	this->createIndexBuffer();
+//}
+
+Mesh3D::Mesh3D(std::string modelPath)
 {
 	this->loadModel(modelPath);
 	this->createVertexBuffer();
 	this->createIndexBuffer();
 }
 
-uint32_t Mesh::getIdxCount()
+uint32_t Mesh3D::getIdxCount()
 {
 	return static_cast<uint32_t>(this->indices.size());
 }
 
 
-Mesh::~Mesh()
+Mesh3D::~Mesh3D()
 {
 	vkDestroyBuffer(Device::get(), indexBuffer, nullptr);
 	vkFreeMemory(Device::get(), indexBufferMemory, nullptr);
@@ -34,7 +42,7 @@ Mesh::~Mesh()
 	vkFreeMemory(Device::get(), vertexBufferMemory, nullptr);
 }
 
-void Mesh::loadModel(std::string modelPath) {
+void Mesh3D::loadModel(std::string modelPath) {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
@@ -80,7 +88,7 @@ void Mesh::loadModel(std::string modelPath) {
 	}
 }
 
-void Mesh::createVertexBuffer()
+void Mesh3D::createVertexBuffer()
 {
 	VkDeviceSize bufferSize = sizeof(Vertex3D) * vertices.size();
 	// first I create a reachable "staging buffer" as source of data
@@ -112,7 +120,7 @@ void Mesh::createVertexBuffer()
 	vkFreeMemory(Device::get(), stagingBufferMemory, nullptr);
 }
 
-void Mesh::createIndexBuffer()
+void Mesh3D::createIndexBuffer()
 {
 	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 

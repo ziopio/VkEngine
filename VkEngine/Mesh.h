@@ -104,12 +104,13 @@ protected:
 	VkBuffer indexBuffer;
 };
 
-class Mesh : public BaseMesh
+class Mesh3D : public BaseMesh
 {
 public:
-	Mesh(std::string modelPath);
+	//Mesh3D(Primitive3D primitive);
+	Mesh3D(std::string modelPath);
 	uint32_t getIdxCount() override;
-	~Mesh();
+	~Mesh3D();
 private:
 	void loadModel(std::string modelPath);
 	void createVertexBuffer();

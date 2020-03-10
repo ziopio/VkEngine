@@ -74,11 +74,21 @@ namespace vkengine
 		MeshManager::addMesh(id, mesh_file);
 	}
 
+	std::vector<std::string> listLoadedMesh()
+	{
+		return MeshManager::listLoadedMeshes();
+	}
+
 	void loadTexture(std::string id, std::string texture_file)
 	{
 		DescriptorSetsFactory::cleanUp();
 		TextureManager::addTexture(id, texture_file);
 		DescriptorSetsFactory::init(swapChain, renderer);
+	}
+
+	std::vector<std::string> listLoadedTextures()
+	{
+		return TextureManager::listLoadedTextures();
 	}
 
 	void createScene(std::string scene_id, std::string name)
@@ -111,6 +121,11 @@ namespace vkengine
 	{
 		active_scene = scene_id;
 		renderer->prepareScene(&scenes.at(active_scene));
+	}
+
+	bool* multithreadedRendering()
+	{
+		return &Renderer::multithreading;
 	}
 
 	void renderFrame()

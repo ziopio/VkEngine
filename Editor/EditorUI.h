@@ -4,7 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <deque>
-#define VIEW_3D_TEXTURE_CODE -1 // special case in gui fragment shader
+
 
 class Editor;
 class EditorComponent;

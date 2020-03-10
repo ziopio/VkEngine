@@ -10,6 +10,7 @@ Texture* TextureManager::fontAtlas;
 void TextureManager::init()
 {
 	textures.push_back(new Texture()); // default / "place holder" texture
+	textures_indices["default"] = textures.size() - 1;
 }
 
 void TextureManager::loadFontAtlasTexture(unsigned char * pixels, 
@@ -55,6 +56,15 @@ Texture * TextureManager::getTexture(unsigned int index)
 unsigned int TextureManager::getTextureIndex(std::string id)
 {
 	return textures_indices[id];
+}
+
+std::vector<std::string> TextureManager::listLoadedTextures()
+{
+	std::vector<std::string> tex_ids;
+	for (auto id : TextureManager::textures_indices) {
+		tex_ids.push_back(id.first);
+	}
+	return tex_ids;
 }
 
 int TextureManager::getTextureCount()

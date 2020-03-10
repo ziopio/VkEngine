@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Object3D.h"
+#include "VkEngine.h"
 
 using namespace glm; 
 using namespace vkengine;
@@ -17,11 +18,11 @@ Object3D::Object3D(std::string id, std::string name, std::string mesh_id,
 
 glm::mat4 Object3D::getMatrix()
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-	startTime = currentTime;
-	this->rotMatrix = glm::rotate(rotMatrix, time * glm::radians(transform.angularSpeed), transform.rotation_vector);
+	//static auto startTime = std::chrono::high_resolution_clock::now();
+	//auto currentTime = std::chrono::high_resolution_clock::now();
+	//float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+	//startTime = currentTime;
+	this->rotMatrix = glm::rotate(rotMatrix, (float)vkengine::unified_delta_time * glm::radians(transform.angularSpeed), transform.rotation_vector);
 	return glm::translate(glm::mat4(1), transform.position) * this->rotMatrix * glm::scale(glm::mat4(1.f), transform.scale_vector);
 }
 

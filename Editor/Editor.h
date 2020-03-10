@@ -11,11 +11,12 @@ public:
 	Editor();
 	void execute();
 	void resizeSwapChain();
+	void spawnHell();
 	~Editor();
+	bool terminate;
 std::unique_ptr<Project> loadedProject;
 private:
 	void load_project(const char* project_dir);
 	EditorUI* UI;
-	bool terminate;
 };
 

@@ -43,6 +43,7 @@ namespace vkengine
 		std::unordered_map<std::string, Camera> cameras;
 		std::unordered_map<std::string, Object3D> objects;
 		std::unordered_map<std::string, LightSource> lights;
+
 	};
 }
 

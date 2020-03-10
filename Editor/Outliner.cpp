@@ -6,11 +6,12 @@
 
 const float d_min = -1000.f, d_max = 1000.0;
 
-static ImGuiTreeNodeFlags base_flags =
+static const ImGuiTreeNodeFlags base_flags =
+	ImGuiTreeNodeFlags_DefaultOpen |
 	ImGuiTreeNodeFlags_OpenOnArrow |
 	ImGuiTreeNodeFlags_OpenOnDoubleClick |
 	ImGuiTreeNodeFlags_SpanAvailWidth;
-static ImGuiTreeNodeFlags leaf_flags = base_flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+static const ImGuiTreeNodeFlags leaf_flags = base_flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
 void showOjectProperties(std::string scene, std::string obj_id);
 void showLightProperties(std::string scene, std::string light_id);
@@ -26,6 +27,7 @@ Outliner::Outliner(EditorUI * UI) : EditorComponent(UI)
 
 void Outliner::draw(int w_width, int w_height)
 {
+	static bool scene_open = true, obj_open = true, lights_open = true, cameras_open = true;
 	if (!visible) { return; }
 
 	auto scene_id = UI->getEditor()->loadedProject.get()->getActiveScene();
@@ -43,23 +45,33 @@ void Outliner::draw(int w_width, int w_height)
 		ImGuiWindowFlags_NoCollapse | 
 		ImGuiWindowFlags_NoMove);
 
-	ImGui::SetNextItemOpen(true);
-	if (ImGui::TreeNode(scene->name.c_str())) {
-		ImGui::SetNextItemOpen(true);
-		if (ImGui::TreeNode("Oggetti")) {
+	if (ImGui::TreeNodeEx(scene->name.c_str(), base_flags)) {
+		if (ImGui::TreeNodeEx("Oggetti", base_flags)) {
+			static const char* context_menu_id;
 			for (auto o : objs) {
 				auto node_flag = leaf_flags | (o == selected_element ?
 					ImGuiTreeNodeFlags_Selected : 0);
 				ImGui::TreeNodeEx(o.c_str(), node_flag, scene->getObject(o)->name.c_str());
-				if (ImGui::IsItemClicked()) {
+				if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
 					selected_element = o;
 					selected_elem_type = NodeType::OBJECT;
 				}
+				context_menu_id = o.c_str();
+				ImGui::OpenPopupOnItemClick(context_menu_id, ImGuiMouseButton_Right);
+				if (ImGui::BeginPopupContextItem())
+				{
+					if (ImGui::Button("Delete")) {
+						if (selected_element == context_menu_id) selected_element = "";
+						scene->removeObject(context_menu_id);
+						vkengine::loadScene(scene_id);
+					}
+					ImGui::EndPopup();
+				}
 			}
+
 			ImGui::TreePop();
 		}
-		ImGui::SetNextItemOpen(true);
-		if (ImGui::TreeNode("Luci")) {
+		if (ImGui::TreeNodeEx("Luci", base_flags)) {
 			for (auto l : lights) {
 				auto node_flag = leaf_flags | (l == selected_element ?
 					ImGuiTreeNodeFlags_Selected : 0);
@@ -71,8 +83,7 @@ void Outliner::draw(int w_width, int w_height)
 			}
 			ImGui::TreePop();
 		}
-		ImGui::SetNextItemOpen(true);
-		if (ImGui::TreeNode("Telecamere")) {
+		if (ImGui::TreeNodeEx("Telecamere", base_flags)) {
 			for (auto c : cams) {
 				auto node_flag = leaf_flags | (c == selected_element ?
 					ImGuiTreeNodeFlags_Selected : 0);

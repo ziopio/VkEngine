@@ -15,11 +15,12 @@ void threadRenderCode(Object3D* obj, Camera* cam,
 	ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex, 
 	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSet);
 
+bool Renderer::multithreading;
+
 Renderer::Renderer(RenderPass* renderPass, SwapChain* swapChain)
 {
 	this->swapChain = swapChain;
 	this->renderPass = renderPass;
-	this->multithreading = true;
 	createOffScreenAttachments();
 	createFramebuffers();
 	createSyncObjects();
@@ -40,6 +41,7 @@ FrameAttachment Renderer::getOffScreenFrameAttachment(unsigned frameIndex)
 
 void Renderer::prepareScene(Scene3D* scene)
 {
+	vkQueueWaitIdle(Device::getGraphicQueue());
 	this->scene = scene;
 	for (auto threadResource : this->per_thread_resources) {
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);

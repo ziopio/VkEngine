@@ -1,5 +1,11 @@
 #include "ToolsPanel.h"
 #include "EditorUI.h"
+#include "Editor.h"
+#include "Project.h"
+
+constexpr const char* add_obj_modal = "Add new Object";
+constexpr const char* select_mesh_modal = "Choose Object Mesh";
+constexpr const char* select_texture_modal = "Choose Object Texture ";
 
 ToolsPanel::ToolsPanel(EditorUI * UI) : EditorComponent(UI)
 {
@@ -16,8 +22,96 @@ void ToolsPanel::draw(int w_width, int w_height)
 	ImGui::SetNextWindowSize(ImVec2(tools_panel_width, w_height / 4 * 3 - main_menu_shift), ImGuiCond_Always);
 	ImGui::SetNextWindowPos(ImVec2(0, main_menu_shift));
 	ImGui::Begin(this->name, nullptr, ImGuiWindowFlags_NoCollapse);
+	std::string id = "default";
+	if (ImGui::Button("+OBJ",ImVec2(0,0))) {
+		ImGui::OpenPopup(add_obj_modal);
+	}
+	if (ImGui::BeginPopupModal(add_obj_modal, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		static std::string selected_mesh = "cube.obj", selected_texture = "default";
+		static char obj_name[20] = "Sample";
+		static char new_obj_id[32] = "obj_id";
+		ImGui::InputText("Unique ID", new_obj_id, sizeof(new_obj_id));
+		ImGui::InputText("Name", obj_name, sizeof(obj_name));
+		ImGui::Separator();
+		ImGui::Text("The object transformations are fixed for now...");
+		ImGui::Separator();
 
+		if (ImGui::Button("Choose Mesh"))
+			ImGui::OpenPopup(select_mesh_modal);
+		ImGui::SameLine();
+		ImGui::Text(selected_mesh.c_str());
+		if (ImGui::Button("Choose Texture"))
+			ImGui::OpenPopup(select_texture_modal);
+		ImGui::SameLine();
+		ImGui::Text(selected_texture.c_str());
 
+		if (ImGui::BeginPopupModal(select_mesh_modal))
+		{
+			ImGui::Text("Meshes loaded are listed here");
+			auto vec = vkengine::listLoadedMesh();
+			static int  index = -1;
+			for (int i = 0; i < vec.size(); i++) {
+				if (ImGui::Selectable(vec[i].c_str(), index == i))
+					selected_mesh = vec[i];
+			}
+			if (ImGui::Button("Ok"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+		if (ImGui::BeginPopupModal(select_texture_modal))
+		{
+			ImGui::Text("Textures loaded are listed here");
+			auto vec = vkengine::listLoadedTextures();
+			static int  index = -1;
+			for (int i = 0; i < vec.size(); i++) {
+				if (ImGui::Selectable(vec[i].c_str(), index == i))
+					selected_texture = vec[i];
+			}
+			if (ImGui::Button("Ok"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+
+		const char* title = "ID Error";
+		if (ImGui::Button("OK", ImVec2(120, 0))) 
+		{
+			auto scene_id = this->UI->getEditor()->loadedProject->getActiveScene();
+			auto objs = vkengine::getScene(scene_id)->listObjects();
+			if (std::find(objs.begin(), objs.end(), new_obj_id) == objs.end())
+			{
+				vkengine::ObjTransformation transform = {};
+				transform.scale_vector = { 1,1,1 };
+				transform.rotation_vector = { 0,1,0 };
+				vkengine::ObjectInitInfo obj_info = {};
+				obj_info.id = new_obj_id;
+				obj_info.name = obj_name;
+				obj_info.material_id = vkengine::MaterialType::PHONG;
+				obj_info.mesh_id = selected_mesh;
+				obj_info.texture_id = selected_texture;
+				obj_info.transformation = transform;
+
+				vkengine::getScene(scene_id)->addObject(obj_info);
+				vkengine::loadScene(scene_id);
+
+				ImGui::CloseCurrentPopup();
+			}
+			else {
+				ImGui::OpenPopup(title);
+			}
+		}
+		if (ImGui::BeginPopupModal(title))
+		{
+			ImGui::Text("Object ID already in use!!");
+			if (ImGui::Button("Ok"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
+	}
 
 	ImGui::End();
 }

@@ -15,6 +15,7 @@ public:
 	static Texture* getTexture(unsigned int index); // by position
 	// Used to get the index in the texture array (both for CPU and GPU side data)
 	static unsigned int getTextureIndex(std::string id);
+	static std::vector<std::string> listLoadedTextures();
 	static int getTextureCount();
 	static void cleanUp();
 private:

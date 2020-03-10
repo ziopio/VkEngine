@@ -1,7 +1,7 @@
 #pragma once
 #include "EditorComponent.h"
 
-constexpr const unsigned tools_panel_width = 50;
+constexpr const unsigned tools_panel_width = 45;
 
 class ToolsPanel : public EditorComponent
 {

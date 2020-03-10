@@ -34,7 +34,7 @@ public:
 	*/
 	bool renderScene();
 	~Renderer();
-	bool multithreading;
+	static bool multithreading;
 private:
 	void createFramebuffers();
 	void createOffScreenAttachments();

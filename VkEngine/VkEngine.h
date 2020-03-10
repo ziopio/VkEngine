@@ -6,6 +6,9 @@
 #include <vector>
 #include "Scene3D.h"
 
+
+#define OFFSCREEN_FRAMEBUFFER_TEXTURE_ID -1 // special case in gui fragment shader
+
 namespace vkengine
 {
 	// Global delta time used inside the engine in each iteration
@@ -58,7 +61,10 @@ namespace vkengine
 	void resizeSwapchain();
 
 	void loadMesh(std::string id, std::string mesh_file);
+	std::vector<std::string> listLoadedMesh();
 	void loadTexture(std::string id, std::string texture_file);
+	std::vector<std::string> listLoadedTextures();
+
 
 	void createScene(std::string scene_id, std::string name );
 	Scene3D* getScene(std::string scene_id);
@@ -68,6 +74,8 @@ namespace vkengine
 	void updateImGuiData(UiDrawData draw_data);
 
 	void loadScene(std::string scene_id);
+	// Intended as parallel CMD buffer recording CPU-side
+	bool* multithreadedRendering();
 	void renderFrame();
 	void shutdown();
 

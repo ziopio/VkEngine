@@ -36,7 +36,7 @@ void View3D::draw(int w_width, int w_height)
 	width_padding.x = (ImGui::GetWindowSize().x - frame_size.x) / 2;
 	ImVec2 newDrawingPos = { width_padding.x, oldDrawingPos.y - oldDrawingPos.x };
 	ImGui::SetCursorPos(newDrawingPos);
-	ImGui::Image((ImTextureID)VIEW_3D_TEXTURE_CODE, frame_size,
+	ImGui::Image((ImTextureID)OFFSCREEN_FRAMEBUFFER_TEXTURE_ID, frame_size,
 		ImVec2(0, 0), ImVec2(1, 1),
 		ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 

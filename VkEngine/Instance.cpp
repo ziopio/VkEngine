@@ -59,11 +59,6 @@ void Instance::destroyInstance()
 
 void Instance::createInstance()
 {
-
-	//Controllo a presenza dei validationLayers
-	if (validation && !checkValidationLayerSupport()) {
-		throw std::runtime_error("validation layers requested, but not available!");
-	}
 	// raccolgo info sulla mia applicazione
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -82,8 +77,11 @@ void Instance::createInstance()
 	std::vector<const char*> glfwExtensions = Instance::getRequiredExtensions();
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(glfwExtensions.size());
 	createInfo.ppEnabledExtensionNames = glfwExtensions.data();
-
-	if (validation) {
+	//Controllo a presenza dei validationLayers
+	if (validation ) {
+		if (!checkValidationLayerSupport()) {
+			throw std::runtime_error("validation layers requested, but not available!");
+		}
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
 	}

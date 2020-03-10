@@ -126,8 +126,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AssetsViewer.h" />
-    <ClInclude Include="Console.h" />
     <ClInclude Include="Editor.h" />
     <ClInclude Include="EditorComponent.h" />
     <ClInclude Include="EditorUI.h" />
@@ -138,8 +136,6 @@
     <ClInclude Include="View3D.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AssetsViewer.cpp" />
-    <ClCompile Include="Console.cpp" />
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
