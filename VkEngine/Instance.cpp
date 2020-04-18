@@ -41,6 +41,11 @@ VkInstance Instance::get()
 	return instance;
 }
 
+void Instance::enableValidation()
+{
+	validation = true;
+}
+
 bool Instance::hasValidation()
 {
 	return validation;
@@ -66,7 +71,7 @@ void Instance::createInstance()
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = EngineName.c_str();
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_1;
+	appInfo.apiVersion = VK_API_VERSION_1_2;
 
 	// creo la struttura di info per la creazione dell'istanza di Vulkan
 	VkInstanceCreateInfo createInfo = {};
@@ -137,7 +142,6 @@ std::vector<const char*> Instance::getRequiredExtensions() {
 	auto info = Instance::surfaceOwner->getInstanceExtInfo();
 	Instance::surfaceExtensions = info.instanceExtensions;
 	Instance::surfaceExtCount = info.instance_extension_count;
-	Instance::validation = info.enableValidation;
 	const char** surfaceRequiredExtensions = surfaceExtensions;
 	std::cout << surfaceExtCount << " required vulkan extensions for GLFW:" << std::endl;
 	std::vector<const char*> extensions(surfaceRequiredExtensions, surfaceRequiredExtensions + surfaceExtCount);

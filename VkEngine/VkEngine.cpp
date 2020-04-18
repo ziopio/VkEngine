@@ -5,28 +5,24 @@
 #include "ApiUtils.h"
 #include "Device.h"
 #include "PhysicalDevice.h"
-#include "MaterialManager.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
-#include "DescriptorSetsFactory.h"
 #include "Scene3D.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
 #include "Renderer.h"
+#include "Pipeline.h"
 
 
 namespace vkengine
 {
 	double unified_delta_time;
 	SurfaceOwner* surfaceOwner;
-	SwapChain* swapChain;
-	RenderPass* renderPass;
-	Renderer* renderer;
 	std::string active_scene;
 	std::unordered_map<std::string, Scene3D> scenes;
 
+	void buildBasicPipelines();
 	void recreateSwapChain();
-	void cleanupSwapChain();
 
 	void setSurfaceOwner(SurfaceOwner * surface_owner)
 	{
@@ -35,6 +31,9 @@ namespace vkengine
 
 	void init()
 	{
+#ifdef DEBUG
+		Instance::enableValidation();
+#endif
 		Instance::setAppName("Demo");
 		Instance::setEngineName("VkEngine");
 		Instance::setSurfaceOwner(surfaceOwner);
@@ -43,15 +42,13 @@ namespace vkengine
 		PhysicalDevice::get();
 		if (Instance::hasValidation()) Device::enableDeviceValidation();
 		Device::get();
-		swapChain = new SwapChain(surfaceOwner);
-		renderPass = new RenderPass(swapChain);
-		MaterialManager::init(swapChain, renderPass);
-		MeshManager::init(swapChain->getImageViews().size());
+		SwapChainMng::init(surfaceOwner);
+		RenderPassCatalog::init();
+		PipelineFactory::init();
+		buildBasicPipelines();
+		MeshManager::init();
 		TextureManager::init();
-		int width, height;
-		surfaceOwner->getFrameBufferSize(&width, &height);
-		renderer = new Renderer(renderPass, swapChain);
-		DescriptorSetsFactory::init(swapChain, renderer);
+		Renderer::init();
 	}
 
 	void resizeSwapchain()
@@ -61,8 +58,12 @@ namespace vkengine
 
 	void shutdown()
 	{
-		//Direction::cleanUp();
-		cleanupSwapChain();
+		vkDeviceWaitIdle(Device::get());
+		PipelineFactory::cleanUP();
+		DescriptorSetsFactory::cleanUp();
+		Renderer::cleanUp();
+		RenderPassCatalog::cleanUP();
+		SwapChainMng::cleanUP();
 		TextureManager::cleanUp();
 		MeshManager::cleanUp();
 		Device::destroy();
@@ -81,14 +82,12 @@ namespace vkengine
 
 	void loadTexture(std::string id, std::string texture_file)
 	{
-		DescriptorSetsFactory::cleanUp();
 		TextureManager::addTexture(id, texture_file);
-		DescriptorSetsFactory::init(swapChain, renderer);
 	}
 
 	std::vector<std::string> listLoadedTextures()
 	{
-		return TextureManager::listLoadedTextures();
+		return TextureManager::listSceneTextures();
 	}
 
 	void createScene(std::string scene_id, std::string name)
@@ -109,18 +108,21 @@ namespace vkengine
 	void loadFontAtlas(unsigned char * pixels, int * width, int * height)
 	{
 		TextureManager::loadFontAtlasTexture(pixels, width, height);
+		PipelineFactory::updatePipelineResources(IMGUI_PIPELINE_LAYOUT);
 	}
 
 	void updateImGuiData(UiDrawData draw_data)
 	{
 		MeshManager::updateImGuiBuffers(draw_data,
-			renderer->getNextFrameBufferIndex());
+			Renderer::getNextFrameBufferIndex());
 	}
 
 	void loadScene(std::string scene_id)
 	{
 		active_scene = scene_id;
-		renderer->prepareScene(&scenes.at(active_scene));
+		Renderer::prepareScene(&scenes.at(active_scene));
+		// Just in case resources like Textures were added / updated
+		PipelineFactory::updatePipelineResources(STD_PIPELINE_LAYOUT);
 	}
 
 	bool* multithreadedRendering()
@@ -130,7 +132,7 @@ namespace vkengine
 
 	void renderFrame()
 	{
-		if (!renderer->renderScene()) {
+		if (!Renderer::renderScene()) {
 			recreateSwapChain();
 		}
 	}
@@ -143,29 +145,44 @@ namespace vkengine
 			surfaceOwner->waitEvents();// window is minimized so application stops
 			surfaceOwner->getFrameBufferSize(&width, &height);
 		}
-		cleanupSwapChain();
+		vkDeviceWaitIdle(Device::get());
+		Renderer::cleanUp();
+		RenderPassCatalog::cleanUP();
+		SwapChainMng::cleanUP();
 
-		for (auto s : scenes) {
+		for (auto & s : scenes) {
 			scenes.at(s.first).getCamera(scenes.at(s.first).current_camera)->updateAspectRatio(width, height);
 		}
 
-		swapChain = new SwapChain(surfaceOwner);
-		renderPass = new RenderPass(swapChain);
-		MaterialManager::init(swapChain, renderPass);
-		renderer = new Renderer(renderPass, swapChain);
-		renderer->prepareScene(&scenes.at(active_scene));
-		DescriptorSetsFactory::init(swapChain, renderer);
+		SwapChainMng::init(surfaceOwner);
+		RenderPassCatalog::init();
+		PipelineFactory::updatePipelinesViewPorts();
+		Renderer::init();
+		Renderer::prepareScene(&scenes.at(active_scene));
+
+		// IMGUI pipeline layout uses an offscreen attachment 
+		// which is recreated by the Renderer to match the swapchain extent
+		// For this reason i have to update his descriptors
+		PipelineFactory::updatePipelineResources(IMGUI_PIPELINE_LAYOUT);
 	}
 
-
-	void cleanupSwapChain()
+	void buildBasicPipelines() 
 	{
-		vkDeviceWaitIdle(Device::get());
-		DescriptorSetsFactory::cleanUp();
-		delete renderer;
-		MaterialManager::destroyAllMaterials();
-		delete renderPass;
-		delete swapChain;
-	}
+		// Standard 3D rendering to offscreen target
+		PipelineFactory::newPipeline(STD_3D_PIPELINE_ID, &RenderPassCatalog::offscreenRP,
+			0, PipelineLayoutType::STD_PIPELINE_LAYOUT);
+		PipelineFactory::setShaders("VkEngine/Shaders/phong_multi_light/vert.spv", "VkEngine/Shaders/phong_multi_light/frag.spv");
 
+		// Imgui rendering to final presentation on swapchain
+		PipelineFactory::newPipeline(IMGUI_PIPELINE_ID, &RenderPassCatalog::presentationRP,
+			0, PipelineLayoutType::IMGUI_PIPELINE_LAYOUT);
+		PipelineFactory::setVertexType(VertexTypes::VERTEX_2D);
+		PipelineFactory::setShaders("VkEngine/Shaders/imgui/vert.spv", "VkEngine/Shaders/imgui/frag.spv");
+		PipelineFactory::setCulling(false);
+		PipelineFactory::setDepthTest(false);
+		PipelineFactory::setDynamicViewPortAndScissor();
+
+		// Building
+		PipelineFactory::createPipelines();
+	}
 }

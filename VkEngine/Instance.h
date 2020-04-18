@@ -10,6 +10,7 @@ public:
 	static void setEngineName(std::string engineName);
 	static void setSurfaceOwner( SurfaceOwner* surfaceOwner);
 	static VkInstance get();
+	static void enableValidation();
 	static bool hasValidation();
 	static void destroyInstance();
 private:
@@ -23,7 +24,7 @@ private:
 	static SurfaceOwner* surfaceOwner;
 	static VkInstance instance;
 	static VkDebugUtilsMessengerEXT messangerExtension;
-	static bool validation;
 	static bool ready;
+	static bool validation;
 };
 

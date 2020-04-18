@@ -1,28 +1,24 @@
 #pragma once
-#include "Shader.h"
-#include "RenderPass.h"
+#include <string>
+#include <unordered_map>
 
-using namespace vkengine;
 
-class Material
-{
-public:
-	Material(MaterialType material, SwapChain* swapchain, RenderPass* renderer);
-	VkPipeline getPipeline();
-	VkPipelineLayout getPipelineLayout();
-	static VkDescriptorSetLayout getMaterialSpecificDescriptorSetLayout();
+typedef struct {
+	// TODO add textures and stuff
+	//std::string pipeline_id;
+	std::string texture_id;
+} Material;
 
-	~Material();
-private:
-	void createMaterialSpecificDescriptorSetLayouts();
-	void buildPipeline();
-	SwapChain* swapChain;
-	RenderPass* renderPass;
-	MaterialType type;
-	Shader* vertexShader;
-	Shader* fragmentShader;
-	VkPipeline pipeline;
-	VkPipelineLayout pipelineLayout;
-	VkDescriptorSetLayout materialSpecificDescriptorSetLayout;
-};
+//
+//class MaterialManager
+//{
+//public:
+//	static std::unordered_map<std::string, Material> materials;
+//	static void init();
+//	static Material* getMaterial(std::string id);
+//	static void destroyAllMaterials();
+//private:
+//	static void loadMaterials();
+//	static bool ready;
+//};
 

@@ -32,7 +32,9 @@ VkShaderModule Shader::get()
 
 Shader::~Shader()
 {
-	vkDestroyShaderModule(Device::get(), this->module, nullptr);
+	if (this->module != VK_NULL_HANDLE) {
+		vkDestroyShaderModule(Device::get(), this->module, nullptr);
+	}
 }
 
 void Shader::createShaderModule(const std::vector<char>& code)

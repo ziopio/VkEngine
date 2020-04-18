@@ -25,58 +25,55 @@ struct ThreadData {
 class Renderer
 {
 public:
-	Renderer(RenderPass* renderPass,SwapChain* swapChain);
-	unsigned getNextFrameBufferIndex();
-	FrameAttachment getOffScreenFrameAttachment(unsigned frameIndex);
-	void prepareScene(Scene3D* scene);
+	static void init();
+	static unsigned getNextFrameBufferIndex();
+	static FrameAttachment getOffScreenFrameAttachment(unsigned frameIndex);
+	static void prepareScene(Scene3D* scene);
 	/* 
 	 * true means OK, false means SWAPCHAIN CHANGED!!!
 	*/
-	bool renderScene();
-	~Renderer();
+	static bool renderScene();
+	static void cleanUp();
 	static bool multithreading;
 private:
-	void createFramebuffers();
-	void createOffScreenAttachments();
-	void prepareThreadedRendering();
-	void updateUniforms(uint32_t frameBufferIndex);
-	void updateOffScreenCommandBuffer(uint32_t frameBufferIndex);
-	void updateFinalPassCommandBuffer(uint32_t frameBufferIndex);
+	static void createFramebuffers();
+	static void createOffScreenAttachments();
+	static void prepareThreadedRendering();
+	static void updateUniforms(uint32_t frameBufferIndex);
+	static void updateOffScreenCommandBuffer(uint32_t frameBufferIndex);
+	static void updateFinalPassCommandBuffer(uint32_t frameBufferIndex);
 
-	void recordImGuiDrawCmds(uint32_t frameBufferIndex);
-	void findObjXthreadDivision(unsigned obj_num);
-	void createSyncObjects();
+	static void recordImGuiDrawCmds(uint32_t frameBufferIndex);
+	static void findObjXthreadDivision(unsigned obj_num);
+	static void createSyncObjects();
 
-	FrameAttachment final_depth_buffer;
-	FrameAttachment offScreen_depth_buffer;
-	std::vector<FrameAttachment> offScreenAttachments;
+	static FrameAttachment final_depth_buffer;
+	static FrameAttachment offScreen_depth_buffer;
+	static std::vector<FrameAttachment> offScreenAttachments;
 
 
-	std::vector<VkFramebuffer> swapChainFramebuffers;
-	std::vector<VkFramebuffer> offScreenFramebuffers;
+	static std::vector<VkFramebuffer> swapChainFramebuffers;
+	static std::vector<VkFramebuffer> offScreenFramebuffers;
 
-	RenderPass* renderPass;
-	SwapChain* swapChain;
+	static std::vector<VkSemaphore> imageAvailableSemaphores;
+	static std::vector<VkSemaphore> offScreenRenderReadySemaphores;
+	static std::vector<VkSemaphore> renderFinishedSemaphores;
+	static std::vector<VkFence> inFlightFences;
 
-	std::vector<VkSemaphore> imageAvailableSemaphores;
-	std::vector<VkSemaphore> offScreenRenderReadySemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
-
-	VkCommandPool primaryCommandPool;
-	std::vector<VkCommandBuffer> offScreenCmdBuffers;
-	std::vector<VkCommandBuffer> primaryCmdBuffers;
+	static VkCommandPool primaryCommandPool;
+	static std::vector<VkCommandBuffer> offScreenCmdBuffers;
+	static std::vector<VkCommandBuffer> primaryCmdBuffers;
 	//VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
 	//std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
 
-	Scene3D* scene;
+	static Scene3D* scene;
 
-	vks::ThreadPool thread_pool;
-	std::vector<ThreadData> per_thread_resources;
+	static vks::ThreadPool thread_pool;
+	static std::vector<ThreadData> per_thread_resources;
 
-	uint32_t numThreads;
-	uint32_t objXthread;
-	uint32_t currentFrame;
-	uint32_t last_imageIndex;
+	static uint32_t numThreads;
+	static uint32_t objXthread;
+	static uint32_t currentFrame;
+	static uint32_t last_imageIndex;
 };
 

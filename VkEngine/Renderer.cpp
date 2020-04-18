@@ -3,8 +3,8 @@
 #include "PhysicalDevice.h"
 #include "Device.h"
 #include "PhysicalDevice.h"
-#include "MaterialManager.h"
-#include "DescriptorSetsFactory.h"
+#include "Pipeline.h"
+#include "DescriptorSets.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
 #include "LightSource.h"
@@ -13,41 +13,68 @@
 // function to feed a thread job
 void threadRenderCode(Object3D* obj, Camera* cam, 
 	ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex, 
-	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSet);
+	VkCommandBufferInheritanceInfo inheritanceInfo, std::vector<VkDescriptorSet> descriptorSets);
 
 bool Renderer::multithreading;
+FrameAttachment Renderer::final_depth_buffer;
+FrameAttachment Renderer::offScreen_depth_buffer;
+std::vector<FrameAttachment> Renderer::offScreenAttachments;
 
-Renderer::Renderer(RenderPass* renderPass, SwapChain* swapChain)
+
+std::vector<VkFramebuffer> Renderer::swapChainFramebuffers;
+std::vector<VkFramebuffer> Renderer::offScreenFramebuffers;
+
+std::vector<VkSemaphore> Renderer::imageAvailableSemaphores;
+std::vector<VkSemaphore> Renderer::offScreenRenderReadySemaphores;
+std::vector<VkSemaphore> Renderer::renderFinishedSemaphores;
+std::vector<VkFence> Renderer::inFlightFences;
+
+VkCommandPool Renderer::primaryCommandPool;
+std::vector<VkCommandBuffer> Renderer::offScreenCmdBuffers;
+std::vector<VkCommandBuffer> Renderer::primaryCmdBuffers;
+//VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
+//std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
+
+Scene3D* Renderer::scene;
+
+vks::ThreadPool Renderer::thread_pool;
+std::vector<ThreadData> Renderer::per_thread_resources;
+
+uint32_t Renderer::numThreads;
+uint32_t Renderer::objXthread;
+uint32_t Renderer::currentFrame;
+uint32_t Renderer::last_imageIndex;
+
+void Renderer::init()
 {
-	this->swapChain = swapChain;
-	this->renderPass = renderPass;
 	createOffScreenAttachments();
 	createFramebuffers();
 	createSyncObjects();
-	//this->findObjXthreadDivision();
-	//prepareThreadedRendering();
 }
 
 unsigned Renderer::getNextFrameBufferIndex()
 {
-	return this->last_imageIndex >= swapChain->getImageViews().size() - 1 ?
-		0 : this->last_imageIndex + 1;
+	return Renderer::last_imageIndex >= SwapChainMng::get()->getImageCount() - 1 ?
+		0 : Renderer::last_imageIndex + 1;
 }
 
 FrameAttachment Renderer::getOffScreenFrameAttachment(unsigned frameIndex)
 {
-	return this->offScreenAttachments[frameIndex];
+	return Renderer::offScreenAttachments[frameIndex];
 }
 
 void Renderer::prepareScene(Scene3D* scene)
 {
 	vkQueueWaitIdle(Device::getGraphicQueue());
-	this->scene = scene;
-	for (auto threadResource : this->per_thread_resources) {
-		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
+	if (Renderer::scene != nullptr) {
+		for (auto threadResource : Renderer::per_thread_resources) {
+			vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
+		}
+		Renderer::per_thread_resources.clear();
+		vkDestroyCommandPool(Device::get(), Renderer::primaryCommandPool, nullptr);
 	}
-	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
-	this->findObjXthreadDivision( this->scene->get_object_num());
+	Renderer::scene = scene;
+	Renderer::findObjXthreadDivision( Renderer::scene->get_object_num());
 	prepareThreadedRendering();
 }
 
@@ -59,15 +86,15 @@ bool Renderer::renderScene()
 
 	// Prendo l'indice dell'immagine su cui disegnare dalla swapchain
 	uint32_t imageIndex;
-	if (!this->swapChain->acquireNextImage(imageAvailableSemaphores[currentFrame], &imageIndex)) {
+	if (!SwapChainMng::get()->acquireNextImage(imageAvailableSemaphores[currentFrame], &imageIndex)) {
 		return false;
 	}
-	this->last_imageIndex = imageIndex;
+	Renderer::last_imageIndex = imageIndex;
 	// Update the uniformBuffer
-	this->updateUniforms(imageIndex);
+	Renderer::updateUniforms(imageIndex);
 	//Aggiorno tutti i commandBuffers
-	this->updateOffScreenCommandBuffer(imageIndex); 
-	this->updateFinalPassCommandBuffer(imageIndex);
+	Renderer::updateOffScreenCommandBuffer(imageIndex); 
+	Renderer::updateFinalPassCommandBuffer(imageIndex);
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -97,7 +124,7 @@ bool Renderer::renderScene()
 	}
 
 	// Presentazione del frame
-	if (!swapChain->presentImage(imageIndex, &renderFinishedSemaphores[currentFrame])) {
+	if (!SwapChainMng::get()->presentImage(imageIndex, &renderFinishedSemaphores[currentFrame])) {
 		return false;
 	}
 	//vkQueueWaitIdle(Device::getPresentQueue()); //not optimal time usage!!!!
@@ -106,16 +133,16 @@ bool Renderer::renderScene()
 	return true;
 }
 
-Renderer::~Renderer()
+void Renderer::cleanUp()
 {
-
-	for (auto threadResource : this->per_thread_resources) {
+	Renderer::scene = nullptr;
+	for (auto threadResource : Renderer::per_thread_resources) {
 		vkDestroyCommandPool(Device::get(), threadResource.commandPool, nullptr);
 	}
-	this->per_thread_resources.clear();
+	Renderer::per_thread_resources.clear();
 
-	//vkDestroyCommandPool(Device::get(), this->mainThreadSecondaryCmdPool, nullptr);
-	vkDestroyCommandPool(Device::get(), this->primaryCommandPool, nullptr);
+	//vkDestroyCommandPool(Device::get(), Renderer::mainThreadSecondaryCmdPool, nullptr);
+	vkDestroyCommandPool(Device::get(), Renderer::primaryCommandPool, nullptr);
 	primaryCmdBuffers.clear();
 
 	vkDestroyImageView(Device::get(), final_depth_buffer.imageView, nullptr);
@@ -126,7 +153,7 @@ Renderer::~Renderer()
 		vkDestroySampler(Device::get(), image.Sampler, nullptr);
 		vkDestroyImageView(Device::get(), image.imageView, nullptr);
 		vkDestroyImage(Device::get(), image.image, nullptr);
-		vkFreeMemory(Device::get(), image.Memory, nullptr);	
+		vkFreeMemory(Device::get(), image.Memory, nullptr);
 	}
 
 	for (auto framebuffer : swapChainFramebuffers) {
@@ -148,23 +175,23 @@ Renderer::~Renderer()
 
 void Renderer::createFramebuffers()
 {
-	swapChainFramebuffers.resize(swapChain->getImageViews().size());
-	offScreenFramebuffers.resize(swapChain->getImageViews().size());
+	swapChainFramebuffers.resize(SwapChainMng::get()->getImageCount());
+	offScreenFramebuffers.resize(SwapChainMng::get()->getImageCount());
 	// Un framebuffer per ogni immagine della swapchain
-	for (size_t i = 0; i < swapChain->getImageViews().size(); i++) {	
+	for (size_t i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
 
 		std::array<VkImageView, 2> attachments = {
-			swapChain->getImageViews()[i],
+			SwapChainMng::get()->getImageViews()[i],
 			final_depth_buffer.imageView
 		};
 
 		VkFramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = this->renderPass->get_SimpleRenderPass();
+		framebufferInfo.renderPass = RenderPassCatalog::presentationRP;
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = swapChain->getExtent().width;
-		framebufferInfo.height = swapChain->getExtent().height;
+		framebufferInfo.width = SwapChainMng::get()->getExtent().width;
+		framebufferInfo.height = SwapChainMng::get()->getExtent().height;
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer(Device::get(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
@@ -175,7 +202,7 @@ void Renderer::createFramebuffers()
 			offScreenAttachments[i].imageView,
 			final_depth_buffer.imageView
 		};
-		framebufferInfo.renderPass = this->renderPass->get_OffScreenRenderPass();
+		framebufferInfo.renderPass = RenderPassCatalog::offscreenRP;
 
 		if (vkCreateFramebuffer(Device::get(), &framebufferInfo, nullptr, &offScreenFramebuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create framebuffer!");
@@ -187,7 +214,7 @@ void Renderer::createOffScreenAttachments() {
 	// Depth Attachment
 	VkFormat depthFormat = findDepthFormat(PhysicalDevice::get());
 	createImage(PhysicalDevice::get(), Device::get(),
-		swapChain->getExtent().width, swapChain->getExtent().height,
+		SwapChainMng::get()->getExtent().width, SwapChainMng::get()->getExtent().height,
 		depthFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		final_depth_buffer.image, final_depth_buffer.Memory);
@@ -199,11 +226,11 @@ void Renderer::createOffScreenAttachments() {
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 	// Offsreen Attachments
-	this->offScreenAttachments.resize(swapChain->getImageViews().size());
-	for (int i = 0; i < swapChain->getImageViews().size();i++) {
+	Renderer::offScreenAttachments.resize(SwapChainMng::get()->getImageCount());
+	for (int i = 0; i < SwapChainMng::get()->getImageCount();i++) {
 		VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 		createImage(PhysicalDevice::get(), Device::get(),
-			swapChain->getExtent().width, swapChain->getExtent().height,
+			SwapChainMng::get()->getExtent().width, SwapChainMng::get()->getExtent().height,
 			format, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_SAMPLED_BIT |
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -245,14 +272,14 @@ void Renderer::prepareThreadedRendering()
 {
 	{
 		//Creazione della pool per i buffer di comando principali
-		Device::createCommandPool(PhysicalDevice::getQueueFamilies().graphicsFamily, &this->primaryCommandPool);
+		Device::createCommandPool(PhysicalDevice::getQueueFamilies().graphicsFamily, &Renderer::primaryCommandPool);
 		//allocazione buffer principali 1 per ogni frame
 		primaryCmdBuffers.resize(swapChainFramebuffers.size());	
 		offScreenCmdBuffers.resize(swapChainFramebuffers.size());
 
 		VkCommandBufferAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = this->primaryCommandPool; // using the standard Pool
+		allocInfo.commandPool = Renderer::primaryCommandPool; // using the standard Pool
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = 1;
 
@@ -270,10 +297,10 @@ void Renderer::prepareThreadedRendering()
 		}
 	}
 	//allocazione pool e buffer secondari per ogni thread
-	this->per_thread_resources.resize(numThreads);
+	Renderer::per_thread_resources.resize(numThreads);
 
 	// for each thread
-	for (uint32_t t = 0; t < this->numThreads; t++) {
+	for (uint32_t t = 0; t < Renderer::numThreads; t++) {
 		// 1 command pool
 		Device::createCommandPool(PhysicalDevice::getQueueFamilies().graphicsFamily,
 			&per_thread_resources[t].commandPool);
@@ -304,13 +331,13 @@ void Renderer::prepareThreadedRendering()
 void Renderer::updateUniforms(uint32_t frameBufferIndex)
 {
 	auto lights = scene->listLights();
-	uniformBlockDefinition uniforms = {};
-	uniforms.V_matrix = this->scene->getCamera(this->scene->current_camera)->setCamera();
-	uniforms.P_matrix = this->scene->getCamera(this->scene->current_camera)->getProjection();
+	UniformBlock uniforms = {};
+	uniforms.V_matrix = Renderer::scene->getCamera(Renderer::scene->current_camera)->setCamera();
+	uniforms.P_matrix = Renderer::scene->getCamera(Renderer::scene->current_camera)->getProjection();
 	uniforms.P_matrix[1][1] *= -1; // invert openGL Y sign
 	uniforms.light_count = lights.size();
 	for (int i = 0; i < uniforms.light_count; i++) {
-		uniforms.lights[i] = this->scene->getLight(lights[i])->getData();
+		uniforms.lights[i] = Renderer::scene->getLight(lights[i])->getData();
 	}
 	DescriptorSetsFactory::updateUniformBuffer(uniforms, frameBufferIndex);
 }
@@ -322,28 +349,31 @@ void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
 
 	VkCommandBufferInheritanceInfo inheritanceInfo = {};
 	inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-	inheritanceInfo.renderPass = renderPass->get_OffScreenRenderPass();
+	inheritanceInfo.renderPass = RenderPassCatalog::offscreenRP;
 	inheritanceInfo.framebuffer = offScreenFramebuffers[frameBufferIndex];
 	// work is divided between the available threads
-	std::array<VkDescriptorSet,2> descriptor_sets = 
-	{ 
-		DescriptorSetsFactory::getStaticGlobalDescriptorSet(),
-		DescriptorSetsFactory::getFrameDescriptorSet(frameBufferIndex) 
-	};
 
-	auto obj_list = this->scene->listObjects();
+	std::vector<VkDescriptorSet> descrSets;
+	for (auto& set : PipelineFactory::pipeline_layouts[STD_PIPELINE_LAYOUT].descriptors.static_sets) {
+		descrSets.push_back(set.set);
+	}
+	for (auto& setlist : PipelineFactory::pipeline_layouts[STD_PIPELINE_LAYOUT].descriptors.frame_dependent_sets) {
+		descrSets.push_back(setlist[frameBufferIndex].set);
+	}
+
+	auto obj_list = Renderer::scene->listObjects();
 	for (uint32_t t = 0, objIndex = 0; t < numThreads; t++)
 	{
-		for (uint32_t i = 0; i < objXthread && objIndex < this->scene->get_object_num(); i++, objIndex++)
+		for (uint32_t i = 0; i < objXthread && objIndex < Renderer::scene->get_object_num(); i++, objIndex++)
 		{
 			if (multithreading) {
 				thread_pool.threads[t]->addJob([=] { threadRenderCode(scene->getObject(obj_list[objIndex]), 
-					this->scene->getCamera(this->scene->current_camera), &per_thread_resources[t],	
-					frameBufferIndex, i, inheritanceInfo, descriptor_sets); });
+					Renderer::scene->getCamera(Renderer::scene->current_camera), &per_thread_resources[t],	
+					frameBufferIndex, i, inheritanceInfo, descrSets); });
 			}
 			else {
-				threadRenderCode(scene->getObject(obj_list[objIndex]), this->scene->getCamera(this->scene->current_camera), 
-					&per_thread_resources[t], frameBufferIndex, i, inheritanceInfo, descriptor_sets);
+				threadRenderCode(scene->getObject(obj_list[objIndex]), Renderer::scene->getCamera(Renderer::scene->current_camera), 
+					&per_thread_resources[t], frameBufferIndex, i, inheritanceInfo, descrSets);
 			}
 		}
 	}
@@ -361,10 +391,10 @@ void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
 
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = renderPass->get_OffScreenRenderPass();
+	renderPassInfo.renderPass = RenderPassCatalog::offscreenRP;
 	renderPassInfo.framebuffer = offScreenFramebuffers[frameBufferIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = swapChain->getExtent();
+	renderPassInfo.renderArea.extent = SwapChainMng::get()->getExtent();
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 	// begin render pass
@@ -374,7 +404,7 @@ void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
 	// i draw only the command buffers related to visible objects
 	for (uint32_t t = 0, objIndex = 0; t < numThreads; t++)
 	{
-		for (uint32_t i = 0;  i < objXthread && objIndex < this->scene->get_object_num(); i++, objIndex++)
+		for (uint32_t i = 0;  i < objXthread && objIndex < Renderer::scene->get_object_num(); i++, objIndex++)
 		{
 			if (scene->getObject(obj_list[objIndex])->visible)
 			{
@@ -406,10 +436,10 @@ void Renderer::updateFinalPassCommandBuffer(uint32_t frameBufferIndex)
 
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = renderPass->get_SimpleRenderPass();
+	renderPassInfo.renderPass = RenderPassCatalog::presentationRP;
 	renderPassInfo.framebuffer = swapChainFramebuffers[frameBufferIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = swapChain->getExtent();
+	renderPassInfo.renderArea.extent = SwapChainMng::get()->getExtent();
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 	// begin render pass
@@ -418,7 +448,7 @@ void Renderer::updateFinalPassCommandBuffer(uint32_t frameBufferIndex)
 	// ImGui rendering
 	if (MeshManager::getImGuiMesh(frameBufferIndex)->getIdxCount() > 0)
 	{
-		this->recordImGuiDrawCmds(frameBufferIndex);
+		Renderer::recordImGuiDrawCmds(frameBufferIndex);
 	}
 
 	vkCmdEndRenderPass(primaryCmdBuffers[frameBufferIndex]);
@@ -429,14 +459,16 @@ void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex)
 {
 	vkCmdBindPipeline(primaryCmdBuffers[frameBufferIndex],
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		MaterialManager::getMaterial(MaterialType::UI)->getPipeline());
+		PipelineFactory::pipelines[IMGUI_PIPELINE_ID].pipeline);
 
-	auto pipelineLayout =
-		MaterialManager::getMaterial(MaterialType::UI)->getPipelineLayout();
-	std::array<VkDescriptorSet, 2> descrSets = {
-		DescriptorSetsFactory::getImGuiDescriptorSet(),
-		DescriptorSetsFactory::getOffScreenBuffDescSet(frameBufferIndex)
-	};
+	auto pipelineLayout = PipelineFactory::pipeline_layouts[IMGUI_PIPELINE_LAYOUT].layout;
+	std::vector<VkDescriptorSet> descrSets;
+	for (auto& set : PipelineFactory::pipeline_layouts[IMGUI_PIPELINE_LAYOUT].descriptors.static_sets) {
+		descrSets.push_back(set.set);
+	}
+	for (auto& setlist : PipelineFactory::pipeline_layouts[IMGUI_PIPELINE_LAYOUT].descriptors.frame_dependent_sets) {
+		descrSets.push_back(setlist[frameBufferIndex].set);
+	}
 	vkCmdBindDescriptorSets(primaryCmdBuffers[frameBufferIndex],
 		VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descrSets.size(),
 		descrSets.data(), 0, nullptr);
@@ -508,7 +540,7 @@ void Renderer::findObjXthreadDivision(unsigned obj_num)
 		objXthread = obj_num;
 	}
 	else {
-		this->objXthread = obj_num / numThreads;
+		Renderer::objXthread = obj_num / numThreads;
 	}
 	//Imposto il numero di thread che la libreria deve utilizzare
 	thread_pool.setThreadCount(numThreads);
@@ -521,7 +553,7 @@ void Renderer::findObjXthreadDivision(unsigned obj_num)
 	This function assembles a command buffer for 1 object running on 1 thread
 */
 void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex,
-	VkCommandBufferInheritanceInfo inheritanceInfo, std::array<VkDescriptorSet,2> descriptorSets)
+	VkCommandBufferInheritanceInfo inheritanceInfo, std::vector<VkDescriptorSet> descriptorSets)
 {
 	obj->visible = cam->checkFrustum(obj->getObjTransform().position, obj->getBoundingRadius());
 
@@ -537,7 +569,7 @@ void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_
 	}
 	//RenderPass has already been started by the main thread so here i just have to bind the needed data and draw.
 
-	VkPipeline pipiline = MaterialManager::getMaterial(obj->getMatType())->getPipeline();
+	VkPipeline pipiline = PipelineFactory::pipelines[STD_3D_PIPELINE_ID].pipeline;
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipiline);
 
 	VkBuffer vertexBuffers[] = { MeshManager::getMesh(obj->getMeshId())->getVkVertexBuffer() };
@@ -546,17 +578,16 @@ void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_
 
 	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj->getMeshId())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-	VkPipelineLayout pipelineLayout = MaterialManager::getMaterial(obj->getMatType())->getPipelineLayout();
+	VkPipelineLayout pipelineLayout = PipelineFactory::pipeline_layouts[STD_PIPELINE_LAYOUT].layout;
 
-	VkPipelineLayout playout = MaterialManager::getMaterial(obj->getMatType())->getPipelineLayout();
 	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		playout,
-		0,descriptorSets.size(), descriptorSets.data(),
+		pipelineLayout,
+		0, descriptorSets.size(), descriptorSets.data(),
 		0, nullptr);
 
-	PushConstantBlock pushConsts = {};
+	MainPushConstantBlock pushConsts = {};
 	pushConsts.model_transform = obj->getMatrix();
-	pushConsts.textureIndex = TextureManager::getTextureIndex(obj->getTextureId());
+	pushConsts.textureIndex = TextureManager::getSceneTextureIndex(obj->getTextureId());
 	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConsts), &pushConsts);
 
 

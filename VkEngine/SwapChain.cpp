@@ -5,17 +5,20 @@
 #include "ApiUtils.h"
 #include "VkEngine.h"
 
+std::vector<SwapChainMng::SwapChain*> SwapChainMng::swapchains;
+unsigned SwapChainMng::current_swapchain;
 
-SwapChain::SwapChain(vkengine::SurfaceOwner * surface_owner)
+SwapChainMng::SwapChain::SwapChain(vkengine::SurfaceOwner * surface_owner)
 {
 	this->surface_owner = surface_owner;
 	this->createSwapChain();
 	this->createImageViews();
+	this->image_count = this->getImageViews().size();
 }
 
-bool SwapChain::acquireNextImage(VkSemaphore semaphore, uint32_t* imageIndex)
+bool SwapChainMng::SwapChain::acquireNextImage(VkSemaphore semaphore, uint32_t* imageIndex)
 {
-	VkResult result = vkAcquireNextImageKHR(Device::get(), swapChain, std::numeric_limits<uint64_t>::max(),semaphore, VK_NULL_HANDLE, imageIndex);
+	VkResult result = vkAcquireNextImageKHR(Device::get(), this->swapChain, std::numeric_limits<uint64_t>::max(), semaphore, VK_NULL_HANDLE, imageIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return false;
 	}
@@ -25,7 +28,7 @@ bool SwapChain::acquireNextImage(VkSemaphore semaphore, uint32_t* imageIndex)
 	return true;
 }
 
-bool SwapChain::presentImage(uint32_t imageIndex, VkSemaphore* semaphores)
+bool SwapChainMng::SwapChain::presentImage(uint32_t imageIndex, VkSemaphore* semaphores)
 {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -48,27 +51,8 @@ bool SwapChain::presentImage(uint32_t imageIndex, VkSemaphore* semaphores)
 	return true;
 }
 
-VkSwapchainKHR SwapChain::get()
-{
-	return this->swapChain;
-}
 
-std::vector<VkImageView> SwapChain::getImageViews()
-{
-	return this->swapImageViews;
-}
-
-VkFormat SwapChain::getFormat()
-{
-	return this->swapChainImageFormat;
-}
-
-VkExtent2D SwapChain::getExtent()
-{
-	return  this->swapChainExtent;
-}
-
-SwapChain::~SwapChain()
+SwapChainMng::SwapChain::~SwapChain()
 {
 	for (auto imageView : swapImageViews) {
 		vkDestroyImageView(Device::get(), imageView, nullptr);
@@ -78,7 +62,7 @@ SwapChain::~SwapChain()
 	swapImageViews.clear();
 }
 
-void SwapChain::createSwapChain()
+void  SwapChainMng::SwapChain::createSwapChain()
 {
 	SwapChainSupportDetails swapChainSupport = PhysicalDevice::getSwapChainSupport();
 
@@ -132,7 +116,7 @@ void SwapChain::createSwapChain()
 	this->swapChainExtent = extent;
 }
 
-VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+VkSurfaceFormatKHR  SwapChainMng::SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
 	//scelta di default se la superficie non ha preferenze
 	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED) {
 		return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
@@ -147,7 +131,7 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 	return availableFormats[0];
 }
 
-VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes) {
+VkPresentModeKHR  SwapChainMng::SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes) {
 	VkPresentModeKHR defaultMode = VK_PRESENT_MODE_FIFO_KHR;
 	// Se disponibile seleziono la modalità a triplo buffering che è la migliore
 	for (const auto& availablePresentMode : availablePresentModes) {
@@ -162,7 +146,7 @@ VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentMod
 	return defaultMode;
 }
 
-VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D SwapChainMng::SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
 	// Alcuni windowManagers consentono di impostare qualsiasi risoluzione per una finestra
 	// ciò accade se i "currentExtent sono a max uint32_t"
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
@@ -185,10 +169,29 @@ VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilit
 }
 
 
-void SwapChain::createImageViews() {
+void SwapChainMng::SwapChain::createImageViews() {
 	swapImageViews.resize(swapImages.size());
 
 	for (uint32_t i = 0; i < swapImages.size(); i++) {
 		swapImageViews[i] = createImageView(Device::get(), swapImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
+}
+
+void SwapChainMng::init(vkengine::SurfaceOwner * surface_owner)
+{
+	SwapChainMng::swapchains.push_back(new SwapChain(surface_owner));
+	current_swapchain = 0;
+}
+
+SwapChainMng::SwapChain * SwapChainMng::get()
+{
+	return SwapChainMng::swapchains[current_swapchain];
+}
+
+void SwapChainMng::cleanUP()
+{
+	for (auto chain : swapchains) {
+		delete chain;
+	}
+	SwapChainMng::swapchains.clear();
 }

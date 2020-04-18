@@ -1,16 +1,17 @@
 #include "stdafx.h"
 #include "MeshManager.h"
 #include "VkEngine.h"
+#include "SwapChain.h"
 
 using namespace vkengine;
 
 std::unordered_map<std::string, Mesh3D*> MeshManager::scene_meshes;
 std::vector<GuiMesh*> MeshManager::per_frame_imguis;
 
-void MeshManager::init(unsigned swapchain_image_count)
+void MeshManager::init()
 {
-	MeshManager::per_frame_imguis.resize(swapchain_image_count);
-	for (int i = 0; i < swapchain_image_count; i++) {
+	MeshManager::per_frame_imguis.resize(SwapChainMng::get()->getImageCount());
+	for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
 		MeshManager::per_frame_imguis[i] = new GuiMesh();
 	}
 }

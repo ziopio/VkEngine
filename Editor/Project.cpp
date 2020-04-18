@@ -79,7 +79,7 @@ void Project::load()
 			float position[] = { trans["pos"][0], trans["pos"][1], trans["pos"][2] };
 			float rotation_vector[] = { trans["rot-axis"][0], trans["rot-axis"][1], trans["rot-axis"][2] };
 			float scale_vector[] = { trans["scale"][0], trans["scale"][1], trans["scale"][2] };
-			t.angularSpeed = trans["rotation"]; // just for testing
+			t.angle = trans["rotation"]; // just for testing
 			t.position = glm::make_vec3(position);
 			t.rotation_vector = glm::make_vec3(rotation_vector);
 			t.scale_vector = glm::make_vec3(scale_vector);
@@ -88,8 +88,7 @@ void Project::load()
 			obj_info.id = obj["id"];
 			obj_info.name = obj["name"];
 			obj_info.mesh_id = obj["mesh"];
-			obj_info.texture_id = obj["texture"];
-			obj_info.material_id = vkengine::MaterialType::PHONG;
+			obj_info.material.texture_id = obj["texture"];
 			obj_info.transformation = t;
 			s->addObject(obj_info);
 		}
@@ -190,7 +189,7 @@ void Project::save()
 				vertex = glm::value_ptr(obj->getObjTransform().rotation_vector);
 				v.assign(vertex, vertex + 3);
 				trans["rot-axis"] = v;
-				trans["rotation"] = obj->getObjTransform().angularSpeed;
+				trans["rotation"] = obj->getObjTransform().angle;
 				j["transformation"] = trans;
 			objects.push_back(j);
 		}

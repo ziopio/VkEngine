@@ -1,21 +1,16 @@
 #pragma once
 #include "SceneElement.h"
+#include "Material.h"
 #include <string>
 
 namespace vkengine
 {
-	enum MaterialType {
-		SAMPLE,
-		PHONG,
-		UI,
-		LAST // DUMMY TOKEN leave at END!
-	};
 
 	typedef struct {
 		glm::vec3 position;
 		/* Axis of the rotation	*/
 		glm::vec3 rotation_vector;
-		float angularSpeed;
+		float angle;
 		glm::vec3 scale_vector;
 	} ObjTransformation;
 
@@ -23,29 +18,27 @@ namespace vkengine
 		std::string name;
 		std::string id;
 		std::string mesh_id;
-		MaterialType material_id;
-		std::string texture_id;
+		Material material;
 		ObjTransformation transformation;
 	} ObjectInitInfo;
 
 	class Object3D : public SceneElement
 	{
 	public:
-		Object3D(std::string id, std::string name, std::string mesh_id, MaterialType material, std::string texture_id, ObjTransformation transform);
+		Object3D(std::string id, std::string name, std::string mesh_id, Material material_id, ObjTransformation transform);
 		glm::mat4 getMatrix();
 		ObjTransformation & getObjTransform();
 		// this is dumb and fake
 		float getBoundingRadius();
 		std::string getMeshId();
-		MaterialType getMatType();
+		Material& getMaterial();
 		std::string getTextureId();
 		~Object3D();
 		bool visible = true;
 	private:
 		glm::mat4 rotMatrix;
 		std::string mesh_id;
-		std::string texture_id;
-		MaterialType material;
+		Material material;
 		ObjTransformation transform;
 	};
 }

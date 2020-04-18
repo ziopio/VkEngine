@@ -14,11 +14,9 @@ namespace vkengine
 	// Global delta time used inside the engine in each iteration
 	extern double unified_delta_time;
 
-
 	typedef struct {
 		unsigned int instance_extension_count;
 		const char** instanceExtensions;
-		bool enableValidation;
 	} VulkanInstanceInitInfo;
 
 	// This structs serve to remove dependencies from imgui types

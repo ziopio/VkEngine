@@ -6,7 +6,7 @@ using namespace vkengine;
 class MeshManager
 {
 public:
-	static void init(unsigned swapchain_image_count);
+	static void init();
 	static void addMesh(std::string id, std::string mesh_path);
 	static BaseMesh* getMesh(std::string id);
 	static std::vector<std::string> listLoadedMeshes();

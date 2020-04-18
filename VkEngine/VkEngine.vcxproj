@@ -70,10 +70,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\VulkanSDK\1.2.131.2\Include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\VulkanSDK\1.2.135.0\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\VulkanSDK\1.2.131.2\Include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\VulkanSDK\1.2.135.0\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,6 +89,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,7 +124,7 @@
     <ClInclude Include="ApiUtils.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Debug.h" />
-    <ClInclude Include="DescriptorSetsFactory.h" />
+    <ClInclude Include="DescriptorSets.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Instance.h" />
     <ClInclude Include="Libraries\frustum.hpp" />
@@ -132,11 +133,11 @@
     <ClInclude Include="Libraries\tiny_obj_loader.h" />
     <ClInclude Include="LightSource.h" />
     <ClInclude Include="Material.h" />
-    <ClInclude Include="MaterialManager.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshManager.h" />
     <ClInclude Include="Object3D.h" />
     <ClInclude Include="PhysicalDevice.h" />
+    <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Scene3D.h" />
@@ -153,16 +154,15 @@
     <ClCompile Include="ApiUtils.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Debug.cpp" />
-    <ClCompile Include="DescriptorSetsFactory.cpp" />
+    <ClCompile Include="DescriptorSets.cpp" />
     <ClCompile Include="Device.cpp" />
     <ClCompile Include="Instance.cpp" />
     <ClCompile Include="LightSource.cpp" />
-    <ClCompile Include="Material.cpp" />
-    <ClCompile Include="MaterialManager.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshManager.cpp" />
     <ClCompile Include="Object3D.cpp" />
     <ClCompile Include="PhysicalDevice.cpp" />
+    <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Scene3D.cpp" />

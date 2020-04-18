@@ -1,7 +1,7 @@
 #pragma once
 
 const std::vector<const char*> validationLayers = {
-	"VK_LAYER_LUNARG_standard_validation"
+	"VK_LAYER_KHRONOS_validation"
 };
 
 // Funzione eseguita dalla callback

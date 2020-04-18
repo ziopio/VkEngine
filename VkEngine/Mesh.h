@@ -3,6 +3,8 @@
 
 using namespace vkengine;
 
+enum VertexTypes { VERTEX_2D, VERTEX_3D };
+
 struct Vertex3D {
 	glm::vec3 pos;
 	glm::vec3 normal;

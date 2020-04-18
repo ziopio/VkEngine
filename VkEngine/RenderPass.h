@@ -2,24 +2,16 @@
 #include "SwapChain.h"
 #include <vulkan/vulkan.h>
 
-class RenderPass
+class RenderPassCatalog
 {
 public:
-	RenderPass(SwapChain* swapchain);
-	//VkRenderPass get_ForwardRenderPass();
-	//VkRenderPass get_DoubleSubPass_RenderPass();
-	VkRenderPass get_SimpleRenderPass();
-	VkRenderPass get_OffScreenRenderPass();
-
-	~RenderPass();
+	static VkRenderPass presentationRP;
+	static VkRenderPass offscreenRP;
+	static void init();
+	static void cleanUP();
 private:
-	void createForwardRenderPass();
-	void createSimpleRenderPass();
-	void createOffScreenRenderPass();
-	VkRenderPass simpleRP;
-	VkRenderPass offscreenRP;
-	VkRenderPass forwardRP;
-	VkRenderPass deferredRP;
-	SwapChain* swapchain;
+	//static void createForwardRenderPass();
+	static void createPresentationRenderPass();
+	static void createOffScreenRenderPass();
 };
 

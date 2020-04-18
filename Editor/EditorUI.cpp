@@ -74,7 +74,7 @@ vkengine::UiDrawData EditorUI::drawUI()
 		ImGui::BeginMainMenuBar();	
 		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::SameLine(ImGui::GetWindowWidth() - 400);
+		ImGui::SameLine(ImGui::GetWindowWidth() - 450);
 		ImGui::Text("Test performance:");
 		ImGui::Checkbox("Multithreaded Rendering", vkengine::multithreadedRendering());
 		if (ImGui::Button("KILL ENGINE")) this->editor->spawnHell();
@@ -333,9 +333,6 @@ vkengine::VulkanInstanceInitInfo EditorUI::getInstanceExtInfo()
 {
 	vkengine::VulkanInstanceInitInfo info = {};
 	info.instanceExtensions = WindowManager::getRequiredInstanceExtensions4Vulkan(&info.instance_extension_count);
-#ifdef DEBUG
-	info.enableValidation = true;
-#endif // DEBUG
 	return info;
 }
 

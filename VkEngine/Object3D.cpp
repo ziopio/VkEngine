@@ -6,11 +6,10 @@ using namespace glm;
 using namespace vkengine;
 
 Object3D::Object3D(std::string id, std::string name, std::string mesh_id, 
-	MaterialType material, std::string texture_id, ObjTransformation transform)
+	Material material, ObjTransformation transform)
 	: SceneElement(id, name)
 {
 	this->mesh_id = mesh_id;
-	this->texture_id = texture_id;
 	this->material = material;
 	this->transform = transform;
 	this->rotMatrix = glm::mat4(1.f);
@@ -22,7 +21,7 @@ glm::mat4 Object3D::getMatrix()
 	//auto currentTime = std::chrono::high_resolution_clock::now();
 	//float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	//startTime = currentTime;
-	this->rotMatrix = glm::rotate(rotMatrix, (float)vkengine::unified_delta_time * glm::radians(transform.angularSpeed), transform.rotation_vector);
+	this->rotMatrix = glm::rotate(rotMatrix, (float)vkengine::unified_delta_time * glm::radians(transform.angle), transform.rotation_vector);
 	return glm::translate(glm::mat4(1), transform.position) * this->rotMatrix * glm::scale(glm::mat4(1.f), transform.scale_vector);
 }
 
@@ -43,14 +42,14 @@ std::string Object3D::getMeshId()
 	return mesh_id;
 }
 
-MaterialType Object3D::getMatType()
+Material& Object3D::getMaterial()
 {
 	return this->material;
 }
 
 std::string Object3D::getTextureId()
 {
-	return texture_id;
+	return material.texture_id;
 }
 
 Object3D::~Object3D()

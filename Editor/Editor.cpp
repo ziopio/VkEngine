@@ -60,9 +60,8 @@ void Editor::spawnHell()
 	transform.scale_vector = { 1.,1.,1. };
 	vkengine::ObjectInitInfo info = {};
 	info.name = "LOL xD";
-	info.material_id = vkengine::MaterialType::PHONG;
+	info.material.texture_id = vkengine::listLoadedTextures()[0];
 	info.mesh_id = "cube.obj";
-	info.texture_id = vkengine::listLoadedTextures()[0];
 	for (int x = -dimension / 2; x < dimension/2; x++) {
 		for (int y = -dimension / 2; y < dimension/2; y++) {
 			for (int z = -dimension / 2; z < dimension / 2; z++) {

@@ -86,9 +86,8 @@ void ToolsPanel::draw(int w_width, int w_height)
 				vkengine::ObjectInitInfo obj_info = {};
 				obj_info.id = new_obj_id;
 				obj_info.name = obj_name;
-				obj_info.material_id = vkengine::MaterialType::PHONG;
+				obj_info.material.texture_id = selected_texture;
 				obj_info.mesh_id = selected_mesh;
-				obj_info.texture_id = selected_texture;
 				obj_info.transformation = transform;
 
 				vkengine::getScene(scene_id)->addObject(obj_info);
