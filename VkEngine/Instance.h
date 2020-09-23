@@ -20,8 +20,8 @@ private:
 	static std::vector<const char*> getRequiredExtensions();
 	static std::string appName;
 	static std::string EngineName;
-	static const char ** surfaceExtensions;
-	static unsigned int surfaceExtCount;
+	//static const char ** surfaceExtensions;
+	//static unsigned int surfaceExtCount;
 	static SurfaceOwner* surfaceOwner;
 	static VkInstance instance;
 	static VkDebugUtilsMessengerEXT messangerExtension;

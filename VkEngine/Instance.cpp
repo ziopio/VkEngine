@@ -1,11 +1,17 @@
 #include "Instance.h"
 #include "Debug.h"
+#include "raytracing.h"
 #include "commons.h"
+
+const std::vector<const char*> advancedInstanceExtensions = {
+	VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+};
+
 
 std::string  Instance::appName = "...";
 std::string Instance::EngineName = "...";
-const char ** Instance::surfaceExtensions;
-unsigned int Instance::surfaceExtCount;
+//const char ** Instance::surfaceExtensions;
+//unsigned int Instance::surfaceExtCount;
 VkInstance Instance::instance;
 SurfaceOwner* Instance::surfaceOwner;
 VkDebugUtilsMessengerEXT Instance::messangerExtension;
@@ -78,10 +84,10 @@ void Instance::createInstance()
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
 
-	// Chiedo a glfw di cercare tutte le estensioni richieste per GLFW 
-	std::vector<const char*> glfwExtensions = Instance::getRequiredExtensions();
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(glfwExtensions.size());
-	createInfo.ppEnabledExtensionNames = glfwExtensions.data();
+	// Chiedo a glfw di cercare tutte le estensioni richieste per GLFW
+	std::vector<const char*> requiredExtensions = Instance::getRequiredExtensions();
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+	createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 	//Controllo a presenza dei validationLayers
 	if (validation ) {
 		if (!checkValidationLayerSupport()) {
@@ -130,28 +136,26 @@ std::vector<const char*> Instance::getRequiredExtensions() {
 	// Cerco tutte le estensioni supportate ( NON NECESSARIO )
 	uint32_t extensionCount = 0;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-	std::vector<VkExtensionProperties> ALLextensions(extensionCount);
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, ALLextensions.data());
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
 
 	std::cout << extensionCount << " available extensions for vulkan:" << std::endl;
-	for (const auto& extension : ALLextensions) {
+	for (const auto& extension : availableExtensions) {
 		std::cout << "\t" << extension.extensionName << std::endl;
 	}
 
 	// Cerco tutte le estensioni richieste da GLFW
-	auto info = Instance::surfaceOwner->getInstanceExtInfo();
-	Instance::surfaceExtensions = info.instanceExtensions;
-	Instance::surfaceExtCount = info.instance_extension_count;
-	const char** surfaceRequiredExtensions = surfaceExtensions;
-	std::cout << surfaceExtCount << " required vulkan extensions for GLFW:" << std::endl;
-	std::vector<const char*> extensions(surfaceRequiredExtensions, surfaceRequiredExtensions + surfaceExtCount);
-	for (const auto& extension : extensions) {
+	auto surface = Instance::surfaceOwner->getInstanceExtInfo();
+	std::vector<const char*> requiredExtensions(surface.instanceExtensions, surface.instanceExtensions + surface.instance_extension_count);
+	requiredExtensions.insert(requiredExtensions.end(), advancedInstanceExtensions.begin(), advancedInstanceExtensions.end());
+	if (validation) {
+		requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+
+	std::cout << requiredExtensions.size() << " required extensions for the engine:" << std::endl;
+	for (const auto& extension : requiredExtensions) {
 		std::cout << "\t" << extension << std::endl;
 	}
 
-	if (validation) {
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
-
-	return extensions;
+	return requiredExtensions;
 }
