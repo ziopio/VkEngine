@@ -1,6 +1,5 @@
-#include "stdafx.h"
 #include "ApiUtils.h"
-
+#include "commons.h"
 
 VkFormat findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
 	for (VkFormat format : candidates) {

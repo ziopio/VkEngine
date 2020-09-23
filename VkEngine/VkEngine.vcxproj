@@ -70,10 +70,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\VulkanSDK\1.2.135.0\Include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\VulkanSDK\1.2.148.1\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\VulkanSDK\1.2.135.0\Include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\VulkanSDK\1.2.148.1\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -138,12 +138,13 @@
     <ClInclude Include="Object3D.h" />
     <ClInclude Include="PhysicalDevice.h" />
     <ClInclude Include="Pipeline.h" />
+    <ClInclude Include="raytracing.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Scene3D.h" />
     <ClInclude Include="SceneElement.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="commons.h" />
     <ClInclude Include="Surface.h" />
     <ClInclude Include="SwapChain.h" />
     <ClInclude Include="Texture.h" />
@@ -163,6 +164,7 @@
     <ClCompile Include="Object3D.cpp" />
     <ClCompile Include="PhysicalDevice.cpp" />
     <ClCompile Include="Pipeline.cpp" />
+    <ClCompile Include="raytracing.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Scene3D.cpp" />

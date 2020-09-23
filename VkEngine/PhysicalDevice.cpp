@@ -1,7 +1,6 @@
-#include "stdafx.h"
 #include "PhysicalDevice.h"
 #include "Instance.h"
-
+#include "commons.h"
 
 VkPhysicalDevice PhysicalDevice::physicalDevice = VK_NULL_HANDLE;
 VkPhysicalDeviceProperties PhysicalDevice::deviceProperties;

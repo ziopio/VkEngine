@@ -1,6 +1,4 @@
-#include "stdafx.h"
 #include "Renderer.h"
-#include "PhysicalDevice.h"
 #include "Device.h"
 #include "PhysicalDevice.h"
 #include "Pipeline.h"
@@ -9,6 +7,7 @@
 #include "TextureManager.h"
 #include "LightSource.h"
 #include "ApiUtils.h"
+#include "commons.h"
 
 // function to feed a thread job
 void threadRenderCode(Object3D* obj, Camera* cam, 

@@ -1,6 +1,7 @@
 #pragma once
 #include "VkEngine.h"
 #include "Surface.h"
+#include "commons.h"
 
 class SwapChainMng {
 	class SwapChain {

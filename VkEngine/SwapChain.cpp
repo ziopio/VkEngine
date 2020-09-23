@@ -1,9 +1,9 @@
-#include "stdafx.h"
 #include "SwapChain.h"
 #include "PhysicalDevice.h"
 #include "Device.h"
 #include "ApiUtils.h"
 #include "VkEngine.h"
+#include "commons.h"
 
 std::vector<SwapChainMng::SwapChain*> SwapChainMng::swapchains;
 unsigned SwapChainMng::current_swapchain;

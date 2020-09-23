@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "commons.h"
 #include "Camera.h"
 #include "VkEngine.h"
 

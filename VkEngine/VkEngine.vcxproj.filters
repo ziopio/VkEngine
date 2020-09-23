@@ -31,15 +31,18 @@
     <Filter Include="Header Files\ApiCore\Utils">
       <UniqueIdentifier>{74b8df3a-2853-4113-bf66-fb194a3c54c9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Libraries">
+    <Filter Include="Header Files\HeaderOnlyLibraries">
       <UniqueIdentifier>{e011c443-a61e-4326-9509-978aae515d88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ApiExtensions">
+      <UniqueIdentifier>{93955a98-7c47-4f16-a220-16f899896e94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ApiExtensions">
+      <UniqueIdentifier>{8fc2bce8-b61c-4de4-9998-eee62acaae30}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VkEngine.h">
@@ -91,16 +94,16 @@
       <Filter>Header Files\ApiCore</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\frustum.hpp">
-      <Filter>Header Files\Libraries</Filter>
+      <Filter>Header Files\HeaderOnlyLibraries</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\stb_image.h">
-      <Filter>Header Files\Libraries</Filter>
+      <Filter>Header Files\HeaderOnlyLibraries</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\threadpool.hpp">
-      <Filter>Header Files\Libraries</Filter>
+      <Filter>Header Files\HeaderOnlyLibraries</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\tiny_obj_loader.h">
-      <Filter>Header Files\Libraries</Filter>
+      <Filter>Header Files\HeaderOnlyLibraries</Filter>
     </ClInclude>
     <ClInclude Include="Scene3D.h">
       <Filter>Header Files</Filter>
@@ -119,6 +122,12 @@
     </ClInclude>
     <ClInclude Include="Pipeline.h">
       <Filter>Header Files\ApiCore</Filter>
+    </ClInclude>
+    <ClInclude Include="raytracing.h">
+      <Filter>Header Files\ApiExtensions</Filter>
+    </ClInclude>
+    <ClInclude Include="commons.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -184,6 +193,9 @@
     </ClCompile>
     <ClCompile Include="DescriptorSets.cpp">
       <Filter>Source Files\ApiCore</Filter>
+    </ClCompile>
+    <ClCompile Include="raytracing.cpp">
+      <Filter>Source Files\ApiExtensions</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

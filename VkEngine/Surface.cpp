@@ -1,7 +1,6 @@
-#include "stdafx.h"
 #include "Instance.h"
 #include "Surface.h"
-
+#include "commons.h"
 
 
 Surface::Surface()

@@ -1,7 +1,7 @@
-#include "stdafx.h"
 #include "Device.h"
 #include "PhysicalDevice.h"
 #include "Debug.h"
+#include "commons.h"
 
 VkDevice Device::device = VK_NULL_HANDLE;
 VkQueue Device::graphicQueue = VK_NULL_HANDLE;

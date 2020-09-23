@@ -1,11 +1,11 @@
 #pragma once
+#include "Object3D.h"
+#include "LightSource.h"
+#include "Camera.h"
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <memory>
-#include "Object3D.h"
-#include "LightSource.h"
-#include "Camera.h"
 #include <string>
 #include <unordered_map>
 

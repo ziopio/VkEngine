@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "commons.h"
 
 
 VkFormat findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);

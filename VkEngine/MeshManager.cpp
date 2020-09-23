@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "commons.h"
 #include "MeshManager.h"
 #include "VkEngine.h"
 #include "SwapChain.h"

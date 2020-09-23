@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "commons.h"
 #include "Debug.h"
 #include "VkEngine.h"
 

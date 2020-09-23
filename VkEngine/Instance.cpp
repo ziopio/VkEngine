@@ -1,6 +1,6 @@
-#include "stdafx.h"
 #include "Instance.h"
 #include "Debug.h"
+#include "commons.h"
 
 std::string  Instance::appName = "...";
 std::string Instance::EngineName = "...";

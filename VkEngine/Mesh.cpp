@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "commons.h"
 #include "Mesh.h"
 #include "VkEngine.h"
 #include "ApiUtils.h"

@@ -1,4 +1,6 @@
 #pragma once
+#include "commons.h"
+
 class Device
 {
 public:

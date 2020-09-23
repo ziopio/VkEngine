@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "commons.h"
 #include "ApiUtils.h"
 #include "RenderPass.h"
 #include "PhysicalDevice.h"

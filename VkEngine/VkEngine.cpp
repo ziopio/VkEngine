@@ -1,5 +1,5 @@
-#include "stdafx.h"
 #include "VkEngine.h"
+#include "Scene3D.h"
 #include "Instance.h"
 #include "Debug.h"
 #include "ApiUtils.h"
@@ -7,12 +7,11 @@
 #include "PhysicalDevice.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
-#include "Scene3D.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
 #include "Renderer.h"
 #include "Pipeline.h"
-
+#include "commons.h"
 
 namespace vkengine
 {
