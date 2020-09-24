@@ -72,12 +72,13 @@ vkengine::UiDrawData EditorUI::drawUI()
 	//MainMenuBar
 	{
 		ImGui::BeginMainMenuBar();	
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		ImGui::Text("Ray Tracing: ");               // Display some text (you can use a format strings too)
+		if(vkengine::hasRayTracing()){ ImGui::Text("OK"); } else{ ImGui::Text("device not capable :P"); }
+		ImGui::SameLine(ImGui::GetWindowWidth() - 150);
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::SameLine(ImGui::GetWindowWidth() - 450);
-		ImGui::Text("Test performance:");
-		ImGui::Checkbox("Multithreaded Rendering", vkengine::multithreadedRendering());
-		if (ImGui::Button("KILL ENGINE")) this->editor->spawnHell();
+		//ImGui::Text("Test performance:");
+		//ImGui::Checkbox("Multithreaded Rendering", vkengine::multithreadedRendering());
+		//if (ImGui::Button("KILL ENGINE")) this->editor->spawnHell();
 		ImGui::EndMainMenuBar();
 	}
 

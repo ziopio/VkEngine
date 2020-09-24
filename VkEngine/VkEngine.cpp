@@ -129,6 +129,11 @@ namespace vkengine
 		return &Renderer::multithreading;
 	}
 
+	bool hasRayTracing()
+	{
+		return PhysicalDevice::hasRaytracing();
+	}
+
 	void renderFrame()
 	{
 		if (!Renderer::renderScene()) {

@@ -74,6 +74,8 @@ namespace vkengine
 	void loadScene(std::string scene_id);
 	// Intended as parallel CMD buffer recording CPU-side
 	bool* multithreadedRendering();
+	bool hasRayTracing();
+
 	void renderFrame();
 	void shutdown();
 
