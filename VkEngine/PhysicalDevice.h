@@ -30,18 +30,31 @@ public:
 	static VkPhysicalDevice get();
 	static QueueFamilyIndices getQueueFamilies();
 	static SwapChainSupportDetails getSwapChainSupport();
-	static VkPhysicalDeviceProperties getPhysicalDeviceProperties();
+	static VkPhysicalDeviceProperties2& getPhysicalDeviceProperties();
+	static VkPhysicalDeviceFeatures2& getPhysicalDeviceFeatures();
+	inline static bool hasRaytracing() { return raytracing; };
 private:
 	static void pickPhysicalDevice();
 	static bool isDeviceSuitable(VkPhysicalDevice device);
 	static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	// Checks for extensions, returns true if at least the minimal extensions can be found.
 	static bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-	static VkPhysicalDevice physicalDevice;
-	static VkPhysicalDeviceProperties deviceProperties;
+	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);	
+//Fields	
+	static bool ready;
 	static VkSurfaceKHR surface;
 	static SwapChainSupportDetails swapChainSupportDetails;
-	static QueueFamilyIndices queueFamilyIndices;
-	static bool ready;
+	static QueueFamilyIndices queueFamilyIndices;	
+	static VkPhysicalDevice physicalDevice;
+	// Basic Vulkan properties and features
+	static VkPhysicalDeviceProperties basicProperties;
+	static VkPhysicalDeviceFeatures basicFeatures;
+	// Structs concatenating all features and properties of the device
+	static VkPhysicalDeviceProperties2 deviceProperties2;
+	static VkPhysicalDeviceFeatures2 deviceFeatures2;
+	// Ray Tracing
+	static VkPhysicalDeviceRayTracingPropertiesKHR rayTracingProperties;
+	static VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures;
+	static bool raytracing;
 };
 

@@ -206,7 +206,7 @@ void DescriptorSetsFactory::updateDescriptorSets(DescSetBundle* bundle)
 					buff_info.buffer = uniformBuffer;
 					buff_info.range = sizeof(UniformBlock);
 					VkDeviceSize minAlignement =
-						PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+						PhysicalDevice::getPhysicalDeviceProperties().properties.limits.minUniformBufferOffsetAlignment;
 					VkDeviceSize alignemetPadding = minAlignement - (sizeof(UniformBlock) % minAlignement);
 					buff_info.offset = i * (sizeof(UniformBlock) + alignemetPadding);
 					buffers_infos.push_back({ buff_info });
@@ -235,7 +235,7 @@ void DescriptorSetsFactory::updateDescriptorSets(DescSetBundle* bundle)
 void DescriptorSetsFactory::updateUniformBuffer(UniformBlock uniforms, int imageIndex)
 {
 	VkDeviceSize minAlignement =
-		PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+		PhysicalDevice::getPhysicalDeviceProperties().properties.limits.minUniformBufferOffsetAlignment;
 	VkDeviceSize alignemetPadding = minAlignement - (sizeof(UniformBlock) % minAlignement);
 
 	memcpy((char *)mappedUniformMemory + imageIndex * (sizeof(UniformBlock) + alignemetPadding),
@@ -260,7 +260,7 @@ void DescriptorSetsFactory::createUniformBuffer()
 {
 	// one uniform block for each frame in-flight
 	VkDeviceSize minAlignement =
-		PhysicalDevice::getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+		PhysicalDevice::getPhysicalDeviceProperties().properties.limits.minUniformBufferOffsetAlignment;
 	VkDeviceSize alignemetPadding = minAlignement - (sizeof(UniformBlock) % minAlignement);
 
 	VkDeviceSize bufferSize = (sizeof(UniformBlock) + alignemetPadding) * SwapChainMng::get()->getImageCount();

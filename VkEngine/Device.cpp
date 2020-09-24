@@ -87,19 +87,17 @@ void Device::createDevice() {
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
-	VkPhysicalDeviceFeatures deviceFeatures = {}; // per adesso.. leave each field on VK_FALSE
-	deviceFeatures.shaderSampledImageArrayDynamicIndexing = true;
-
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pQueueCreateInfos = queueCreateInfos.data(); // aggancio l'array di info delle code
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 
-	createInfo.pEnabledFeatures = &deviceFeatures; // aggancio le caratteristiche del dispositivo fisico
+	// We use VkPhysicalDeviceFeatures2 so all features are taken from pNext
+	createInfo.pEnabledFeatures = nullptr; 
+	createInfo.pNext = &PhysicalDevice::getPhysicalDeviceFeatures();
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
 	if (validation) {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();

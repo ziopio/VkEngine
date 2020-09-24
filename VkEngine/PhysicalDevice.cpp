@@ -1,13 +1,24 @@
 #include "PhysicalDevice.h"
 #include "Instance.h"
 #include "commons.h"
+#include "raytracing.h"
 
 VkPhysicalDevice PhysicalDevice::physicalDevice = VK_NULL_HANDLE;
-VkPhysicalDeviceProperties PhysicalDevice::deviceProperties;
 VkSurfaceKHR PhysicalDevice::surface = VK_NULL_HANDLE;
 QueueFamilyIndices PhysicalDevice::queueFamilyIndices;
 SwapChainSupportDetails PhysicalDevice::swapChainSupportDetails;
+
+
+VkPhysicalDeviceProperties PhysicalDevice::basicProperties = {};
+VkPhysicalDeviceFeatures PhysicalDevice::basicFeatures = {};
+VkPhysicalDeviceProperties2 PhysicalDevice::deviceProperties2 = {};
+VkPhysicalDeviceFeatures2 PhysicalDevice::deviceFeatures2 = {};
+
+VkPhysicalDeviceRayTracingPropertiesKHR PhysicalDevice::rayTracingProperties = {};
+VkPhysicalDeviceRayTracingFeaturesKHR PhysicalDevice::rayTracingFeatures = {};
+
 bool PhysicalDevice::ready;
+bool PhysicalDevice::raytracing;
 
 void PhysicalDevice::setSurface(VkSurfaceKHR surface)
 {
@@ -41,9 +52,16 @@ SwapChainSupportDetails PhysicalDevice::getSwapChainSupport()
 	return swapChainSupportDetails = PhysicalDevice::querySwapChainSupport(physicalDevice);
 }
 
-VkPhysicalDeviceProperties PhysicalDevice::getPhysicalDeviceProperties()
+VkPhysicalDeviceProperties2& PhysicalDevice::getPhysicalDeviceProperties()
 {
-	return PhysicalDevice::deviceProperties;
+	if (!ready) throw std::runtime_error("PhysicalDevice Not Ready!!");
+	return PhysicalDevice::deviceProperties2;
+}
+
+VkPhysicalDeviceFeatures2& PhysicalDevice::getPhysicalDeviceFeatures()
+{
+	if (!ready) throw std::runtime_error("PhysicalDevice Not Ready!!");
+	return PhysicalDevice::deviceFeatures2;
 }
 
 void PhysicalDevice::pickPhysicalDevice()
@@ -71,9 +89,21 @@ void PhysicalDevice::pickPhysicalDevice()
 
 bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device)
 {
-	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceProperties(device, &deviceProperties);
-	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+	// basic infos
+	vkGetPhysicalDeviceProperties(device, &basicProperties);
+	vkGetPhysicalDeviceFeatures(device, &basicFeatures);
+	//RAY_TRACING properties:
+	rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+	deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+	deviceProperties2.properties = basicProperties;
+	deviceProperties2.pNext = &rayTracingProperties;
+	vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
+	//RAY_TRACING features:
+	rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
+	deviceFeatures2.features = basicFeatures;
+	deviceFeatures2.pNext = &rayTracingFeatures;
+	vkGetPhysicalDeviceFeatures2(device, &deviceFeatures2);
 
 	// trovo una coda utilizzabile
 	queueFamilyIndices = findQueueFamilies(device);
@@ -86,11 +116,11 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device)
 		swapChainAdequate = !swapChainSupportDetails.formats.empty() && !swapChainSupportDetails.presentModes.empty();
 	}
 
-	return deviceProperties.deviceType &
+	return basicProperties.deviceType &
 		(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU | VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) //dedicata o integrata 
-		&& deviceFeatures.geometryShader && queueFamilyIndices.isComplete() // che supporti il geometry shader e abbia le code richieste
+		&& basicFeatures.geometryShader && queueFamilyIndices.isComplete() // che supporti il geometry shader e abbia le code richieste
 		&& extensionsSupported && swapChainAdequate // supporti le estensioni di superficie e supporti una swap_chain compatibile
-		&& deviceFeatures.samplerAnisotropy; // supporti il multisampling
+		&& basicFeatures.samplerAnisotropy; // supporti il multisampling
 }
 
 QueueFamilyIndices PhysicalDevice::findQueueFamilies(VkPhysicalDevice device)
@@ -141,15 +171,20 @@ bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device)
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
 	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+	std::set<std::string> raytracingExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
+
 
 	std::cout << extensionCount << " available extensions for the GPU:" << std::endl;
 
 	for (const auto& extension : availableExtensions) {
 		std::cout << "\t" << extension.extensionName << std::endl;
 		requiredExtensions.erase(extension.extensionName);
+		raytracingExtensions.erase(extension.extensionName);
 	}
 
-	return requiredExtensions.empty(); // se è vuoto allora ho trovato tutte le estensioni
+	raytracing = raytracingExtensions.empty();
+
+	return requiredExtensions.empty(); // se è vuoto allora ho trovato tutte le estensioni minime richieste
 }
 
 SwapChainSupportDetails PhysicalDevice::querySwapChainSupport(VkPhysicalDevice device)

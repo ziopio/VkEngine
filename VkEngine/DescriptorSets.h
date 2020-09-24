@@ -1,7 +1,5 @@
 #pragma once
-#include <glm/glm.hpp>
-#include <vulkan/vulkan.h>
-#include <vector>
+#include "commons.h"
 #include "LightSource.h"
 
 constexpr const unsigned TEXTURE_ARRAY_LENGTH = 32;
