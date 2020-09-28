@@ -9,7 +9,7 @@ constexpr const float NORMAL_SPEED = 10.0f;
 constexpr const float FASTER_SPEED = 100.0f;
 constexpr const float ROTATION_CONSTANT = 0.005f;
 
-vkengine::Camera::Camera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective) : 
+vkengine::Camera::Camera(unsigned id, std::string name, ViewSetup view, PerspectiveSetup perspective) : 
 	SceneElement( id,  name)
 {
 	camera_timer = clock();

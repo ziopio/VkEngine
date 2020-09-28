@@ -1,6 +1,7 @@
 #pragma once
-#include "commons.h"
+#include "Scene3D.h"
 #include "Mesh.h"
+#include "commons.h"
 
 
 // Holds data for a ray tracing scratch buffer that is used as a temporary storage
@@ -52,10 +53,10 @@ AccelerationStructure createAcceleration(VkAccelerationStructureCreateInfoKHR& a
 class RayTracer {
 public:
 	static void initialize();
-	static void prepare();
+	static void prepare(vkengine::Scene3D * scene);
 	static void cleanUP();
 private:
 	static void buildBottomLevelAS();
-	//static void buildTopLevelAS();
+	static void buildTopLevelAS(vkengine::Scene3D * scene);
 	static std::vector<BottomLevelAS> BLASs;
 };

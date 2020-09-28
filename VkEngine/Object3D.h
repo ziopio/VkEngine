@@ -19,7 +19,7 @@ namespace vkengine
 
 	typedef struct {
 		std::string name;
-		std::string id;
+		unsigned id;
 		std::string mesh_id;
 		Material material;
 		ObjTransformation transformation;
@@ -28,7 +28,7 @@ namespace vkengine
 	class Object3D : public SceneElement
 	{
 	public:
-		Object3D(std::string id, std::string name, std::string mesh_id, Material material_id, ObjTransformation transform);
+		Object3D(unsigned id, std::string name, std::string mesh_id, Material material_id, ObjTransformation transform);
 		glm::mat4 getMatrix();
 		ObjTransformation & getObjTransform();
 		// this is dumb and fake

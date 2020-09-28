@@ -9,7 +9,7 @@ namespace vkengine
 {
 
 	typedef struct {
-		std::string id;
+		unsigned id;
 		std::string name;
 		float position[3];
 		float color[3];
@@ -26,7 +26,7 @@ namespace vkengine
 	class LightSource : public SceneElement
 	{
 	public:
-		LightSource(std::string id, std::string name, 
+		LightSource(unsigned id, std::string name,
 			glm::vec3 pos, glm::vec3 color, float power);
 		LightData& getData();
 		~LightSource();

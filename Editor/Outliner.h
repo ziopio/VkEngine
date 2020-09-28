@@ -25,7 +25,7 @@ public:
 	~Outliner();
 private:
 	//std::vector<SceneNode> scenes;
-	std::string selected_element;
+	int selected_element = -1;
 	NodeType selected_elem_type;
 };
 

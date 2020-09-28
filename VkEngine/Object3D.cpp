@@ -5,7 +5,7 @@
 using namespace glm; 
 using namespace vkengine;
 
-Object3D::Object3D(std::string id, std::string name, std::string mesh_id, 
+Object3D::Object3D(unsigned id, std::string name, std::string mesh_id,
 	Material material, ObjTransformation transform)
 	: SceneElement(id, name)
 {

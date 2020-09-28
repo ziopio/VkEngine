@@ -103,12 +103,12 @@ AccelerationStructure createAcceleration(VkAccelerationStructureCreateInfoKHR & 
 void RayTracer::buildBottomLevelAS()
 {
 	// Mesh to geometry traslation and setup of the BLAS vector
-	for (auto mesh_id : MeshManager::listLoadedMeshes())
+	for (auto mesh : MeshManager::getMeshLibrary())
 	{
 		// for simplicity we define one blas for each mesh
 		BottomLevelAS blas = {};
 		// each mesh is a geometry
-		auto ASG = mesh3DToASGeometryKHR(MeshManager::getMesh(mesh_id));
+		auto ASG = mesh3DToASGeometryKHR(mesh);
 		blas.gCreateinfos.push_back(ASG.info);
 		blas.geometries.push_back(ASG.geometry);
 		blas.offsets.push_back(ASG.offset);
@@ -204,14 +204,22 @@ void RayTracer::buildBottomLevelAS()
 	vkFreeMemory(Device::get(), scratchMem, nullptr);
 }
 
+void RayTracer::buildTopLevelAS(vkengine::Scene3D * scene)
+{
+	for (auto & obj : scene->listObjects()) {
+
+	}
+}
+
 void RayTracer::initialize()
 {
 	LOAD_RAYTRACING_API_COMMANDS(Device::get());
 }
 
-void RayTracer::prepare() {
+void RayTracer::prepare(vkengine::Scene3D * scene) {
 	cleanUP();
 	buildBottomLevelAS();
+	buildTopLevelAS(scene);
 }
 
 void RayTracer::cleanUP()

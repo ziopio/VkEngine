@@ -11,13 +11,15 @@ namespace vkengine
 	class SceneElement
 	{
 	public:
-		SceneElement(std::string id, std::string name)
+		SceneElement(unsigned id, std::string name)
 		{
 			this->id = id; this->name = name;
 		};
-		inline std::string getId() { return id; };
+		inline unsigned getId() { return id; };
+		inline std::string getName() { return name; };
+		inline void setName() { this->name = name; };
 		std::string name;
 	protected:
-		std::string id;
+		unsigned id;
 	};
 }

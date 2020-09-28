@@ -26,7 +26,7 @@ namespace vkengine
 	class Camera : public SceneElement
 	{
 	public:
-		Camera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective);
+		Camera(unsigned id, std::string name, ViewSetup view, PerspectiveSetup perspective);
 		//updates camera values and returns its lookAt matrix
 		ViewSetup& getViewSetup();
 		PerspectiveSetup& getPerspectiveSetup();

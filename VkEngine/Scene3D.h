@@ -17,32 +17,32 @@ namespace vkengine
 	public:
 		Scene3D(std::string id, std::string name);
 
-		void addCamera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective);
-		Camera* getCamera(std::string id);
-		std::vector<std::string> listCameras();
+		void addCamera(unsigned id, std::string name, ViewSetup view, PerspectiveSetup perspective);
+		Camera* getCamera(unsigned);
+		std::vector<unsigned> listCameras();
 
 		void addObject(vkengine::ObjectInitInfo obj_info);
-		Object3D* getObject(std::string id);
-		std::vector<std::string> listObjects();
-		void removeObject(std::string id);
+		Object3D* getObject(unsigned id);
+		std::vector<unsigned> listObjects();
+		void removeObject(unsigned id);
 		inline unsigned get_object_num() { return objects.size(); }
 
 		void addLight(vkengine::PointLightInfo);
-		LightSource* getLight(std::string id);		
-		std::vector<std::string> listLights();
-		void removeLight(std::string id);
+		LightSource* getLight(unsigned id);
+		std::vector<unsigned> listLights();
+		void removeLight(unsigned id);
 
 		std::vector<SceneElement*> getAllElements();
 
 		~Scene3D();
 	public:
-		std::string current_camera;
+		unsigned current_camera;
 		std::string name;
 	private:
 		std::string id;
-		std::unordered_map<std::string, Camera> cameras;
-		std::unordered_map<std::string, Object3D> objects;
-		std::unordered_map<std::string, LightSource> lights;
+		std::unordered_map<unsigned, Camera> cameras;
+		std::unordered_map<unsigned, Object3D> objects;
+		std::unordered_map<unsigned, LightSource> lights;
 
 	};
 }

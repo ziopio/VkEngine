@@ -11,20 +11,20 @@ Scene3D::Scene3D(std::string id, std::string name)
 	this->name = name;
 }
 
-void Scene3D:: addCamera(std::string id, std::string name, ViewSetup view, PerspectiveSetup perspective)
+void Scene3D:: addCamera(unsigned id, std::string name, ViewSetup view, PerspectiveSetup perspective)
 {
 	this->cameras.insert( { id, Camera( id, name,view, perspective) } );
 	this->current_camera = id;
 }
 
-Camera* vkengine::Scene3D::getCamera(std::string id)
+Camera* vkengine::Scene3D::getCamera(unsigned id)
 {
 	return &cameras.at(id);
 }
 
-std::vector<std::string> vkengine::Scene3D::listCameras()
+std::vector<unsigned> vkengine::Scene3D::listCameras()
 {
-	std::vector<std::string> keys;
+	std::vector<unsigned> keys;
 	for (auto entry : cameras) {
 		keys.push_back(entry.first);
 	}
@@ -37,21 +37,21 @@ void Scene3D::addObject(vkengine::ObjectInitInfo obj_info)
 		Object3D(obj_info.id, obj_info.name, obj_info.mesh_id, obj_info.material, obj_info.transformation) } );
 }
 
-Object3D* Scene3D::getObject(std::string id)
+Object3D* Scene3D::getObject(unsigned id)
 {
 	return &objects.at(id);
 }
 
-std::vector<std::string> vkengine::Scene3D::listObjects()
+std::vector<unsigned> vkengine::Scene3D::listObjects()
 {
-	std::vector<std::string> keys;
+	std::vector<unsigned> keys;
 	for (auto entry : objects) {
 		keys.push_back(entry.first);
 	}
 	return keys;
 }
 
-void Scene3D::removeObject(std::string id)
+void Scene3D::removeObject(unsigned id)
 {
 	objects.erase(id);
 }
@@ -61,21 +61,21 @@ void Scene3D::addLight(vkengine::PointLightInfo info)
 	lights.insert({ info.id, LightSource(info.id, info.name, glm::make_vec3(info.position), glm::make_vec3(info.color), info.power) } );
 }
 
-LightSource* Scene3D::getLight(std::string id)
+LightSource* Scene3D::getLight(unsigned id)
 {
 	return &lights.at(id);
 }
 
-std::vector<std::string> vkengine::Scene3D::listLights()
+std::vector<unsigned> vkengine::Scene3D::listLights()
 {
-	std::vector<std::string> keys;
+	std::vector<unsigned> keys;
 	for (auto entry : lights) {
 		keys.push_back(entry.first);
 	}
 	return keys;
 }
 
-void Scene3D::removeLight(std::string id)
+void Scene3D::removeLight(unsigned id)
 {
 	lights.erase(id);
 }

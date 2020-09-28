@@ -127,7 +127,7 @@ namespace vkengine
 		PipelineFactory::updatePipelineResources(STD_PIPELINE_LAYOUT);
 
 		/////// raytracing
-		RayTracer::prepare();
+		RayTracer::prepare(&scenes.at(active_scene));
 	}
 
 	bool* multithreadedRendering()

@@ -78,13 +78,13 @@ void ToolsPanel::draw(int w_width, int w_height)
 		{
 			auto scene_id = this->UI->getEditor()->loadedProject->getActiveScene();
 			auto objs = vkengine::getScene(scene_id)->listObjects();
-			if (std::find(objs.begin(), objs.end(), new_obj_id) == objs.end())
+			if (std::find(objs.begin(), objs.end(), atoi(new_obj_id)) == objs.end())
 			{
 				vkengine::ObjTransformation transform = {};
 				transform.scale_vector = { 1,1,1 };
 				transform.rotation_vector = { 0,1,0 };
 				vkengine::ObjectInitInfo obj_info = {};
-				obj_info.id = new_obj_id;
+				obj_info.id = atoi(new_obj_id);
 				obj_info.name = obj_name;
 				obj_info.material.texture_id = selected_texture;
 				obj_info.mesh_id = selected_mesh;

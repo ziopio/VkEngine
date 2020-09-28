@@ -13,9 +13,9 @@ static const ImGuiTreeNodeFlags base_flags =
 	ImGuiTreeNodeFlags_SpanAvailWidth;
 static const ImGuiTreeNodeFlags leaf_flags = base_flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-void showOjectProperties(std::string scene, std::string obj_id);
-void showLightProperties(std::string scene, std::string light_id);
-void showCameraProperties(std::string scene, std::string cam_id);
+void showOjectProperties(std::string scene, unsigned obj_id);
+void showLightProperties(std::string scene, unsigned light_id);
+void showCameraProperties(std::string scene, unsigned cam_id);
 void showVectorControls(std::string name, glm::vec3* vec);
 
 Outliner::Outliner(EditorUI * UI) : EditorComponent(UI)
@@ -46,22 +46,23 @@ void Outliner::draw(int w_width, int w_height)
 		ImGuiWindowFlags_NoMove);
 
 	if (ImGui::TreeNodeEx(scene->name.c_str(), base_flags)) {
+		char buff[32];
 		if (ImGui::TreeNodeEx("Oggetti", base_flags)) {
-			static const char* context_menu_id;
+			static unsigned context_menu_id;
 			for (auto o : objs) {
 				auto node_flag = leaf_flags | (o == selected_element ?
 					ImGuiTreeNodeFlags_Selected : 0);
-				ImGui::TreeNodeEx(o.c_str(), node_flag, scene->getObject(o)->name.c_str());
+				ImGui::TreeNodeEx(std::to_string(o).c_str(), node_flag, scene->getObject(o)->name.c_str());
 				if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
 					selected_element = o;
 					selected_elem_type = NodeType::OBJECT;
 				}
-				context_menu_id = o.c_str();
-				ImGui::OpenPopupOnItemClick(context_menu_id, ImGuiMouseButton_Right);
+				context_menu_id = o;
+				ImGui::OpenPopupOnItemClick(std::to_string(context_menu_id).c_str(), ImGuiMouseButton_Right);
 				if (ImGui::BeginPopupContextItem())
 				{
 					if (ImGui::Button("Delete")) {
-						if (selected_element == context_menu_id) selected_element = "";
+						if (selected_element == context_menu_id) selected_element = -1;
 						scene->removeObject(context_menu_id);
 						vkengine::loadScene(scene_id);
 					}
@@ -75,7 +76,7 @@ void Outliner::draw(int w_width, int w_height)
 			for (auto l : lights) {
 				auto node_flag = leaf_flags | (l == selected_element ?
 					ImGuiTreeNodeFlags_Selected : 0);
-				ImGui::TreeNodeEx(l.c_str(), node_flag, scene->getLight(l)->name.c_str());
+				ImGui::TreeNodeEx(std::to_string(l).c_str(), node_flag, scene->getLight(l)->name.c_str());
 				if (ImGui::IsItemClicked()) {
 					selected_element = l;
 					selected_elem_type = NodeType::LIGHT;
@@ -87,7 +88,7 @@ void Outliner::draw(int w_width, int w_height)
 			for (auto c : cams) {
 				auto node_flag = leaf_flags | (c == selected_element ?
 					ImGuiTreeNodeFlags_Selected : 0);
-				ImGui::TreeNodeEx(c.c_str(), node_flag, scene->getCamera(c)->name.c_str());
+				ImGui::TreeNodeEx(std::to_string(c).c_str(), node_flag, scene->getCamera(c)->name.c_str());
 				if (ImGui::IsItemClicked()) {
 					selected_element = c;
 					selected_elem_type = NodeType::CAMERA;
@@ -107,7 +108,7 @@ void Outliner::draw(int w_width, int w_height)
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoMove);
 
-	if (selected_element != "") {
+	if (selected_element != -1) {
 		switch (selected_elem_type)
 		{
 		case NodeType::OBJECT: showOjectProperties(scene_id, selected_element); break;
@@ -123,7 +124,7 @@ void Outliner::draw(int w_width, int w_height)
 
 Outliner::~Outliner() = default;
 
-void showOjectProperties(std::string scene, std::string obj_id)
+void showOjectProperties(std::string scene, unsigned obj_id)
 {
 	auto obj = vkengine::getScene(scene)->getObject(obj_id);
 	ImGui::Text(obj->name.c_str()); 
@@ -131,14 +132,14 @@ void showOjectProperties(std::string scene, std::string obj_id)
 	showVectorControls("Scale", &obj->getObjTransform().scale_vector);
 }
 
-void showLightProperties(std::string scene, std::string light_id)
+void showLightProperties(std::string scene, unsigned light_id)
 {
 	auto light = vkengine::getScene(scene)->getLight(light_id);
 	ImGui::Text(light->name.c_str());
 	showVectorControls("Position", (glm::vec3*)&light->getData().position);
 }
 
-void showCameraProperties(std::string scene, std::string cam_id)
+void showCameraProperties(std::string scene, unsigned cam_id)
 {
 	auto cam = vkengine::getScene(scene)->getCamera(cam_id);
 	ImGui::Text(cam->name.c_str()); 
