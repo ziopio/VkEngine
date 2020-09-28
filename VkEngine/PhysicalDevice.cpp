@@ -1,7 +1,7 @@
 #include "PhysicalDevice.h"
 #include "Instance.h"
+#include "vk_extensions.h"
 #include "commons.h"
-#include "raytracing.h"
 
 VkPhysicalDevice PhysicalDevice::physicalDevice = VK_NULL_HANDLE;
 VkSurfaceKHR PhysicalDevice::surface = VK_NULL_HANDLE;
@@ -13,6 +13,8 @@ VkPhysicalDeviceProperties PhysicalDevice::basicProperties = {};
 VkPhysicalDeviceFeatures PhysicalDevice::basicFeatures = {};
 VkPhysicalDeviceProperties2 PhysicalDevice::deviceProperties2 = {};
 VkPhysicalDeviceFeatures2 PhysicalDevice::deviceFeatures2 = {};
+
+VkPhysicalDeviceBufferDeviceAddressFeaturesKHR PhysicalDevice::deviceAddrFeatures = {};
 
 VkPhysicalDeviceRayTracingPropertiesKHR PhysicalDevice::rayTracingProperties = {};
 VkPhysicalDeviceRayTracingFeaturesKHR PhysicalDevice::rayTracingFeatures = {};
@@ -92,17 +94,23 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device)
 	// basic infos
 	vkGetPhysicalDeviceProperties(device, &basicProperties);
 	vkGetPhysicalDeviceFeatures(device, &basicFeatures);
+	// PROPERTIES //
 	//RAY_TRACING properties:
 	rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
 	deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
 	deviceProperties2.properties = basicProperties;
 	deviceProperties2.pNext = &rayTracingProperties;
 	vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
+	// FEATURES //
+	//Buffer Device Address features
+	deviceAddrFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
 	//RAY_TRACING features:
 	rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+	rayTracingFeatures.pNext = &deviceAddrFeatures; // feature chaining
+	// feature final query
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
 	deviceFeatures2.features = basicFeatures;
-	deviceFeatures2.pNext = &rayTracingFeatures;
+	deviceFeatures2.pNext = &rayTracingFeatures; // feature chaining
 	vkGetPhysicalDeviceFeatures2(device, &deviceFeatures2);
 
 	// trovo una coda utilizzabile
@@ -128,7 +136,6 @@ QueueFamilyIndices PhysicalDevice::findQueueFamilies(VkPhysicalDevice device)
 	QueueFamilyIndices indices;
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
 
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
@@ -170,9 +177,8 @@ bool PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device)
 	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-	std::set<std::string> raytracingExtensions(rayTracingDeviceExtensions.begin(), rayTracingDeviceExtensions.end());
-
+	std::set<std::string> requiredExtensions(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+	std::set<std::string> raytracingExtensions(std::begin(rayTracingDeviceExtensions), std::end(rayTracingDeviceExtensions));
 
 	std::cout << extensionCount << " available extensions for the GPU:" << std::endl;
 

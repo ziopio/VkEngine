@@ -129,6 +129,9 @@
     <ClInclude Include="commons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vk_extensions.h">
+      <Filter>Header Files\ApiExtensions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VkEngine.cpp">
@@ -195,6 +198,9 @@
       <Filter>Source Files\ApiCore</Filter>
     </ClCompile>
     <ClCompile Include="raytracing.cpp">
+      <Filter>Source Files\ApiExtensions</Filter>
+    </ClCompile>
+    <ClCompile Include="vk_extensions.cpp">
       <Filter>Source Files\ApiExtensions</Filter>
     </ClCompile>
   </ItemGroup>

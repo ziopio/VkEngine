@@ -26,3 +26,5 @@
 #include <map>
 #include <unordered_map>
 #include <thread>
+#include <numeric>
+#include <assert.h>

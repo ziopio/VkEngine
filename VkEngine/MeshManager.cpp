@@ -21,7 +21,7 @@ void MeshManager::addMesh(std::string id, std::string mesh_path)
 	scene_meshes[id] = new Mesh3D(mesh_path);
 }
 
-BaseMesh * MeshManager::getMesh(std::string id)
+Mesh3D * MeshManager::getMesh(std::string id)
 {
 	return scene_meshes[id];
 }

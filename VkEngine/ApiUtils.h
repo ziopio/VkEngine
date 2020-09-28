@@ -24,6 +24,6 @@ void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool cmdPool
 
 void copyBufferToImage(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
+VkCommandBuffer beginSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool);
 
-void endSingleTimeCommands(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkCommandBuffer commandBuffer);
+void submitAndWaitCommandBuffers(VkDevice device, VkQueue queue, VkCommandPool commandPool, std::vector<VkCommandBuffer> & commandBuffers);

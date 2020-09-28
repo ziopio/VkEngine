@@ -52,10 +52,14 @@ void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize
 	VkMemoryRequirements memRequirements;
 	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	VkMemoryAllocateFlagsInfo memoryFlags = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR};
+	VkMemoryAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+	if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) {
+		memoryFlags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+		allocInfo.pNext = &memoryFlags;
+	}
 
 	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate buffer memory!");
@@ -69,13 +73,15 @@ void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize
 }
 
 void copyBufferToBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
+	VkCommandBuffer commandBuffer = beginSingleTimeCommandBuffer(device, commandPool);
 
 	VkBufferCopy copyRegion = {};
 	copyRegion.size = size;
 	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-	endSingleTimeCommands(device, queue, commandPool, commandBuffer);
+	std::vector<VkCommandBuffer> _buffers(1, commandBuffer);
+
+	submitAndWaitCommandBuffers(device, queue, commandPool, _buffers);
 }
 
 void createImage(VkPhysicalDevice physicalDevice, VkDevice device, uint32_t width, uint32_t height,
@@ -141,7 +147,7 @@ bool hasStencilComponent(VkFormat format) {
 }
 
 void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, cmdPool);
+	VkCommandBuffer commandBuffer = beginSingleTimeCommandBuffer(device, cmdPool);
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
@@ -216,11 +222,12 @@ void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool cmdPool
 		1, &barrier
 	);
 
-	endSingleTimeCommands(device, queue, cmdPool, commandBuffer);
+	std::vector<VkCommandBuffer> _buffers(1, commandBuffer);
+	submitAndWaitCommandBuffers(device, queue, cmdPool, _buffers);
 }
 
 void copyBufferToImage(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, cmdPool);
+	VkCommandBuffer commandBuffer = beginSingleTimeCommandBuffer(device, cmdPool);
 
 	VkBufferImageCopy region = {};
 	region.bufferOffset = 0;
@@ -248,10 +255,11 @@ void copyBufferToImage(VkDevice device, VkQueue queue, VkCommandPool cmdPool, Vk
 		&region
 	);// nota si possoso accodare svariate operazioni di copiatura tra 1 buffer e 1 immagine
 
-	endSingleTimeCommands(device, queue, cmdPool, commandBuffer);
+	std::vector<VkCommandBuffer> _buffers(1, commandBuffer);
+	submitAndWaitCommandBuffers(device, queue, cmdPool, _buffers);
 }
 
-VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool) {
+VkCommandBuffer beginSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool) {
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -270,17 +278,31 @@ VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPo
 	return commandBuffer;
 }
 
+//
+//void endSingleTimeCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool,VkCommandBuffer commandBuffer) {
+//	vkEndCommandBuffer(commandBuffer);
+//
+//	VkSubmitInfo submitInfo = {};
+//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+//	submitInfo.commandBufferCount = 1;
+//	submitInfo.pCommandBuffers = &commandBuffer;
+//
+//	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+//	vkQueueWaitIdle(queue);
+//
+//	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+//}
 
-void endSingleTimeCommands(VkDevice device, VkQueue queue, VkCommandPool commandPool,VkCommandBuffer commandBuffer) {
-	vkEndCommandBuffer(commandBuffer);
-
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+void submitAndWaitCommandBuffers(VkDevice device, VkQueue queue, VkCommandPool commandPool, std::vector<VkCommandBuffer> & commandBuffers) {
+	for (auto cmd : commandBuffers) {
+		vkEndCommandBuffer(cmd);
+	}
+	VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+	submitInfo.commandBufferCount = commandBuffers.size();
+	submitInfo.pCommandBuffers = commandBuffers.data();
 
 	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(queue);
 
-	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
 }

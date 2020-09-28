@@ -1,6 +1,7 @@
 #include "Device.h"
 #include "PhysicalDevice.h"
 #include "Debug.h"
+#include "vk_extensions.h"
 #include "commons.h"
 
 VkDevice Device::device = VK_NULL_HANDLE;
@@ -96,8 +97,14 @@ void Device::createDevice() {
 	createInfo.pEnabledFeatures = nullptr; 
 	createInfo.pNext = &PhysicalDevice::getPhysicalDeviceFeatures();
 
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	std::vector<const char*> extensions(requiredDeviceExtensions.begin(),requiredDeviceExtensions.end());
+
+	if (PhysicalDevice::hasRaytracing()) {
+		for (auto ext : rayTracingDeviceExtensions) { extensions.push_back(ext); }
+	}
+
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+	createInfo.ppEnabledExtensionNames = extensions.data();
 	if (validation) {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();

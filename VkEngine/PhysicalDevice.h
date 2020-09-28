@@ -1,7 +1,7 @@
 #pragma once
 #include "commons.h"
 
-const std::vector<const char*> deviceExtensions = {
+const std::vector<const char*> requiredDeviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
@@ -52,6 +52,9 @@ private:
 	// Structs concatenating all features and properties of the device
 	static VkPhysicalDeviceProperties2 deviceProperties2;
 	static VkPhysicalDeviceFeatures2 deviceFeatures2;
+	// Extra features and properties
+	// Buffer Device Address
+	static VkPhysicalDeviceBufferDeviceAddressFeaturesKHR deviceAddrFeatures;
 	// Ray Tracing
 	static VkPhysicalDeviceRayTracingPropertiesKHR rayTracingProperties;
 	static VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures;

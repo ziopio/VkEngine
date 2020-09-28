@@ -11,6 +11,7 @@
 #include "RenderPass.h"
 #include "Renderer.h"
 #include "Pipeline.h"
+#include "raytracing.h"
 #include "commons.h"
 
 namespace vkengine
@@ -48,6 +49,7 @@ namespace vkengine
 		MeshManager::init();
 		TextureManager::init();
 		Renderer::init();
+		RayTracer::initialize();
 	}
 
 	void resizeSwapchain()
@@ -58,6 +60,7 @@ namespace vkengine
 	void shutdown()
 	{
 		vkDeviceWaitIdle(Device::get());
+		RayTracer::cleanUP();
 		PipelineFactory::cleanUP();
 		DescriptorSetsFactory::cleanUp();
 		Renderer::cleanUp();
@@ -122,6 +125,9 @@ namespace vkengine
 		Renderer::prepareScene(&scenes.at(active_scene));
 		// Just in case resources like Textures were added / updated
 		PipelineFactory::updatePipelineResources(STD_PIPELINE_LAYOUT);
+
+		/////// raytracing
+		RayTracer::prepare();
 	}
 
 	bool* multithreadedRendering()

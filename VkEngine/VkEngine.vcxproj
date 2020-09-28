@@ -126,6 +126,7 @@
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DescriptorSets.h" />
     <ClInclude Include="Device.h" />
+    <ClInclude Include="vk_extensions.h" />
     <ClInclude Include="Instance.h" />
     <ClInclude Include="Libraries\frustum.hpp" />
     <ClInclude Include="Libraries\stb_image.h" />
@@ -174,6 +175,7 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="VkEngine.cpp" />
+    <ClCompile Include="vk_extensions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

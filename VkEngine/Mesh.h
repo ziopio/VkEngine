@@ -96,9 +96,9 @@ namespace std {
 
 class BaseMesh {
 public:
-	virtual VkBuffer getVkVertexBuffer();
-	virtual VkBuffer getVkIndexBuffer();
-	virtual uint32_t getIdxCount() = 0;
+	virtual VkBuffer getVkVertexBuffer() const;
+	virtual VkBuffer getVkIndexBuffer() const;
+	virtual uint32_t getIdxCount() const = 0;
 protected:
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer vertexBuffer;
@@ -111,7 +111,8 @@ class Mesh3D : public BaseMesh
 public:
 	//Mesh3D(Primitive3D primitive);
 	Mesh3D(std::string modelPath);
-	uint32_t getIdxCount() override;
+	uint32_t getIdxCount() const override;
+	uint32_t getVertexCount() const;
 	~Mesh3D();
 private:
 	void loadModel(std::string modelPath);
@@ -129,7 +130,7 @@ public:
 	//are re-allocated with the double of needed space.
 	void updateMeshData(UiDrawData draw_data);
 	UiDrawData getData();
-	uint32_t getIdxCount() override;
+	uint32_t getIdxCount() const override;
 	~GuiMesh();
 private:
 	UiDrawData draw_data;
