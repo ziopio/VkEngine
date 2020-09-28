@@ -1,4 +1,3 @@
-#include "commons.h"
 #include "Mesh.h"
 #include "VkEngine.h"
 #include "ApiUtils.h"
@@ -8,6 +7,9 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "Libraries/tiny_obj_loader.h"
 
+#include "commons.h"
+
+using namespace vkengine;
 
 VkBuffer BaseMesh::getVkVertexBuffer() const {return this->vertexBuffer;}
 

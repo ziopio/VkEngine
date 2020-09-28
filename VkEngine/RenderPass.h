@@ -1,6 +1,5 @@
 #pragma once
-#include "SwapChain.h"
-#include <vulkan/vulkan.h>
+#include "commons.h"
 
 class RenderPassCatalog
 {

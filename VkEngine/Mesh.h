@@ -1,7 +1,6 @@
 #pragma once
 #include "VkEngine.h"
-
-using namespace vkengine;
+#include "commons.h"
 
 enum VertexTypes { VERTEX_2D, VERTEX_3D };
 
@@ -128,12 +127,12 @@ public:
 	//Update buffers with new fresh data, 
 	//if space is not enough, buffers and memory 
 	//are re-allocated with the double of needed space.
-	void updateMeshData(UiDrawData draw_data);
-	UiDrawData getData();
+	void updateMeshData(vkengine::UiDrawData draw_data);
+	vkengine::UiDrawData getData();
 	uint32_t getIdxCount() const override;
 	~GuiMesh();
 private:
-	UiDrawData draw_data;
+	vkengine::UiDrawData draw_data;
 	Vertex2D* mappedVtxMemory;
 	uint32_t* mappedIdxMemory;
 	size_t allocated_Vtx_MemSize;

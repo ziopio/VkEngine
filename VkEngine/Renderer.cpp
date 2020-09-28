@@ -9,6 +9,8 @@
 #include "ApiUtils.h"
 #include "commons.h"
 
+using namespace vkengine;
+
 // function to feed a thread job
 void threadRenderCode(Object3D* obj, Camera* cam, 
 	ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex, 

@@ -1,11 +1,10 @@
 #pragma once
 #include "VkEngine.h"
-#include <unordered_map>
-#include "vulkan/vulkan.h"
 #include "Shader.h"
 #include "SwapChain.h"
 #include "DescriptorSets.h"
 #include "Mesh.h"
+#include "commons.h"
 
 constexpr const char* STD_3D_PIPELINE_ID = "standard";
 constexpr const char* IMGUI_PIPELINE_ID = "imgui";

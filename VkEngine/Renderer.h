@@ -4,8 +4,6 @@
 #include "LightSource.h"
 #include "Libraries/threadpool.hpp"
 
-using namespace vkengine;
-
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 struct FrameAttachment {
@@ -28,7 +26,7 @@ public:
 	static void init();
 	static unsigned getNextFrameBufferIndex();
 	static FrameAttachment getOffScreenFrameAttachment(unsigned frameIndex);
-	static void prepareScene(Scene3D* scene);
+	static void prepareScene(vkengine::Scene3D* scene);
 	/* 
 	 * true means OK, false means SWAPCHAIN CHANGED!!!
 	*/
@@ -66,7 +64,7 @@ private:
 	//VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
 	//std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
 
-	static Scene3D* scene;
+	static vkengine::Scene3D* scene;
 
 	static vks::ThreadPool thread_pool;
 	static std::vector<ThreadData> per_thread_resources;

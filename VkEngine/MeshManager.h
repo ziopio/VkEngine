@@ -1,8 +1,6 @@
 #pragma once
 #include "Mesh.h"
 
-using namespace vkengine;
-
 class MeshManager
 {
 public:
@@ -11,7 +9,7 @@ public:
 	static Mesh3D* getMesh(std::string id);
 	static std::vector<std::string> listLoadedMeshes();
 	static GuiMesh* getImGuiMesh(unsigned imageIndex);
-	static void updateImGuiBuffers(UiDrawData imgui, unsigned imageIndex);
+	static void updateImGuiBuffers(vkengine::UiDrawData imgui, unsigned imageIndex);
 	static void cleanUp();
 private:
 	static std::unordered_map<std::string, Mesh3D*> scene_meshes;
