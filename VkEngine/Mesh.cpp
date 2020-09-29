@@ -175,7 +175,7 @@ void GuiMesh::updateMeshData(UiDrawData draw_data)
 		createBuffer(PhysicalDevice::get(), Device::get(),
 			allocated_Vtx_MemSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			vertexBuffer, vertexBufferMemory);
 		vkMapMemory(Device::get(), vertexBufferMemory, 0, allocated_Vtx_MemSize, 0, (void**)&mappedVtxMemory);
 	}
@@ -192,7 +192,7 @@ void GuiMesh::updateMeshData(UiDrawData draw_data)
 		createBuffer(PhysicalDevice::get(), Device::get(),
 			allocated_Idx_MemSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			indexBuffer, indexBufferMemory);
 		vkMapMemory(Device::get(), indexBufferMemory, 0, allocated_Idx_MemSize, 0, (void**)&mappedIdxMemory);
 	}
