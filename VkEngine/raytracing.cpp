@@ -17,6 +17,31 @@ uint64_t getBufferDeviceAddress(VkBuffer buffer)
 	return vkGetBufferDeviceAddressKHR(Device::get(), &bufferDeviceAI);
 }
 
+Buffer createScratchBuffer(VkDeviceSize size) {
+	VkBuffer scratchBuffer;
+	VkDeviceMemory scratchMem;
+	createBuffer(PhysicalDevice::get(), Device::get(), size,
+		VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchMem);
+	// Get its device address
+	VkBufferDeviceAddressInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+	bufferInfo.buffer = scratchBuffer;
+	VkDeviceAddress scratchAddress = vkGetBufferDeviceAddress(Device::get(), &bufferInfo);
+	return Buffer{ scratchBuffer,scratchMem, scratchAddress };
+}
+
+VkDeviceSize getScratchMemoryRequirements(AccelerationStructure AS) {
+	VkAccelerationStructureMemoryRequirementsInfoKHR memoryReqInfo{
+				  VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR };
+	memoryReqInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR; // scratch
+	memoryReqInfo.accelerationStructure = AS.accelerationStructure;
+	memoryReqInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
+	VkMemoryRequirements2 reqMem{ VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
+	vkGetAccelerationStructureMemoryRequirementsKHR(Device::get(), &memoryReqInfo, &reqMem);
+
+	return reqMem.memoryRequirements.size;
+}
+
 AccelerationStructureGeometry mesh3DToASGeometryKHR(const Mesh3D* model)
 {
 	// Setting up the creation info of acceleration structure
@@ -133,31 +158,15 @@ void RayTracer::buildBottomLevelAS()
 		// SCRATCH MEMORY ESTIMATION
 		// Estimate the amount of scratch memory required to build the BLAS, and
 		// update the size of the scratch buffer that will be allocated to
-		// sequentially build all BLASes
-		VkAccelerationStructureMemoryRequirementsInfoKHR memoryReqInfo{
-					  VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR };
-		memoryReqInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR; // scratch
-		memoryReqInfo.accelerationStructure = blas.as.accelerationStructure;
-		memoryReqInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-		VkMemoryRequirements2 reqMem{ VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-		vkGetAccelerationStructureMemoryRequirementsKHR(Device::get(), &memoryReqInfo, &reqMem);
-		
-		VkDeviceSize scratchSize = reqMem.memoryRequirements.size;
+		// sequentially build all BLASes		
+		VkDeviceSize scratchSize = getScratchMemoryRequirements(blas.as);
 		maxScratch = std::max(maxScratch, scratchSize);
 
 		// TODO query the true sizes of each blas [optional]
 	}
 
-	////// SCRATCH BUFFER CREATION
-	VkBuffer scratchBuffer;
-	VkDeviceMemory scratchMem;
-	createBuffer(PhysicalDevice::get(),Device::get(), maxScratch, 
-		VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchMem);
-	// Get its device address
-	VkBufferDeviceAddressInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
-	bufferInfo.buffer = scratchBuffer;
-	VkDeviceAddress scratchAddress = vkGetBufferDeviceAddress(Device::get(), &bufferInfo);
+	// SCRATCH BUFFER CREATION
+	Buffer scratchBuffer = createScratchBuffer(maxScratch);
 
 	// TODO // Prepare the Query for the size of compact BLAS
 
@@ -181,7 +190,7 @@ void RayTracer::buildBottomLevelAS()
 		bottomASInfo.geometryCount = (uint32_t)blas.geometries.size();
 		VkAccelerationStructureGeometryKHR* as_geometries = blas.geometries.data();
 		bottomASInfo.ppGeometries = &as_geometries;
-		bottomASInfo.scratchData.deviceAddress = scratchAddress;
+		bottomASInfo.scratchData.deviceAddress = scratchBuffer.deviceAddr;
 		// Vulkan wants an array of pointers to offsets... :(
 		std::vector<VkAccelerationStructureBuildOffsetInfoKHR*> pBuildOffset(blas.offsets.size());
 		for (size_t i = 0; i < blas.offsets.size(); i++) {
@@ -203,8 +212,8 @@ void RayTracer::buildBottomLevelAS()
 	submitAndWaitCommandBuffers(Device::get(),Device::getGraphicQueue(),Device::getGraphicCmdPool(), cmdBuffers);
 
 	// We can destroy our scratch buffer
-	vkDestroyBuffer(Device::get(), scratchBuffer, nullptr);
-	vkFreeMemory(Device::get(), scratchMem, nullptr);
+	vkDestroyBuffer(Device::get(), scratchBuffer.vkBuffer, nullptr);
+	vkFreeMemory(Device::get(), scratchBuffer.vkMemory, nullptr);
 }
 
 void RayTracer::buildTopLevelAS(Scene3D * scene)
@@ -239,24 +248,10 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	TLAS.as = createAcceleration(asCreateInfo);
 
 	// Compute the amount of scratch memory required by the acceleration structure builder
-	VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo{
-		VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR };
-	memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR;
-	memoryRequirementsInfo.accelerationStructure = TLAS.as.accelerationStructure;
-	memoryRequirementsInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-	VkMemoryRequirements2 reqMem{ VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-	vkGetAccelerationStructureMemoryRequirementsKHR(Device::get(), &memoryRequirementsInfo, &reqMem);
+	VkDeviceSize scratchSize = getScratchMemoryRequirements(TLAS.as);
 
-	VkDeviceSize scratchSize = reqMem.memoryRequirements.size;
-
-	// Allocate the scratch memory
 	//SCRATCH BUFFER CREATION
-	VkBuffer scratchBuffer;
-	VkDeviceMemory scratchMem;
-	createBuffer(PhysicalDevice::get(), Device::get(), scratchSize,
-		VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchMem);
-	VkDeviceAddress scratchAddress = getBufferDeviceAddress(scratchBuffer);
+	Buffer scratchBuffer = createScratchBuffer(scratchSize);
 
 	// For each instance, build the corresponding instance descriptor
 	std::vector<VkAccelerationStructureInstanceKHR> geometryInstances;
@@ -317,7 +312,7 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	topASInfo.geometryCount = 1;
 	VkAccelerationStructureGeometryKHR * pTopGeom = &topASGeometry;
 	topASInfo.ppGeometries = &pTopGeom;
-	topASInfo.scratchData.deviceAddress = scratchAddress;
+	topASInfo.scratchData.deviceAddress = scratchBuffer.deviceAddr;
 
 	VkAccelerationStructureBuildOffsetInfoKHR offsets = {static_cast<uint32_t>(TLAS.instances.size()),0,0,0};
 	const VkAccelerationStructureBuildOffsetInfoKHR* pOffsets = &offsets;
@@ -332,8 +327,8 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	vkDestroyBuffer(Device::get(), stageBuffer, nullptr);
 	vkFreeMemory(Device::get(), stageBufferMemory, nullptr);
 	// Scratch buffer CleanUp
-	vkDestroyBuffer(Device::get(), scratchBuffer, nullptr);
-	vkFreeMemory(Device::get(), scratchMem, nullptr);
+	vkDestroyBuffer(Device::get(), scratchBuffer.vkBuffer, nullptr);
+	vkFreeMemory(Device::get(), scratchBuffer.vkMemory, nullptr);
 }
 
 void RayTracer::initialize()

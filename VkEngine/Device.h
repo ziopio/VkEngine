@@ -1,6 +1,13 @@
 #pragma once
 #include "commons.h"
 
+struct Buffer {
+	VkBuffer vkBuffer;
+	VkDeviceMemory vkMemory;
+	VkDeviceAddress deviceAddr;
+};
+
+
 class Device
 {
 public:
