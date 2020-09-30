@@ -1,6 +1,7 @@
 #pragma once
 #include "Scene3D.h"
 #include "Mesh.h"
+#include "Device.h"
 #include "commons.h"
 
 
@@ -54,8 +55,7 @@ struct TLAS_Instance {
 
 struct TopLevelAS {
 	AccelerationStructure as;
-	VkBuffer instanceBuffer;
-	VkDeviceMemory instanceBufferMemory;
+	Buffer instanceBuffer;
 	std::vector<TLAS_Instance> instances;
 };
 
@@ -83,6 +83,9 @@ public:
 private:
 	static void buildBottomLevelAS();
 	static void buildTopLevelAS(vkengine::Scene3D * scene);
+	static void createRtDescriptorSets();
+private:
+	// Accelleration structures
 	static TopLevelAS TLAS;
 	static std::vector<BottomLevelAS> BLASs;
 };

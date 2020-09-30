@@ -265,27 +265,26 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	VkDeviceSize allocSize = geometryInstances.size() * sizeof(VkAccelerationStructureInstanceKHR);
 	//--------------------------------------------------------------------------------------------------------------
 	// STAGE buffer loading
-	VkBuffer stageBuffer;
-	VkDeviceMemory stageBufferMemory;
+	Buffer stageBuffer;
 	void* mappedStageBuffer;
 	createBuffer(PhysicalDevice::get(), Device::get(), allocSize,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-		stageBuffer, stageBufferMemory);
-	vkMapMemory(Device::get(),stageBufferMemory,0,allocSize,0, &mappedStageBuffer);
+		stageBuffer.vkBuffer, stageBuffer.vkMemory);
+	vkMapMemory(Device::get(),stageBuffer.vkMemory,0,allocSize,0, &mappedStageBuffer);
 	memcpy(mappedStageBuffer, geometryInstances.data(), allocSize);
-	vkUnmapMemory(Device::get(), stageBufferMemory);
+	vkUnmapMemory(Device::get(), stageBuffer.vkMemory);
 	//Final TLAS instance buffer loading
 	createBuffer(PhysicalDevice::get(), Device::get(), allocSize,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		TLAS.instanceBuffer, TLAS.instanceBufferMemory);
+		TLAS.instanceBuffer.vkBuffer, TLAS.instanceBuffer.vkMemory);
 	//--------------------------------------------------------------------------------------------------------------
 	// Copy data in GPU memory
 	VkCommandBuffer cmdBuffer = beginSingleTimeCommandBuffer(Device::get(), Device::getGraphicCmdPool());
 	VkBufferCopy copyRegion = {};
 	copyRegion.size = allocSize;
-	vkCmdCopyBuffer(cmdBuffer, stageBuffer, TLAS.instanceBuffer, 1, &copyRegion);
+	vkCmdCopyBuffer(cmdBuffer, stageBuffer.vkBuffer, TLAS.instanceBuffer.vkBuffer, 1, &copyRegion);
 	//We put a barrier to make all as_structure build operations to wait for previous commands to end their write operations
 	VkMemoryBarrier barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER};
 	barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
@@ -297,7 +296,7 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	//FINALLY we have the data in deice local memory safely written ready for the TLAS build
 	VkAccelerationStructureGeometryDataKHR gData = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR };
 	gData.instances.arrayOfPointers = VK_FALSE;
-	gData.instances.data.deviceAddress = getBufferDeviceAddress(TLAS.instanceBuffer);
+	gData.instances.data.deviceAddress = getBufferDeviceAddress(TLAS.instanceBuffer.vkBuffer);
 	VkAccelerationStructureGeometryKHR topASGeometry = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
 	topASGeometry.geometryType = VkGeometryTypeKHR::VK_GEOMETRY_TYPE_INSTANCES_KHR;
 	topASGeometry.geometry = gData;
@@ -324,11 +323,15 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	//--------------------------------------------------------------------------------------------------------------
 
 	//Stage CleanUp
-	vkDestroyBuffer(Device::get(), stageBuffer, nullptr);
-	vkFreeMemory(Device::get(), stageBufferMemory, nullptr);
+	vkDestroyBuffer(Device::get(), stageBuffer.vkBuffer, nullptr);
+	vkFreeMemory(Device::get(), stageBuffer.vkMemory, nullptr);
 	// Scratch buffer CleanUp
 	vkDestroyBuffer(Device::get(), scratchBuffer.vkBuffer, nullptr);
 	vkFreeMemory(Device::get(), scratchBuffer.vkMemory, nullptr);
+}
+
+void RayTracer::createRtDescriptorSets()
+{
 }
 
 void RayTracer::initialize()
@@ -347,8 +350,8 @@ void RayTracer::cleanUP()
 	// Destroy TLAS resources
 	vkDestroyAccelerationStructureKHR(Device::get(), TLAS.as.accelerationStructure, nullptr);
 	vkFreeMemory(Device::get(), TLAS.as.memory, nullptr);
-	vkDestroyBuffer(Device::get(), TLAS.instanceBuffer, nullptr);
-	vkFreeMemory(Device::get(), TLAS.instanceBufferMemory, nullptr);
+	vkDestroyBuffer(Device::get(), TLAS.instanceBuffer.vkBuffer, nullptr);
+	vkFreeMemory(Device::get(), TLAS.instanceBuffer.vkMemory, nullptr);
 	TLAS.instances.clear();
 
 	// Destroy BLAS resources

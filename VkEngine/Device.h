@@ -7,6 +7,11 @@ struct Buffer {
 	VkDeviceAddress deviceAddr;
 };
 
+struct Image {
+	VkImage vkImage;
+	VkDeviceMemory vkMemory;
+	VkDeviceAddress deviceAddr;
+};
 
 class Device
 {

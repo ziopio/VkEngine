@@ -233,17 +233,19 @@ void Renderer::createOffScreenAttachments() {
 		createImage(PhysicalDevice::get(), Device::get(),
 			SwapChainMng::get()->getExtent().width, SwapChainMng::get()->getExtent().height,
 			format, VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_SAMPLED_BIT |
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | // used as color attachment in first renderpass
+			VK_IMAGE_USAGE_SAMPLED_BIT | // sampled for second renderpass
+			VK_IMAGE_USAGE_STORAGE_BIT, // Storage is for usage in ray tracing pipeline (first pass)
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			offScreenAttachments[i].image, offScreenAttachments[i].Memory);
 		
 		offScreenAttachments[i].imageView = createImageView(Device::get(), offScreenAttachments[i].image, 
 			format, VK_IMAGE_ASPECT_COLOR_BIT);
-		
-		transitionImageLayout(Device::get(),Device::getGraphicQueue(),Device::getGraphicCmdPool(),
-			offScreenAttachments[i].image,format,
-			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		// Layout is kept general but could be switched to better suit it's usage during different rendering phases
+		transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
+			offScreenAttachments[i].image, format,
+			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
 		VkSamplerCreateInfo samplerInfo = {};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
