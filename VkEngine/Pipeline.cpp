@@ -63,23 +63,10 @@ void PipelineFactory::setVertexType(VertexTypes type)
 void PipelineFactory::setShaders(const char * vertex, const char * fragment)
 {
 	VulkanPipelineSettings* setup = &pipelines[current_pipeline].settings;
-	setup->vertex = std::make_unique<Shader>(vertex);
-	setup->fragment = std::make_unique<Shader>(fragment);
+	setup->vertex = std::make_unique<Shader>(vertex, VK_SHADER_STAGE_VERTEX_BIT);
+	setup->fragment = std::make_unique<Shader>(fragment, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = setup->vertex->get();
-	vertShaderStageInfo.pName = "main"; // Si può personalizzare l'entry-point
-	//vertShaderStageInfo.pSpecializationInfo serve ad inizializzare direttive al preprocessore spir-V
-
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = setup->fragment->get();
-	fragShaderStageInfo.pName = "main";
-	// riunisco gli shaders
-	setup->shader_stages = { vertShaderStageInfo, fragShaderStageInfo };
+	setup->shader_stages = { setup->vertex->getStage(), setup->fragment->getStage() };
 }
 
 void PipelineFactory::setDepthTest(bool flag)
@@ -105,7 +92,7 @@ void PipelineFactory::setDynamicViewPortAndScissor()
 	setup->dynamic_states_info = dynamic_state;
 }
 
-void PipelineFactory::createPipelines()
+void PipelineFactory::createRasterizationPipelines()
 {
 	std::vector<VkPipeline> pipeline_objects(pipelines.size());
 	std::vector<Pipeline*> pipeline_references; // pointers to values of the map
@@ -168,7 +155,7 @@ void PipelineFactory::updatePipelinesViewPorts()
 		}
 	}
 	// TODO: Optimize with use of pipelineCaches/derivative ecc
-	PipelineFactory::createPipelines();
+	PipelineFactory::createRasterizationPipelines();
 }
 
 void PipelineFactory::updatePipelineResources(PipelineLayoutType PLayout)
@@ -307,71 +294,122 @@ void PipelineFactory::initializeWithDefaultSettings(VulkanPipelineSettings * set
 	setup->colorBlending = colorBlending;
 }
 
+//VkPipelineLayout createPipelineLayout() 
+//{
+//	VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+//	pipelineLayoutInfo.setLayoutCount = layouts.size();
+//	pipelineLayoutInfo.pSetLayouts = layouts.data();
+//}
+
 void PipelineFactory::createPipelineLayouts()
 {
 	PipelineFactory::pipeline_layouts.resize(PipelineLayoutType::PipelineLayoutType_END);
-	std::vector<VkDescriptorSetLayout> layouts;
-	DescSetBundle bundle = {};
 
-	// STD rendering pipeline layout---------------------------------------
-	VkPushConstantRange pushRange = {};
-	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-
-	layouts.push_back(DescriptorSetsFactory::getDescSetLayout(TEXTURE_ARRAY)->layout);
-	layouts.push_back(DescriptorSetsFactory::getDescSetLayout(UNIFORM_BUFFER)->layout);
-	pipelineLayoutInfo.setLayoutCount = layouts.size();
-	pipelineLayoutInfo.pSetLayouts = layouts.data();
-	pushRange.size = sizeof(MainPushConstantBlock);
-	pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = &pushRange; // Optional
-	if (vkCreatePipelineLayout(Device::get(), 
-		&pipelineLayoutInfo, nullptr, 
-		&PipelineFactory::pipeline_layouts[PipelineLayoutType::STD_PIPELINE_LAYOUT].layout) 
-		!= VK_SUCCESS) 
+	// STD rendering pipeline layout---------------------------------------	
 	{
-		throw std::runtime_error("failed to create pipeline layout!");
+		std::vector<VkDescriptorSetLayout> layouts;
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY)->layout);
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout);
+		VkPushConstantRange pushRange = {};
+		pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		pushRange.size = sizeof(MainPushConstantBlock);
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+		pipelineLayoutInfo.setLayoutCount = layouts.size();
+		pipelineLayoutInfo.pSetLayouts = layouts.data();
+		pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
+		pipelineLayoutInfo.pPushConstantRanges = &pushRange; // Optional
+		if (vkCreatePipelineLayout(Device::get(),
+			&pipelineLayoutInfo, nullptr,
+			&PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_STANDARD].layout)
+			!= VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+		DescSetBundle bundle = {};
+		//bundle configuration
+		bundle.static_sets.push_back(
+			{ DS_USAGE_ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY),nullptr });
+		bundle.frame_dependent_sets.push_back({});
+		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
+			bundle.frame_dependent_sets[0].push_back(
+				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER),nullptr });
+		}
+		bundle.data_context = DescSetsResourceContext::SCENE_DATA;
+		PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_STANDARD].descriptors = bundle;
 	}
-	layouts.clear();
-	//bundle configuration
-	bundle.static_sets.push_back(
-		{ DescSetUsage::ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(TEXTURE_ARRAY),nullptr });
-	bundle.frame_dependent_sets.push_back({});
-	for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
-		bundle.frame_dependent_sets[0].push_back(
-			{ DescSetUsage::USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(UNIFORM_BUFFER),nullptr });
+	
+
+	// Ray_TRACING rendering pipeline layout---------------------------------------	
+	{		
+		std::vector<VkDescriptorSetLayout> layouts;
+		//layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY)->layout); // shared input with rasterizer
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_ACCELERATION_STRUCTURE)->layout); // ray-tracing only
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE)->layout); // shared output with rasterizer
+		//layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+		pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+		pipelineLayoutInfo.setLayoutCount = layouts.size();
+		pipelineLayoutInfo.pSetLayouts = layouts.data();
+		if (vkCreatePipelineLayout(Device::get(),
+			&pipelineLayoutInfo, nullptr,
+			&PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].layout)
+			!= VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+		//bundle configuration
+		DescSetBundle bundle = {};
+		bundle.static_sets.push_back(
+			{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_ACCELERATION_STRUCTURE),nullptr });
+		bundle.static_sets.push_back(
+			{ DS_USAGE_ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY),nullptr });
+		bundle.frame_dependent_sets.push_back({});
+		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
+			bundle.frame_dependent_sets[0].push_back(
+				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER),nullptr });
+		}
+		bundle.frame_dependent_sets.push_back({});
+		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
+			bundle.frame_dependent_sets[1].push_back(
+				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE),nullptr });
+		}
+		bundle.data_context = DescSetsResourceContext::SCENE_DATA;
+		PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].descriptors = bundle;
+
 	}
-	bundle.data_context = DescSetsResourceContext::SCENE_DATA;
-	PipelineFactory::pipeline_layouts[STD_PIPELINE_LAYOUT].descriptors = bundle;
-
-	// ImGui rendering pipeline layout--------------------------------------------
-
-	layouts.push_back(DescriptorSetsFactory::getDescSetLayout(TEXTURE_ARRAY)->layout);
-	layouts.push_back(DescriptorSetsFactory::getDescSetLayout(FRAMEBUFFER_TEXTURE)->layout);
-	pipelineLayoutInfo.setLayoutCount = layouts.size();
-	pipelineLayoutInfo.pSetLayouts = layouts.data();
-	pushRange.size = sizeof(ImGuiPushConstantBlock);
-	pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = &pushRange; // Optional
-	if (vkCreatePipelineLayout(Device::get(),
-		&pipelineLayoutInfo, nullptr,
-		&PipelineFactory::pipeline_layouts[PipelineLayoutType::IMGUI_PIPELINE_LAYOUT].layout)
-		!= VK_SUCCESS)
+	
+	// ImGui rendering pipeline layout-------------------------------------------
 	{
-		throw std::runtime_error("failed to create pipeline layout!");
+		std::vector<VkDescriptorSetLayout> layouts;		
+		VkPushConstantRange pushRange = {};
+		pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		pushRange.size = sizeof(ImGuiPushConstantBlock);
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY)->layout);
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_FRAMEBUFFER_TEXTURE)->layout);
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+		pipelineLayoutInfo.setLayoutCount = layouts.size();
+		pipelineLayoutInfo.pSetLayouts = layouts.data();
+		pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
+		pipelineLayoutInfo.pPushConstantRanges = &pushRange; // Optional
+		if (vkCreatePipelineLayout(Device::get(),
+			&pipelineLayoutInfo, nullptr,
+			&PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_IMGUI].layout)
+			!= VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+		//bundle configuration
+		DescSetBundle bundle = {};
+		bundle.static_sets.push_back(
+			{ DescSetUsage::DS_USAGE_ALBEDO_TEXTURE,DescriptorSetsFactory::getDescSetLayout(DescSetsLayouts::DSL_TEXTURE_ARRAY),nullptr });
+		bundle.frame_dependent_sets.push_back({});
+		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
+			bundle.frame_dependent_sets[0].push_back(
+				{ DescSetUsage::DS_OFFSCREEN_RENDER_TARGET,DescriptorSetsFactory::getDescSetLayout(DescSetsLayouts::DSL_FRAMEBUFFER_TEXTURE),nullptr });
+		}
+		bundle.data_context = DescSetsResourceContext::IMGUI_DATA;
+		PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_IMGUI].descriptors = bundle;
 	}
-	layouts.clear();
-	//bundle configuration
-	bundle = {};
-	bundle.static_sets.push_back(
-		{ DescSetUsage::ALBEDO_TEXTURE,DescriptorSetsFactory::getDescSetLayout(TEXTURE_ARRAY),nullptr });
-	bundle.frame_dependent_sets.push_back({});
-	for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
-		bundle.frame_dependent_sets[0].push_back(
-			{ DescSetUsage::OFFSCREEN_RENDER_TARGET,DescriptorSetsFactory::getDescSetLayout(FRAMEBUFFER_TEXTURE),nullptr });
-	}
-	bundle.data_context = DescSetsResourceContext::IMGUI_DATA;
-	PipelineFactory::pipeline_layouts[IMGUI_PIPELINE_LAYOUT].descriptors = bundle;
+
 
 }

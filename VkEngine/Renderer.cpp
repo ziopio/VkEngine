@@ -357,10 +357,10 @@ void Renderer::updateOffScreenCommandBuffer(uint32_t frameBufferIndex)
 	// work is divided between the available threads
 
 	std::vector<VkDescriptorSet> descrSets;
-	for (auto& set : PipelineFactory::pipeline_layouts[STD_PIPELINE_LAYOUT].descriptors.static_sets) {
+	for (auto& set : PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_STANDARD].descriptors.static_sets) {
 		descrSets.push_back(set.set);
 	}
-	for (auto& setlist : PipelineFactory::pipeline_layouts[STD_PIPELINE_LAYOUT].descriptors.frame_dependent_sets) {
+	for (auto& setlist : PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_STANDARD].descriptors.frame_dependent_sets) {
 		descrSets.push_back(setlist[frameBufferIndex].set);
 	}
 
@@ -464,12 +464,12 @@ void Renderer::recordImGuiDrawCmds(uint32_t frameBufferIndex)
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
 		PipelineFactory::pipelines[IMGUI_PIPELINE_ID].pipeline);
 
-	auto pipelineLayout = PipelineFactory::pipeline_layouts[IMGUI_PIPELINE_LAYOUT].layout;
+	auto pipelineLayout = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_IMGUI].layout;
 	std::vector<VkDescriptorSet> descrSets;
-	for (auto& set : PipelineFactory::pipeline_layouts[IMGUI_PIPELINE_LAYOUT].descriptors.static_sets) {
+	for (auto& set : PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_IMGUI].descriptors.static_sets) {
 		descrSets.push_back(set.set);
 	}
-	for (auto& setlist : PipelineFactory::pipeline_layouts[IMGUI_PIPELINE_LAYOUT].descriptors.frame_dependent_sets) {
+	for (auto& setlist : PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_IMGUI].descriptors.frame_dependent_sets) {
 		descrSets.push_back(setlist[frameBufferIndex].set);
 	}
 	vkCmdBindDescriptorSets(primaryCmdBuffers[frameBufferIndex],
@@ -581,7 +581,7 @@ void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_
 
 	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj->getMeshId())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-	VkPipelineLayout pipelineLayout = PipelineFactory::pipeline_layouts[STD_PIPELINE_LAYOUT].layout;
+	VkPipelineLayout pipelineLayout = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_STANDARD].layout;
 
 	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		pipelineLayout,

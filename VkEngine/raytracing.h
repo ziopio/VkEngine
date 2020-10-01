@@ -1,6 +1,8 @@
 #pragma once
 #include "Scene3D.h"
 #include "Mesh.h"
+#include "Pipeline.h"
+#include "DescriptorSets.h"
 #include "Device.h"
 #include "commons.h"
 
@@ -11,7 +13,6 @@ struct AccelerationStructureGeometry {
 	VkAccelerationStructureGeometryKHR geometry; // the geometry for build the AS, in this case, from triangles.
 	VkAccelerationStructureBuildOffsetInfoKHR offset; // the offset, which correspond to the actual wanted geometry when building.
 };
-
 
 // Ray tracing acceleration structure
 struct AccelerationStructure {
@@ -78,14 +79,24 @@ AccelerationStructure createAcceleration(VkAccelerationStructureCreateInfoKHR& a
 class RayTracer {
 public:
 	static void initialize();
+	static void createRayTracingPipeline();
 	static void prepare(vkengine::Scene3D * scene);
 	static void cleanUP();
 private:
 	static void buildBottomLevelAS();
 	static void buildTopLevelAS(vkengine::Scene3D * scene);
-	static void createRtDescriptorSets();
+	static void destroyAS();
 private:
 	// Accelleration structures
 	static TopLevelAS TLAS;
 	static std::vector<BottomLevelAS> BLASs;
+
+	/*
+	//Descriptor sets allocation managed by PipelineFactory:
+	1 set containing 1 binding for an acceleration structure, static rarely updated
+	1 set containing 1 binding for a frame-dependent storage image, updated every frame
+	This requires the specification of 2 new DS layouts.
+	*/
+
+	static Pipeline rayTracingPipeline;
 };

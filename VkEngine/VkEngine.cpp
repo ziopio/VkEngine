@@ -42,6 +42,7 @@ namespace vkengine
 		PhysicalDevice::get();
 		if (Instance::hasValidation()) Device::enableDeviceValidation();
 		Device::get();
+		if (hasRayTracing()) RayTracer::initialize();
 		SwapChainMng::init(surfaceOwner);
 		RenderPassCatalog::init();
 		PipelineFactory::init();
@@ -49,7 +50,6 @@ namespace vkengine
 		MeshManager::init();
 		TextureManager::init();
 		Renderer::init();
-		RayTracer::initialize();
 	}
 
 	void resizeSwapchain()
@@ -110,7 +110,7 @@ namespace vkengine
 	void loadFontAtlas(unsigned char * pixels, int * width, int * height)
 	{
 		TextureManager::loadFontAtlasTexture(pixels, width, height);
-		PipelineFactory::updatePipelineResources(IMGUI_PIPELINE_LAYOUT);
+		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_IMGUI);
 	}
 
 	void updateImGuiData(UiDrawData draw_data)
@@ -124,10 +124,12 @@ namespace vkengine
 		active_scene = scene_id;
 		Renderer::prepareScene(&scenes.at(active_scene));
 		// Just in case resources like Textures were added / updated
-		PipelineFactory::updatePipelineResources(STD_PIPELINE_LAYOUT);
+		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_STANDARD);
 
 		/////// raytracing
-		RayTracer::prepare(&scenes.at(active_scene));
+		if (hasRayTracing()) {
+			RayTracer::prepare(&scenes.at(active_scene));
+		}
 	}
 
 	bool* multithreadedRendering()
@@ -173,26 +175,29 @@ namespace vkengine
 		// IMGUI pipeline layout uses an offscreen attachment 
 		// which is recreated by the Renderer to match the swapchain extent
 		// For this reason i have to update his descriptors
-		PipelineFactory::updatePipelineResources(IMGUI_PIPELINE_LAYOUT);
+		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_IMGUI);
 	}
 
 	void buildBasicPipelines() 
 	{
 		// Standard 3D rendering to offscreen target
 		PipelineFactory::newPipeline(STD_3D_PIPELINE_ID, &RenderPassCatalog::offscreenRP,
-			0, PipelineLayoutType::STD_PIPELINE_LAYOUT);
+			0, PipelineLayoutType::PIPELINE_LAYOUT_STANDARD);
 		PipelineFactory::setShaders("VkEngine/Shaders/phong_multi_light/vert.spv", "VkEngine/Shaders/phong_multi_light/frag.spv");
 
 		// Imgui rendering to final presentation on swapchain
 		PipelineFactory::newPipeline(IMGUI_PIPELINE_ID, &RenderPassCatalog::presentationRP,
-			0, PipelineLayoutType::IMGUI_PIPELINE_LAYOUT);
+			0, PipelineLayoutType::PIPELINE_LAYOUT_IMGUI);
 		PipelineFactory::setVertexType(VertexTypes::VERTEX_2D);
 		PipelineFactory::setShaders("VkEngine/Shaders/imgui/vert.spv", "VkEngine/Shaders/imgui/frag.spv");
 		PipelineFactory::setCulling(false);
 		PipelineFactory::setDepthTest(false);
 		PipelineFactory::setDynamicViewPortAndScissor();
-
 		// Building
-		PipelineFactory::createPipelines();
+		PipelineFactory::createRasterizationPipelines();
+
+		if (hasRayTracing()) {
+			RayTracer::createRayTracingPipeline();
+		}
 	}
 }

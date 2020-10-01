@@ -8,9 +8,11 @@ constexpr const unsigned TEXTURE_ARRAY_LENGTH = 32;
 */
 enum DescSetsLayouts {
 	// lenght
-	TEXTURE_ARRAY,
-	FRAMEBUFFER_TEXTURE,
-	UNIFORM_BUFFER,
+	DSL_TEXTURE_ARRAY,
+	DSL_FRAMEBUFFER_TEXTURE,
+	DSL_UNIFORM_BUFFER,
+	DSL_ACCELERATION_STRUCTURE, // Raytracing KHR
+	DSL_STORAGE_IMAGE,
 	DescSetsLayouts_END // must be last
 };
 /* This is needed to choose which group of assets should 
@@ -26,18 +28,18 @@ Desc sets with the same layout could link to different resources
 to serve different purposes inside a shader...
 */
 enum DescSetUsage {
-	USAGE_UNDEFINED,// when usage is not needed at current developing stage...
-	ALBEDO_TEXTURE,
-	NORMAL_MAP,
-	OFFSCREEN_RENDER_TARGET,
+	DS_USAGE_UNDEFINED,// when usage is not needed at current developing stage...
+	DS_USAGE_ALBEDO_TEXTURE,
+	DS_USAGE_NORMAL_MAP,
+	DS_OFFSCREEN_RENDER_TARGET,
 	// TODO add some more..
 };
 
 typedef struct {
-	DescSetsLayouts type;
+	//DescSetsLayouts type;
 	VkDescriptorSetLayout layout;
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
-	bool frame_dependent;//Tells if the set should be replicated for each frame in flight
+	//bool frame_dependent;//Tells if the set should be replicated for each frame in flight
 } DescSetLayout;
 
 typedef struct {
@@ -91,7 +93,7 @@ public:
 	static void cleanUp();
 private:
 	static std::vector<DescSetLayout> layouts;
-	static std::vector<VkDescriptorPool> pools;
+	static VkDescriptorPool pool;
 
 	// For now this class manages the unique Uniform buffer needed
 	static VkBuffer uniformBuffer;
@@ -99,6 +101,6 @@ private:
 	static void* mappedUniformMemory;
 
 	static std::vector<VkDescriptorImageInfo> gatherImageInfos(DescSetUsage usage, DescSetsResourceContext data_context);
-	static std::vector<VkDescriptorBufferInfo> gatherBufferInfos(DescSetUsage usage, DescSetsResourceContext data_context);
+	//static std::vector<VkDescriptorBufferInfo> gatherBufferInfos(DescSetUsage usage, DescSetsResourceContext data_context);
 
 };

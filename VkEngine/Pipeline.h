@@ -13,8 +13,9 @@ constexpr const char* IMGUI_PIPELINE_ID = "imgui";
 A set of predefined pipelines Layouts used inside the engine.
 */
 enum PipelineLayoutType {
-	STD_PIPELINE_LAYOUT,
-	IMGUI_PIPELINE_LAYOUT,
+	PIPELINE_LAYOUT_STANDARD,
+	PIPELINE_LAYOUT_RAY_TRACING,
+	PIPELINE_LAYOUT_IMGUI,
 	PipelineLayoutType_END
 };
 
@@ -80,7 +81,7 @@ public:
 	// This is used for imgui 
 	static void setDynamicViewPortAndScissor();
 	// creates all the pipelines added
-	static void createPipelines();
+	static void createRasterizationPipelines();
 	// Recreates all pipelines with the current swapchain extent,should be called after swapchain recreation.
 	static void updatePipelinesViewPorts();
 	// Updates all decriptors of a pipeline layout

@@ -7,88 +7,73 @@
 #include "Renderer.h"
 
 std::vector<DescSetLayout> DescriptorSetsFactory::layouts;
-std::vector<VkDescriptorPool> DescriptorSetsFactory::pools;
+VkDescriptorPool DescriptorSetsFactory::pool;
 VkBuffer DescriptorSetsFactory::uniformBuffer;
 VkDeviceMemory DescriptorSetsFactory::uniformBufferMemory;
 void* DescriptorSetsFactory::mappedUniformMemory;
 
+VkDescriptorSetLayout createDStLayout(std::vector<VkDescriptorSetLayoutBinding> bindings) {
+	VkDescriptorSetLayout layout;
+	VkDescriptorSetLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	layoutInfo.pBindings = bindings.data();
+	if (vkCreateDescriptorSetLayout(Device::get(), &layoutInfo, nullptr,&layout) != VK_SUCCESS)
+	{ throw std::runtime_error("failed to create descriptor set layout!"); }
+	return layout;
+}
+
 void DescriptorSetsFactory::initLayouts() {
 	DescriptorSetsFactory::layouts.resize(DescSetsLayouts::DescSetsLayouts_END);
 
-	// TEXTURE_ARRAY : 32 texture in fragment shader
+	// ACCELERATION STRUCTURE : 1 binding of 1 ACs in raytracing shaders
 	{
-		DescriptorSetsFactory::layouts[TEXTURE_ARRAY].type = TEXTURE_ARRAY;
+		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+		samplerLayoutBinding.binding = 0;
+		samplerLayoutBinding.descriptorCount = 1;
+		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		layouts[DSL_ACCELERATION_STRUCTURE].bindings = { samplerLayoutBinding };
+		layouts[DSL_ACCELERATION_STRUCTURE].layout = createDStLayout(layouts[DSL_ACCELERATION_STRUCTURE].bindings);
+	}
+	// TEXTURE_ARRAY : 1 binding of 32 textures in fragment shader
+	{
 		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 		samplerLayoutBinding.binding = 0;
 		samplerLayoutBinding.descriptorCount = TEXTURE_ARRAY_LENGTH;
 		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		layouts[TEXTURE_ARRAY].bindings = { samplerLayoutBinding };
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(layouts[TEXTURE_ARRAY].bindings.size());
-		layoutInfo.pBindings = layouts[TEXTURE_ARRAY].bindings.data();
-
-		if (vkCreateDescriptorSetLayout(Device::get(), 
-			&layoutInfo, nullptr, 
-			&DescriptorSetsFactory::layouts[DescSetsLayouts::TEXTURE_ARRAY].layout) 
-			!= VK_SUCCESS) 
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
+		layouts[DSL_TEXTURE_ARRAY].bindings = { samplerLayoutBinding };
+		layouts[DSL_TEXTURE_ARRAY].layout = createDStLayout(layouts[DSL_TEXTURE_ARRAY].bindings);
 	}
-
-	// FRAMEBUFFER_TEXTURE Texture : in fragment shader
+	// STORAGE_IMAGE for RAYTRACING : 1 binding of 1 storage image in raytracing shaders
 	{
-		DescriptorSetsFactory::layouts[FRAMEBUFFER_TEXTURE].type = FRAMEBUFFER_TEXTURE;
+		VkDescriptorSetLayoutBinding storageImgLayoutBinding = {};
+		storageImgLayoutBinding.binding = 0;
+		storageImgLayoutBinding.descriptorCount = 1;
+		storageImgLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		storageImgLayoutBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+		layouts[DSL_STORAGE_IMAGE].bindings = { storageImgLayoutBinding };
+		layouts[DSL_STORAGE_IMAGE].layout = createDStLayout(layouts[DSL_STORAGE_IMAGE].bindings);
+	}
+	// FRAMEBUFFER_TEXTURE: a set with 1binding of 1 Texture : in fragment shader
+	{
 		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 		samplerLayoutBinding.binding = 0;
 		samplerLayoutBinding.descriptorCount = 1;
 		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		layouts[FRAMEBUFFER_TEXTURE].bindings = { samplerLayoutBinding };
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(layouts[FRAMEBUFFER_TEXTURE].bindings.size());
-		layoutInfo.pBindings = layouts[FRAMEBUFFER_TEXTURE].bindings.data();
-
-		if (vkCreateDescriptorSetLayout(Device::get(),
-			&layoutInfo, nullptr,
-			&DescriptorSetsFactory::layouts[DescSetsLayouts::FRAMEBUFFER_TEXTURE].layout)
-			!= VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-		layouts[FRAMEBUFFER_TEXTURE].frame_dependent = true;
+		layouts[DSL_FRAMEBUFFER_TEXTURE].bindings = { samplerLayoutBinding };
+		layouts[DSL_FRAMEBUFFER_TEXTURE].layout = createDStLayout(layouts[DSL_FRAMEBUFFER_TEXTURE].bindings);
 	}
-	// Uniform set for drawing in 3D
+	// Uniform set for drawing both in rasterization and in raaytracing
 	{		
-		DescriptorSetsFactory::layouts[UNIFORM_BUFFER].type = UNIFORM_BUFFER;
 		VkDescriptorSetLayoutBinding uniformMatLayoutBinding = {};
 		uniformMatLayoutBinding.binding = 0;
 		uniformMatLayoutBinding.descriptorCount = 1;
 		uniformMatLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uniformMatLayoutBinding.pImmutableSamplers = nullptr;
-		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		layouts[UNIFORM_BUFFER].bindings = { uniformMatLayoutBinding };
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(layouts[UNIFORM_BUFFER].bindings.size());
-		layoutInfo.pBindings = layouts[UNIFORM_BUFFER].bindings.data();
-
-		if (vkCreateDescriptorSetLayout(Device::get(), 
-			&layoutInfo, nullptr,
-			&DescriptorSetsFactory::layouts[DescSetsLayouts::UNIFORM_BUFFER].layout)
-			!= VK_SUCCESS) 
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-		layouts[UNIFORM_BUFFER].frame_dependent = true;
+		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+		layouts[DSL_UNIFORM_BUFFER].bindings = { uniformMatLayoutBinding };
+		layouts[DSL_UNIFORM_BUFFER].layout = createDStLayout(layouts[DSL_UNIFORM_BUFFER].bindings);
 	}
 }
 
@@ -109,13 +94,15 @@ void DescriptorSetsFactory::initDescSetPool()
 				poolSizes.push_back(poolSize);
 			}
 		}
-		for (auto & DSLayouts : PLayout.descriptors.frame_dependent_sets) {
-			for (auto & bind : DSLayouts[0].layout->bindings) {
-				VkDescriptorPoolSize poolSize;
-				poolSize.type = bind.descriptorType;
-				poolSize.descriptorCount = bind.descriptorCount * frames_in_flight;
-				sets_needed += frames_in_flight;
-				poolSizes.push_back(poolSize);
+		for (auto & frame_dependent_group : PLayout.descriptors.frame_dependent_sets) {
+			for (auto & DSLayout : frame_dependent_group) {
+				for (auto & bind : DSLayout.layout->bindings) {
+					VkDescriptorPoolSize poolSize;
+					poolSize.type = bind.descriptorType;
+					poolSize.descriptorCount = bind.descriptorCount * frames_in_flight;
+					sets_needed += frames_in_flight;
+					poolSizes.push_back(poolSize);
+				}
 			}
 		}
 	}
@@ -127,12 +114,10 @@ void DescriptorSetsFactory::initDescSetPool()
 	poolInfo.pPoolSizes = poolSizes.data();
 	// 1 of uniforms per image + 1 for textures(3D scene) + 2 for IMGUI (textures and 3D scene render per swap image)
 	poolInfo.maxSets = sets_needed;
-	VkDescriptorPool pool;
 	VkResult result = vkCreateDescriptorPool(Device::get(), &poolInfo, nullptr, &pool);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
-	DescriptorSetsFactory::pools.push_back(pool);
 }
 
 void DescriptorSetsFactory::allocateDescriptorSets(DescSetBundle * bundle)
@@ -141,7 +126,7 @@ void DescriptorSetsFactory::allocateDescriptorSets(DescSetBundle * bundle)
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 
 	auto lambda = [&allocInfo](DescSet *desc_set) {
-		allocInfo.descriptorPool = pools[0]; // ONE POOL FOR NOW
+		allocInfo.descriptorPool = pool; // ONE POOL FOR NOW
 		allocInfo.descriptorSetCount = 1;
 		allocInfo.pSetLayouts = &desc_set->layout->layout;
 		VkResult result = vkAllocateDescriptorSets(Device::get(), &allocInfo, &desc_set->set);
@@ -157,7 +142,6 @@ void DescriptorSetsFactory::allocateDescriptorSets(DescSetBundle * bundle)
 		for( auto & desc_set : set_list){
 			lambda(&desc_set);
 	}
-
 }
 
 void DescriptorSetsFactory::updateDescriptorSets(DescSetBundle* bundle)
@@ -246,13 +230,12 @@ void DescriptorSetsFactory::cleanUp() {
 	vkUnmapMemory(Device::get(), uniformBufferMemory);
 	vkDestroyBuffer(Device::get(), uniformBuffer, nullptr);
 	vkFreeMemory(Device::get(), uniformBufferMemory, nullptr);
-	for (auto & pool : pools) {
-		vkDestroyDescriptorPool(Device::get(), pool, nullptr);
-	}
+
+	vkDestroyDescriptorPool(Device::get(), pool, nullptr);
+
 	for (auto & DSlayout : layouts) {
 		vkDestroyDescriptorSetLayout(Device::get(), DSlayout.layout, nullptr);
 	}
-	pools.clear();
 	layouts.clear();
 }
 
@@ -286,7 +269,7 @@ std::vector<VkDescriptorImageInfo> DescriptorSetsFactory::gatherImageInfos(DescS
 	case DescSetsResourceContext::SCENE_DATA:
 		switch (usage)
 		{
-		case DescSetUsage::ALBEDO_TEXTURE:
+		case DescSetUsage::DS_USAGE_ALBEDO_TEXTURE:
 			imagesInfo.resize(TEXTURE_ARRAY_LENGTH);
 			for (int i = 0; i < TEXTURE_ARRAY_LENGTH; i++) {
 				imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -305,7 +288,7 @@ std::vector<VkDescriptorImageInfo> DescriptorSetsFactory::gatherImageInfos(DescS
 	case DescSetsResourceContext::IMGUI_DATA:
 		switch (usage)
 		{
-		case DescSetUsage::ALBEDO_TEXTURE:
+		case DescSetUsage::DS_USAGE_ALBEDO_TEXTURE:
 			imagesInfo.resize(TEXTURE_ARRAY_LENGTH);
 			for (int i = 0; i < TEXTURE_ARRAY_LENGTH; i++) {
 				imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

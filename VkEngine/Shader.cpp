@@ -19,15 +19,25 @@ static std::vector<char> readFile(const std::string& filename) {
 	return buffer;
 }
 
-Shader::Shader(std::string spirv_Path)
+Shader::Shader(std::string spirv_Path, VkShaderStageFlagBits target_stage)
 {
 	auto code = readFile(spirv_Path);
 	createShaderModule(code);
+	this->target_stage = target_stage;
 }
 
-VkShaderModule Shader::get()
+VkShaderModule Shader::getModule()
 {
 	return this->module;
+}
+
+VkPipelineShaderStageCreateInfo Shader::getStage()
+{
+	VkPipelineShaderStageCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	info.stage = this->target_stage;
+	info.module = this->module;
+	info.pName = "main"; // Si può personalizzare l'entry-point
+	return info;
 }
 
 Shader::~Shader()
