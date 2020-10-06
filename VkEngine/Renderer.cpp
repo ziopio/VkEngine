@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "raytracing.h"
 #include "Device.h"
 #include "PhysicalDevice.h"
 #include "Pipeline.h"
@@ -16,6 +17,7 @@ void threadRenderCode(Object3D* obj, Camera* cam,
 	ThreadData* threadData, uint32_t frameBufferIndex, uint32_t cmdBufferIndex, 
 	VkCommandBufferInheritanceInfo inheritanceInfo, std::vector<VkDescriptorSet> descriptorSets);
 
+bool Renderer::useRayTracing;
 bool Renderer::multithreading;
 FrameAttachment Renderer::final_depth_buffer;
 FrameAttachment Renderer::offScreen_depth_buffer;
@@ -77,9 +79,13 @@ void Renderer::prepareScene(Scene3D* scene)
 	Renderer::scene = scene;
 	Renderer::findObjXthreadDivision( Renderer::scene->get_object_num());
 	prepareThreadedRendering();
+	/////// raytracing
+	if (hasRayTracing()) {
+		RayTracer::prepare(scene);
+	}
 }
 
-bool Renderer::renderScene()
+bool Renderer::prepareFrame()
 {
 	// Wait for fence to signal that all command buffers are ready
 	vkWaitForFences(Device::get(), 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
@@ -90,42 +96,56 @@ bool Renderer::renderScene()
 	if (!SwapChainMng::get()->acquireNextImage(imageAvailableSemaphores[currentFrame], &imageIndex)) {
 		return false;
 	}
-	Renderer::last_imageIndex = imageIndex;
+	Renderer::last_imageIndex = imageIndex;	
 	// Update the uniformBuffer
 	Renderer::updateUniforms(imageIndex);
-	//Aggiorno tutti i commandBuffers
-	Renderer::updateOffScreenCommandBuffer(imageIndex); 
-	Renderer::updateFinalPassCommandBuffer(imageIndex);
+	return true;
+}
 
+void Renderer::renderScene()
+{
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	// Indico quale semaforo attendere e in che stato la pipeline deve fermarsi
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &imageAvailableSemaphores[currentFrame];
+	submitInfo.pWaitSemaphores = &imageAvailableSemaphores[currentFrame]; // non server siccome offscreen
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &offScreenCmdBuffers[imageIndex];
+
 	// Indico quale è il semaforo che indica la fine dell'attesa
-	submitInfo.signalSemaphoreCount = 1;	
+	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &offScreenRenderReadySemaphores[currentFrame];
-
-
-	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
+	
+	submitInfo.pCommandBuffers = &offScreenCmdBuffers[Renderer::last_imageIndex];
+	if (useRayTracing) {
+		RayTracer::updateCmdBuffer(offScreenCmdBuffers, offScreenAttachments, Renderer::last_imageIndex);
+		RayTracer::traceRays(submitInfo);
 	}
+	else /* RASTERIZATION */{
+		//Aggiorno tutti i commandBuffers
+		Renderer::updateOffScreenCommandBuffer(Renderer::last_imageIndex);
+		
+		if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
+	}
+	Renderer::updateFinalPassCommandBuffer(Renderer::last_imageIndex);
 
 	submitInfo.pWaitSemaphores = &offScreenRenderReadySemaphores[currentFrame];
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
-	submitInfo.pCommandBuffers = &primaryCmdBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &primaryCmdBuffers[Renderer::last_imageIndex];
 
 	//vkQueueWaitIdle(Device::getGraphicQueue()); //not optimal time usage!!!!
 	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
+}
 
+bool Renderer::finalizeFrame()
+{
 	// Presentazione del frame
-	if (!SwapChainMng::get()->presentImage(imageIndex, &renderFinishedSemaphores[currentFrame])) {
+	if (!SwapChainMng::get()->presentImage(Renderer::last_imageIndex, &renderFinishedSemaphores[currentFrame])) {
 		return false;
 	}
 	//vkQueueWaitIdle(Device::getPresentQueue()); //not optimal time usage!!!!
@@ -222,11 +242,13 @@ void Renderer::createOffScreenAttachments() {
 	
 	final_depth_buffer.imageView = createImageView(Device::get(), final_depth_buffer.image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 	
-	transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
+	VkCommandBuffer command = beginSingleTimeCommandBuffer(Device::get(), Device::getGraphicCmdPool());
+
+	transitionImageLayout(command,
 		final_depth_buffer.image, depthFormat, 
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	// Offsreen Attachments
+	// Offscreen Attachments
 	Renderer::offScreenAttachments.resize(SwapChainMng::get()->getImageCount());
 	for (int i = 0; i < SwapChainMng::get()->getImageCount();i++) {
 		VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -242,10 +264,10 @@ void Renderer::createOffScreenAttachments() {
 		offScreenAttachments[i].imageView = createImageView(Device::get(), offScreenAttachments[i].image, 
 			format, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		// Layout is kept general but could be switched to better suit it's usage during different rendering phases
-		transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
+		// Default Layout is set to best fit its use in the offscreen renderpass
+		transitionImageLayout(command,
 			offScreenAttachments[i].image, format,
-			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		VkSamplerCreateInfo samplerInfo = {};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -269,6 +291,7 @@ void Renderer::createOffScreenAttachments() {
 			throw std::runtime_error("failed to create texture sampler!");
 		}	
 	}
+	submitAndWaitCommandBuffer(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(), command);
 }
 
 void Renderer::prepareThreadedRendering()

@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene3D.h"
+#include "Renderer.h"
 #include "Mesh.h"
 #include "Pipeline.h"
 #include "DescriptorSets.h"
@@ -80,7 +81,11 @@ class RayTracer {
 public:
 	static void initialize();
 	static void createRayTracingPipeline();
+	static void createShaderBindingTable();
+	static void updateRTPipelineResources();
 	static void prepare(vkengine::Scene3D * scene);
+	static void updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex);
+	static void traceRays(VkSubmitInfo & info);
 	static void cleanUP();
 private:
 	static void buildBottomLevelAS();
@@ -98,5 +103,11 @@ private:
 	This requires the specification of 2 new DS layouts.
 	*/
 
-	static Pipeline rayTracingPipeline;
+	static VkPipeline rayTracingPipeline;
+	static Buffer shaderBindingTable;
+
+	//
+	//static VkCommandPool cmdPool;
+	//static std::vector<VkCommandBuffer> commandBuffers;
+
 };

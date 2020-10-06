@@ -27,12 +27,12 @@ public:
 	static unsigned getNextFrameBufferIndex();
 	static FrameAttachment getOffScreenFrameAttachment(unsigned frameIndex);
 	static void prepareScene(vkengine::Scene3D* scene);
-	/* 
-	 * true means OK, false means SWAPCHAIN CHANGED!!!
-	*/
-	static bool renderScene();
+	static bool prepareFrame();
+	static void renderScene();
+	static bool finalizeFrame();
 	static void cleanUp();
 	static bool multithreading;
+	static bool useRayTracing;
 private:
 	static void createFramebuffers();
 	static void createOffScreenAttachments();

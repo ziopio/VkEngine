@@ -4,6 +4,7 @@
 #include "Pipeline.h"
 #include "Device.h"
 #include "MeshManager.h"
+#include "SwapChain.h"
 #include "PhysicalDevice.h"
 #include "ApiUtils.h"
 #include "vk_extensions.h"
@@ -17,7 +18,10 @@ using namespace vkengine;
 
 std::vector<BottomLevelAS> RayTracer::BLASs;
 TopLevelAS RayTracer::TLAS;
-Pipeline RayTracer::rayTracingPipeline;
+VkPipeline RayTracer::rayTracingPipeline;
+Buffer RayTracer::shaderBindingTable;
+//VkCommandPool RayTracer::cmdPool;
+//std::vector<VkCommandBuffer> RayTracer::commandBuffers;
 
 uint64_t getBufferDeviceAddress(VkBuffer buffer)
 {
@@ -339,6 +343,66 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	vkFreeMemory(Device::get(), scratchBuffer.vkMemory, nullptr);
 }
 
+void RayTracer::updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex)
+{
+	// begin main command recording
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	if (vkBeginCommandBuffer(cmdBuffers[frameIndex], &beginInfo) != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+	auto Playout = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING];
+	std::vector<VkDescriptorSet> descrSets;
+	for (auto& set : Playout.descriptors.static_sets) {
+		descrSets.push_back(set.set);
+	}
+	for (auto& setlist : Playout.descriptors.frame_dependent_sets) {
+		descrSets.push_back(setlist[frameIndex].set);
+	}
+	vkCmdBindPipeline(cmdBuffers[frameIndex], VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rayTracingPipeline);
+
+	vkCmdBindDescriptorSets(cmdBuffers[frameIndex], VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, Playout.layout,
+		 0, descrSets.size(), descrSets.data(), 0, nullptr);
+
+	// Size of a program identifier
+	VkDeviceSize progSize = PhysicalDevice::getPhysicalDeviceRayTracingProperties().shaderGroupBaseAlignment;  
+	VkDeviceSize rayGenOffset = 0u * progSize;  // Start at the beginning of m_sbtBuffer
+	VkDeviceSize missOffset = 1u * progSize;  // Jump over raygen
+	VkDeviceSize missStride = progSize;
+	VkDeviceSize hitGroupOffset = 2u * progSize;  // Jump over the previous shaders
+	VkDeviceSize hitGroupStride = progSize;
+
+	// since 3 are the shader groups of 1 shader all the same size
+	VkDeviceSize tableSize = progSize * 3;
+
+	const VkStridedBufferRegionKHR raygenShaderBindingTable = { shaderBindingTable.vkBuffer, rayGenOffset,
+																 progSize, tableSize };
+	const VkStridedBufferRegionKHR missShaderBindingTable = { shaderBindingTable.vkBuffer, missOffset,
+															   progSize, tableSize };
+	const VkStridedBufferRegionKHR hitShaderBindingTable = { shaderBindingTable.vkBuffer, hitGroupOffset,
+															  progSize, tableSize };
+	const VkStridedBufferRegionKHR callableShaderBindingTable = {}; // not used
+
+
+	// it's basically a compute task, the invocation resembles a CUDA call
+	auto extent = SwapChainMng::get()->getExtent();
+
+	transitionImageLayout(cmdBuffers[frameIndex],
+		storageImages[frameIndex].image, VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+
+	vkCmdTraceRaysKHR(cmdBuffers[frameIndex], &raygenShaderBindingTable, &missShaderBindingTable, &hitShaderBindingTable,
+		&callableShaderBindingTable, extent.width, extent.height, 1); 
+
+	// Usually a Renderpass takes care of changing the image layout, 
+	// here we don't have one so we must take care of this
+	transitionImageLayout(cmdBuffers[frameIndex],
+		storageImages[frameIndex].image, VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	vkEndCommandBuffer(cmdBuffers[frameIndex]);
+}
+
 void RayTracer::createRayTracingPipeline()
 {	
 	Shader rayGen("VkEngine/Shaders/raytracing_simple/rgen.spv", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
@@ -371,7 +435,7 @@ void RayTracer::createRayTracingPipeline()
 	missGroupCI.anyHitShader = VK_SHADER_UNUSED_KHR;
 	missGroupCI.intersectionShader = VK_SHADER_UNUSED_KHR;
 	shaderGroups.push_back(missGroupCI);
-	// Hit Group - Closest Hit + AnyHit
+	// Hit Group: Closest Hit + AnyHit
 	VkRayTracingShaderGroupCreateInfoKHR closesHitGroupCI{ VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR };
 	closesHitGroupCI.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR; // could also be procedural instead
 	closesHitGroupCI.generalShader = VK_SHADER_UNUSED_KHR;
@@ -392,9 +456,81 @@ void RayTracer::createRayTracingPipeline()
 	rayPipelineInfo.maxRecursionDepth = 1; // 1 forces a Miss call if a trace call happens after the first hit
 	rayPipelineInfo.libraries = { VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR };
 
-	if (vkCreateRayTracingPipelinesKHR(Device::get(), nullptr, 1, & rayPipelineInfo, nullptr, &RayTracer::rayTracingPipeline.pipeline) != VK_SUCCESS) {
+	if (vkCreateRayTracingPipelinesKHR(Device::get(), nullptr, 1, & rayPipelineInfo, nullptr, &RayTracer::rayTracingPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create Ray-Tracing Pipeline!");
 	}
+}
+
+void RayTracer::createShaderBindingTable()
+{
+	// 3 shaders: raygen, miss, chit
+	auto groupCount = 3;               
+	// Size of a program identifier
+	uint32_t groupHandleSize = PhysicalDevice::getPhysicalDeviceRayTracingProperties().shaderGroupHandleSize;
+	// Size of shader alignment
+	uint32_t baseAlignment = PhysicalDevice::getPhysicalDeviceRayTracingProperties().shaderGroupBaseAlignment;
+
+	// Fetch all the shader handles used in the pipeline, so that they can be written in the SBT
+	uint32_t sbtSize = groupCount * baseAlignment;
+	std::vector<uint8_t> shaderHandleStorage(sbtSize);
+	vkGetRayTracingShaderGroupHandlesKHR(Device::get(), RayTracer::rayTracingPipeline, 
+		0, groupCount, sbtSize,	shaderHandleStorage.data());
+	// Write the handles in the SBT
+	createBuffer(PhysicalDevice::get(), Device::get(), sbtSize,  
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		shaderBindingTable.vkBuffer, shaderBindingTable.vkMemory);
+
+	// Write the handles in the SBT	
+	void* mapped;
+	vkMapMemory(Device::get(), shaderBindingTable.vkMemory, 0, sbtSize, 0, &mapped);
+	auto* pData = reinterpret_cast<uint8_t*>(mapped);
+	for (uint32_t g = 0; g < groupCount; g++)
+	{
+		memcpy(pData, shaderHandleStorage.data() + g * groupHandleSize, groupHandleSize);  // raygen
+		pData += baseAlignment;
+	}
+	vkUnmapMemory(Device::get(), shaderBindingTable.vkMemory);
+}
+
+void RayTracer::updateRTPipelineResources()
+{
+	VkAccelerationStructureKHR tlas = TLAS.as.accelerationStructure;
+	auto bundle = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].descriptors;
+	std::vector<VkWriteDescriptorSet> writes;
+
+	{
+		VkWriteDescriptorSet accStructWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		accStructWrite.dstSet = bundle.static_sets[0].set;
+		accStructWrite.dstBinding = 0;
+		accStructWrite.dstArrayElement = 0;
+		accStructWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		accStructWrite.descriptorCount = 1;
+		accStructWrite.pBufferInfo = nullptr;
+		accStructWrite.pImageInfo = nullptr;
+		// The specialized acceleration structure descriptor has to be chained
+		VkWriteDescriptorSetAccelerationStructureKHR asDescrSetWrite{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR };
+		asDescrSetWrite.accelerationStructureCount = 1;
+		asDescrSetWrite.pAccelerationStructures = &tlas;
+		accStructWrite.pNext = &asDescrSetWrite;
+		writes.push_back(accStructWrite);
+	}
+	std::vector<VkDescriptorImageInfo> imageDescriptors(bundle.frame_dependent_sets[0].size());
+	for (int i = 0; i < bundle.frame_dependent_sets[0].size(); i++)
+	{
+		VkWriteDescriptorSet storageImgDescSet = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		storageImgDescSet.dstSet = bundle.frame_dependent_sets[0][i].set;
+		storageImgDescSet.dstBinding = 0;
+		storageImgDescSet.dstArrayElement = 0;
+		storageImgDescSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		storageImgDescSet.descriptorCount = 1;
+		storageImgDescSet.pBufferInfo = nullptr;
+		imageDescriptors[i].imageView = Renderer::getOffScreenFrameAttachment(i).imageView;
+		imageDescriptors[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		storageImgDescSet.pImageInfo = &imageDescriptors[i];
+		writes.push_back(storageImgDescSet);
+	}
+	vkQueueWaitIdle(Device::getGraphicQueue());
+	vkUpdateDescriptorSets(Device::get(), writes.size(), writes.data(), 0, nullptr);
 }
 
 void RayTracer::initialize()
@@ -406,6 +542,15 @@ void RayTracer::prepare(Scene3D * scene) {
 	destroyAS();
 	buildBottomLevelAS();
 	buildTopLevelAS(scene);
+}
+
+void RayTracer::traceRays(VkSubmitInfo & info)
+{
+
+	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &info, VK_NULL_HANDLE) != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
+
 }
 
 
@@ -428,7 +573,10 @@ void RayTracer::destroyAS()
 
 void RayTracer::cleanUP()
 {
+	// Destroy SBT
+	vkDestroyBuffer(Device::get(), shaderBindingTable.vkBuffer, nullptr);
+	vkFreeMemory(Device::get(), shaderBindingTable.vkMemory, nullptr);
 	// Destroy Pipeline
-	vkDestroyPipeline(Device::get(), rayTracingPipeline.pipeline, nullptr);
+	vkDestroyPipeline(Device::get(), rayTracingPipeline, nullptr);
 	destroyAS();
 }

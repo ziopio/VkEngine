@@ -107,12 +107,10 @@ void DescriptorSetsFactory::initDescSetPool()
 		}
 	}
 
-	//Second: select how many sets can be allocated
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	// 1 of uniforms per image + 1 for textures(3D scene) + 2 for IMGUI (textures and 3D scene render per swap image)
 	poolInfo.maxSets = sets_needed;
 	VkResult result = vkCreateDescriptorPool(Device::get(), &poolInfo, nullptr, &pool);
 	if (result != VK_SUCCESS) {
@@ -150,8 +148,7 @@ void DescriptorSetsFactory::updateDescriptorSets(DescSetBundle* bundle)
 	std::vector<VkWriteDescriptorSet> writes;
 	std::vector<std::vector<VkDescriptorImageInfo>> images_infos;
 	std::vector<std::vector<VkDescriptorBufferInfo>> buffers_infos;
-	VkWriteDescriptorSet descriptorWrite = {};
-	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	VkWriteDescriptorSet descriptorWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
 	for (auto & set : bundle->static_sets) {
 		descriptorWrite.dstSet = set.set;

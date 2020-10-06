@@ -146,8 +146,7 @@ bool hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommandBuffer(device, cmdPool);
+void transitionImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
@@ -173,13 +172,21 @@ void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool cmdPool
 
 	VkPipelineStageFlags sourceStage;
 	VkPipelineStageFlags destinationStage;
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = 0;
+	if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+		barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-	}else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
 		barrier.srcAccessMask = 0;
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
@@ -219,21 +226,16 @@ void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool cmdPool
 	}
 
 	vkCmdPipelineBarrier(
-		commandBuffer,
+		cmdBuffer,
 		sourceStage, destinationStage,
 		0,
 		0, nullptr,
 		0, nullptr,
 		1, &barrier
 	);
-
-	std::vector<VkCommandBuffer> _buffers(1, commandBuffer);
-	submitAndWaitCommandBuffers(device, queue, cmdPool, _buffers);
 }
 
-void copyBufferToImage(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommandBuffer(device, cmdPool);
-
+void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
 	VkBufferImageCopy region = {};
 	region.bufferOffset = 0;
 	region.bufferRowLength = 0;
@@ -261,7 +263,6 @@ void copyBufferToImage(VkDevice device, VkQueue queue, VkCommandPool cmdPool, Vk
 	);// nota si possoso accodare svariate operazioni di copiatura tra 1 buffer e 1 immagine
 
 	std::vector<VkCommandBuffer> _buffers(1, commandBuffer);
-	submitAndWaitCommandBuffers(device, queue, cmdPool, _buffers);
 }
 
 VkCommandBuffer beginSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool) {
@@ -283,20 +284,11 @@ VkCommandBuffer beginSingleTimeCommandBuffer(VkDevice device, VkCommandPool comm
 	return commandBuffer;
 }
 
-//
-//void endSingleTimeCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool,VkCommandBuffer commandBuffer) {
-//	vkEndCommandBuffer(commandBuffer);
-//
-//	VkSubmitInfo submitInfo = {};
-//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-//	submitInfo.commandBufferCount = 1;
-//	submitInfo.pCommandBuffers = &commandBuffer;
-//
-//	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-//	vkQueueWaitIdle(queue);
-//
-//	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
-//}
+void submitAndWaitCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkCommandBuffer & commandBuffer)
+{
+	std::vector<VkCommandBuffer> buffers = { commandBuffer };
+	submitAndWaitCommandBuffers(device, queue, commandPool, buffers);
+}
 
 void submitAndWaitCommandBuffers(VkDevice device, VkQueue queue, VkCommandPool commandPool, std::vector<VkCommandBuffer> & commandBuffers) {
 	for (auto cmd : commandBuffers) {

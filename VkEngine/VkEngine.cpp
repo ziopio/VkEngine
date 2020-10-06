@@ -125,10 +125,8 @@ namespace vkengine
 		Renderer::prepareScene(&scenes.at(active_scene));
 		// Just in case resources like Textures were added / updated
 		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_STANDARD);
-
-		/////// raytracing
 		if (hasRayTracing()) {
-			RayTracer::prepare(&scenes.at(active_scene));
+			RayTracer::updateRTPipelineResources();
 		}
 	}
 
@@ -142,10 +140,22 @@ namespace vkengine
 		return PhysicalDevice::hasRaytracing();
 	}
 
+	bool * rayTracing()
+	{
+		return &Renderer::useRayTracing;
+	}
+
 	void renderFrame()
 	{
-		if (!Renderer::renderScene()) {
+		if (!Renderer::prepareFrame()) {
 			recreateSwapChain();
+			return;
+		}
+		Renderer::renderScene();
+
+		if (!Renderer::finalizeFrame()) {
+			recreateSwapChain();
+			return;
 		}
 	}
 
@@ -175,7 +185,10 @@ namespace vkengine
 		// IMGUI pipeline layout uses an offscreen attachment 
 		// which is recreated by the Renderer to match the swapchain extent
 		// For this reason i have to update his descriptors
-		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_IMGUI);
+		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_IMGUI);		
+		if (hasRayTracing()) {
+			RayTracer::updateRTPipelineResources();
+		}
 	}
 
 	void buildBasicPipelines() 
@@ -198,6 +211,7 @@ namespace vkengine
 
 		if (hasRayTracing()) {
 			RayTracer::createRayTracingPipeline();
+			RayTracer::createShaderBindingTable();
 		}
 	}
 }

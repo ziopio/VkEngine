@@ -20,10 +20,13 @@ void createImage(VkPhysicalDevice physicalDevice, VkDevice device, uint32_t widt
 
 bool hasStencilComponent(VkFormat format);
 
-void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-void copyBufferToImage(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 VkCommandBuffer beginSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool);
+
+void submitAndWaitCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkCommandBuffer & commandBuffer);
+
 
 void submitAndWaitCommandBuffers(VkDevice device, VkQueue queue, VkCommandPool commandPool, std::vector<VkCommandBuffer> & commandBuffers);

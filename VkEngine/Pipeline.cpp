@@ -361,16 +361,16 @@ void PipelineFactory::createPipelineLayouts()
 		DescSetBundle bundle = {};
 		bundle.static_sets.push_back(
 			{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_ACCELERATION_STRUCTURE),nullptr });
-		bundle.static_sets.push_back(
-			{ DS_USAGE_ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY),nullptr });
+		//bundle.static_sets.push_back(
+		//	{ DS_USAGE_ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY),nullptr });
+		//bundle.frame_dependent_sets.push_back({});
+		//for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
+		//	bundle.frame_dependent_sets[0].push_back(
+		//		{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER),nullptr });
+		//}
 		bundle.frame_dependent_sets.push_back({});
 		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
 			bundle.frame_dependent_sets[0].push_back(
-				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER),nullptr });
-		}
-		bundle.frame_dependent_sets.push_back({});
-		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
-			bundle.frame_dependent_sets[1].push_back(
 				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE),nullptr });
 		}
 		bundle.data_context = DescSetsResourceContext::SCENE_DATA;

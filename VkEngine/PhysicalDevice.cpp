@@ -66,6 +66,12 @@ VkPhysicalDeviceFeatures2& PhysicalDevice::getPhysicalDeviceFeatures()
 	return PhysicalDevice::deviceFeatures2;
 }
 
+VkPhysicalDeviceRayTracingPropertiesKHR & PhysicalDevice::getPhysicalDeviceRayTracingProperties()
+{
+	if (!ready) throw std::runtime_error("PhysicalDevice Not Ready!!");
+	return PhysicalDevice::rayTracingProperties;
+}
+
 void PhysicalDevice::pickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;

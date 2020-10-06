@@ -54,7 +54,10 @@ typedef struct {
 	DescSetsResourceContext data_context;
 	// always valid for the pipelines
 	std::vector<DescSet> static_sets;
-	// List of descriptors that are replicated for each frame in flight
+	/* Lists of descriptors sets that are replicated for each frame in flight.
+	Example: if the swapchain has 3 images, each set is repeated 3 times 
+	to allow rendering of multiple frames on different render targets or textures.
+	*/
 	std::vector<std::vector<DescSet>> frame_dependent_sets;
 } DescSetBundle;
 

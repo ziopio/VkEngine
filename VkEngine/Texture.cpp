@@ -97,22 +97,26 @@ void Texture::createTextureImage(unsigned char * pixels, int width, int height)
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		textureImage, textureImageMemory);
 
-	transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
+	VkCommandBuffer command = beginSingleTimeCommandBuffer(Device::get(), Device::getGraphicCmdPool());
+
+	transitionImageLayout(command,
 		textureImage,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	copyBufferToImage(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
+	copyBufferToImage(command,
 		stagingBuffer, textureImage,
 		static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
-	transitionImageLayout(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(),
+	transitionImageLayout(command,
 		textureImage,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // shader accessible
 
+	submitAndWaitCommandBuffer(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(), command);
+	
 	vkDestroyBuffer(Device::get(), stagingBuffer, nullptr);
 	vkFreeMemory(Device::get(), stagingBufferMemory, nullptr);
 }

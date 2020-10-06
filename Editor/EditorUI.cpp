@@ -71,9 +71,10 @@ vkengine::UiDrawData EditorUI::drawUI()
 	}	
 	//MainMenuBar
 	{
-		ImGui::BeginMainMenuBar();	
-		ImGui::Text("Ray Tracing: ");               // Display some text (you can use a format strings too)
-		if(vkengine::hasRayTracing()){ ImGui::Text("OK"); } else{ ImGui::Text("device not capable :P"); }
+		ImGui::BeginMainMenuBar();
+		if(vkengine::hasRayTracing()){ 
+			ImGui::Checkbox("Ray Tracing: ", vkengine::rayTracing());
+		} else { ImGui::Text("device not capable :P"); }
 		ImGui::SameLine(ImGui::GetWindowWidth() - 150);
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
 		//ImGui::Text("Test performance:");

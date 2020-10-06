@@ -32,6 +32,8 @@ public:
 	static SwapChainSupportDetails getSwapChainSupport();
 	static VkPhysicalDeviceProperties2& getPhysicalDeviceProperties();
 	static VkPhysicalDeviceFeatures2& getPhysicalDeviceFeatures();
+	static VkPhysicalDeviceRayTracingPropertiesKHR& getPhysicalDeviceRayTracingProperties();
+
 	inline static bool hasRaytracing() { return raytracing; };
 private:
 	static void pickPhysicalDevice();

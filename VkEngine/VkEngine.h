@@ -75,6 +75,7 @@ namespace vkengine
 	// Intended as parallel CMD buffer recording CPU-side
 	bool* multithreadedRendering();
 	bool hasRayTracing();
+	bool* rayTracing();
 
 	void renderFrame();
 	void shutdown();
