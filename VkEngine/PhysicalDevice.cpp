@@ -54,7 +54,7 @@ SwapChainSupportDetails PhysicalDevice::getSwapChainSupport()
 	return swapChainSupportDetails = PhysicalDevice::querySwapChainSupport(physicalDevice);
 }
 
-VkPhysicalDeviceProperties2& PhysicalDevice::getPhysicalDeviceProperties()
+VkPhysicalDeviceProperties2& PhysicalDevice::getProperties()
 {
 	if (!ready) throw std::runtime_error("PhysicalDevice Not Ready!!");
 	return PhysicalDevice::deviceProperties2;

@@ -15,14 +15,6 @@ VkBuffer BaseMesh::getVkVertexBuffer() const {return this->vertexBuffer;}
 
 VkBuffer BaseMesh::getVkIndexBuffer() const {return this->indexBuffer;}
 
-//Mesh3D::Mesh3D(Primitive3D primitive)
-//{
-//	this->vertices = primitive.vertices;
-//	this->indices = primitive.indices;
-//	this->createVertexBuffer();
-//	this->createIndexBuffer();
-//}
-
 Mesh3D::Mesh3D(std::string modelPath)
 {
 	this->loadModel(modelPath);
@@ -118,7 +110,8 @@ void Mesh3D::createVertexBuffer()
 	// create the effective optimized vertex buffer to destinate data
 	createBuffer(PhysicalDevice::get(), Device::get(),
 		bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | (PhysicalDevice::hasRaytracing() ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR : 0),
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | 
+		(PhysicalDevice::hasRaytracing() ? (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) : 0),
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		vertexBuffer, vertexBufferMemory);
 	copyBufferToBuffer(Device::get(),Device::getGraphicQueue(),Device::getGraphicCmdPool(),stagingBuffer, vertexBuffer, bufferSize);
@@ -146,7 +139,8 @@ void Mesh3D::createIndexBuffer()
 
 	createBuffer(PhysicalDevice::get(), Device::get(),
 		bufferSize, 
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | (PhysicalDevice::hasRaytracing() ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR : 0),
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | 
+		(PhysicalDevice::hasRaytracing() ? (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) : 0),
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		indexBuffer, indexBufferMemory);
 

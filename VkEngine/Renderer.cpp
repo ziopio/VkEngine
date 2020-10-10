@@ -35,8 +35,7 @@ std::vector<VkFence> Renderer::inFlightFences;
 VkCommandPool Renderer::primaryCommandPool;
 std::vector<VkCommandBuffer> Renderer::offScreenCmdBuffers;
 std::vector<VkCommandBuffer> Renderer::primaryCmdBuffers;
-//VkCommandPool mainThreadSecondaryCmdPool;// gui records on main thread
-//std::vector<VkCommandBuffer> mainThreadSecondaryCmdBuffers; // for gui
+
 
 Scene3D* Renderer::scene;
 
@@ -120,15 +119,13 @@ void Renderer::renderScene()
 	submitInfo.pCommandBuffers = &offScreenCmdBuffers[Renderer::last_imageIndex];
 	if (useRayTracing) {
 		RayTracer::updateCmdBuffer(offScreenCmdBuffers, offScreenAttachments, Renderer::last_imageIndex);
-		RayTracer::traceRays(submitInfo);
 	}
 	else /* RASTERIZATION */{
-		//Aggiorno tutti i commandBuffers
 		Renderer::updateOffScreenCommandBuffer(Renderer::last_imageIndex);
-		
-		if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-			throw std::runtime_error("failed to submit draw command buffer!");
-		}
+	}
+
+	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 	Renderer::updateFinalPassCommandBuffer(Renderer::last_imageIndex);
 
@@ -365,6 +362,12 @@ void Renderer::updateUniforms(uint32_t frameBufferIndex)
 	for (int i = 0; i < uniforms.light_count; i++) {
 		uniforms.lights[i] = Renderer::scene->getLight(lights[i])->getData();
 	}
+
+	if (useRayTracing) {
+		uniforms.V_matrix = glm::inverse(uniforms.V_matrix);
+		uniforms.P_matrix = glm::inverse(uniforms.P_matrix);
+	}
+
 	DescriptorSetsFactory::updateUniformBuffer(uniforms, frameBufferIndex);
 }
 

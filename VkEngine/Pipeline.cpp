@@ -345,7 +345,7 @@ void PipelineFactory::createPipelineLayouts()
 		//layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY)->layout); // shared input with rasterizer
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_ACCELERATION_STRUCTURE)->layout); // ray-tracing only
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE)->layout); // shared output with rasterizer
-		//layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 		pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 		pipelineLayoutInfo.setLayoutCount = layouts.size();
@@ -363,15 +363,16 @@ void PipelineFactory::createPipelineLayouts()
 			{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_ACCELERATION_STRUCTURE),nullptr });
 		//bundle.static_sets.push_back(
 		//	{ DS_USAGE_ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY),nullptr });
-		//bundle.frame_dependent_sets.push_back({});
-		//for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
-		//	bundle.frame_dependent_sets[0].push_back(
-		//		{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER),nullptr });
-		//}
+
 		bundle.frame_dependent_sets.push_back({});
 		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
 			bundle.frame_dependent_sets[0].push_back(
 				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE),nullptr });
+		}		
+		bundle.frame_dependent_sets.push_back({});
+		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
+			bundle.frame_dependent_sets[1].push_back(
+				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER),nullptr });
 		}
 		bundle.data_context = DescSetsResourceContext::SCENE_DATA;
 		PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].descriptors = bundle;

@@ -34,22 +34,29 @@ struct BottomLevelAS {
 // Like a scene object would point to its mesh
 struct TLAS_Instance {
 	VkDeviceAddress				blasAddr;
-	uint32_t					instance_id{ 0 };  // Instance Index (gl_InstanceID)
+	uint32_t					customID{ 0 };  // Instance Index (gl_InstanceID)
 	uint32_t					hitGroupId{ 0 };  // Hit group index in the SBT
 	uint32_t					mask{ 0xFF };     // Visibility mask, will be AND-ed with ray mask
 	VkGeometryInstanceFlagsKHR  flags{ VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR };
 	glm::mat4					matrix{ glm::mat4(1) };  // Identity
 	// Helper to handle conversion of the transfor matrix from column major 4x4 to row major 3x4
 	VkAccelerationStructureInstanceKHR to_VkAcInstanceKHR() const {
+
+		//VkTransformMatrixKHR transform_matrix = {
+		//	1.0f, 0.0f, 0.0f, 0.0f,
+		//	0.0f, 1.0f, 0.0f, 0.0f,
+		//	0.0f, 0.0f, 1.0f, 0.0f };
+
 		glm::mat4 t = glm::transpose(matrix);
 
 		VkAccelerationStructureInstanceKHR acInstance = {};
-		acInstance.instanceCustomIndex = instance_id,
+		acInstance.instanceCustomIndex = customID,
 		acInstance.mask = mask;
 		acInstance.instanceShaderBindingTableRecordOffset = hitGroupId;
 		acInstance.flags = flags;
 		acInstance.accelerationStructureReference = blasAddr;
 
+		//acInstance.transform = transform_matrix;
 		memcpy(&acInstance.transform, &t, sizeof(VkTransformMatrixKHR));
 		return acInstance;
 	};
@@ -69,7 +76,7 @@ uint64_t getBufferDeviceAddress(VkBuffer buffer);
 /*
 	Fills an AccelerationStructureGeometry structure from A Mesh3D object
 */
-AccelerationStructureGeometry mesh3DToASGeometryKHR(const Mesh3D* model);
+AccelerationStructureGeometry mesh3DToASGeometryKHR(const Mesh3D * model);
 
 /*
 	Creates an Acceleration Structure Vulkan object from give create infos, 
@@ -85,7 +92,6 @@ public:
 	static void updateRTPipelineResources();
 	static void prepare(vkengine::Scene3D * scene);
 	static void updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex);
-	static void traceRays(VkSubmitInfo & info);
 	static void cleanUP();
 private:
 	static void buildBottomLevelAS();

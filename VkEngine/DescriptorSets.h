@@ -93,6 +93,7 @@ public:
 	// Note: the data choice logic is embedded in the code, this should change in future...
 	static void updateDescriptorSets(DescSetBundle* bundle);
 	static void updateUniformBuffer(UniformBlock uniforms, int imageIndex);
+	inline static VkBuffer getUniformBuffer() {	return uniformBuffer;};
 	static void cleanUp();
 private:
 	static std::vector<DescSetLayout> layouts;

@@ -1,14 +1,10 @@
 TODO
 
-Pipeline compatibili ---->  YEEEEEEEEEEEE
+Make Renderer high level and shift raster code to new Rasterizer class
 
-L'idea è creare famiglie di pipeline,
-Ogni famiglia ha il suo pipeline-layout che descrive le risorse ed i propri descriptor sets.
+define and classify bindings, this is more important then sets
 
-Questo permette di condividere uno stesso set di descrittori ( 1 sola azione di binding) per tutte le pipeline compatibili
-
-Oppure cambiare set di descrittori ( con stesso layout ) e mantenere la stessa pipeline , se dovesse servire.
-
+think of better ways to shrink code verbosity of Vulkan
 
 MULTITHREADING -->> TOO DUMB!!
 Terrible, toot many LOCKS!

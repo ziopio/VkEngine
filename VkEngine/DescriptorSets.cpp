@@ -27,12 +27,12 @@ void DescriptorSetsFactory::initLayouts() {
 
 	// ACCELERATION STRUCTURE : 1 binding of 1 ACs in raytracing shaders
 	{
-		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-		samplerLayoutBinding.binding = 0;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		layouts[DSL_ACCELERATION_STRUCTURE].bindings = { samplerLayoutBinding };
+		VkDescriptorSetLayoutBinding accStructBinding = {};
+		accStructBinding.binding = 0;
+		accStructBinding.descriptorCount = 1;
+		accStructBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		accStructBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		layouts[DSL_ACCELERATION_STRUCTURE].bindings = { accStructBinding };
 		layouts[DSL_ACCELERATION_STRUCTURE].layout = createDStLayout(layouts[DSL_ACCELERATION_STRUCTURE].bindings);
 	}
 	// TEXTURE_ARRAY : 1 binding of 32 textures in fragment shader
@@ -71,7 +71,7 @@ void DescriptorSetsFactory::initLayouts() {
 		uniformMatLayoutBinding.binding = 0;
 		uniformMatLayoutBinding.descriptorCount = 1;
 		uniformMatLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		layouts[DSL_UNIFORM_BUFFER].bindings = { uniformMatLayoutBinding };
 		layouts[DSL_UNIFORM_BUFFER].layout = createDStLayout(layouts[DSL_UNIFORM_BUFFER].bindings);
 	}
@@ -187,7 +187,7 @@ void DescriptorSetsFactory::updateDescriptorSets(DescSetBundle* bundle)
 					buff_info.buffer = uniformBuffer;
 					buff_info.range = sizeof(UniformBlock);
 					VkDeviceSize minAlignement =
-						PhysicalDevice::getPhysicalDeviceProperties().properties.limits.minUniformBufferOffsetAlignment;
+						PhysicalDevice::getProperties().properties.limits.minUniformBufferOffsetAlignment;
 					VkDeviceSize alignemetPadding = minAlignement - (sizeof(UniformBlock) % minAlignement);
 					buff_info.offset = i * (sizeof(UniformBlock) + alignemetPadding);
 					buffers_infos.push_back({ buff_info });
@@ -216,7 +216,7 @@ void DescriptorSetsFactory::updateDescriptorSets(DescSetBundle* bundle)
 void DescriptorSetsFactory::updateUniformBuffer(UniformBlock uniforms, int imageIndex)
 {
 	VkDeviceSize minAlignement =
-		PhysicalDevice::getPhysicalDeviceProperties().properties.limits.minUniformBufferOffsetAlignment;
+		PhysicalDevice::getProperties().properties.limits.minUniformBufferOffsetAlignment;
 	VkDeviceSize alignemetPadding = minAlignement - (sizeof(UniformBlock) % minAlignement);
 
 	memcpy((char *)mappedUniformMemory + imageIndex * (sizeof(UniformBlock) + alignemetPadding),
@@ -240,7 +240,7 @@ void DescriptorSetsFactory::createUniformBuffer()
 {
 	// one uniform block for each frame in-flight
 	VkDeviceSize minAlignement =
-		PhysicalDevice::getPhysicalDeviceProperties().properties.limits.minUniformBufferOffsetAlignment;
+		PhysicalDevice::getProperties().properties.limits.minUniformBufferOffsetAlignment;
 	VkDeviceSize alignemetPadding = minAlignement - (sizeof(UniformBlock) % minAlignement);
 
 	VkDeviceSize bufferSize = (sizeof(UniformBlock) + alignemetPadding) * SwapChainMng::get()->getImageCount();
