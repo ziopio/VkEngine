@@ -89,14 +89,15 @@ public:
 	static void initialize();
 	static void createRayTracingPipeline();
 	static void createShaderBindingTable();
-	static void updateRTPipelineResources();
+	static void updateRTPipelineResources(vkengine::Scene3D* scene);
 	static void prepare(vkengine::Scene3D * scene);
 	static void updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex);
 	static void cleanUP();
 private:
 	static void buildBottomLevelAS();
 	static void buildTopLevelAS(vkengine::Scene3D * scene);
-	static void destroyAS();
+	static void createSceneBuffer(vkengine::Scene3D* scene);
+	static void destroySceneAcceleration();
 private:
 	// Accelleration structures
 	static TopLevelAS TLAS;
@@ -111,6 +112,7 @@ private:
 
 	static VkPipeline rayTracingPipeline;
 	static Buffer shaderBindingTable;
+	static Buffer sceneBuffer;
 
 	//
 	//static VkCommandPool cmdPool;

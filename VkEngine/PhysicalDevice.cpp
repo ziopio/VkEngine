@@ -14,6 +14,7 @@ VkPhysicalDeviceFeatures PhysicalDevice::basicFeatures = {};
 VkPhysicalDeviceProperties2 PhysicalDevice::deviceProperties2 = {};
 VkPhysicalDeviceFeatures2 PhysicalDevice::deviceFeatures2 = {};
 
+VkPhysicalDeviceDescriptorIndexingFeaturesEXT PhysicalDevice::descriptorIndexingFeatures = {};
 VkPhysicalDeviceBufferDeviceAddressFeaturesKHR PhysicalDevice::deviceAddrFeatures = {};
 
 VkPhysicalDeviceRayTracingPropertiesKHR PhysicalDevice::rayTracingProperties = {};
@@ -108,8 +109,11 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device)
 	deviceProperties2.pNext = &rayTracingProperties;
 	vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
 	// FEATURES //
+	// Runtime Descriptor Array
+	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
 	//Buffer Device Address features
 	deviceAddrFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+	deviceAddrFeatures.pNext = &descriptorIndexingFeatures;
 	//RAY_TRACING features:
 	rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
 	rayTracingFeatures.pNext = &deviceAddrFeatures; // feature chaining

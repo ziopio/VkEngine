@@ -34,6 +34,11 @@ Mesh3D * MeshManager::getMesh(std::string string_id)
 	return mesh_library[mesh_ids[string_id]];
 }
 
+unsigned MeshManager::getMeshID(std::string string_id)
+{
+	return mesh_ids[string_id];
+}
+
 std::vector<Mesh3D*> MeshManager::getMeshLibrary()
 {
 	return std::vector<Mesh3D*>(mesh_library);

@@ -601,11 +601,11 @@ void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_
 	VkPipeline pipiline = PipelineFactory::pipelines[STD_3D_PIPELINE_ID].pipeline;
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipiline);
 
-	VkBuffer vertexBuffers[] = { MeshManager::getMesh(obj->getMeshId())->getVkVertexBuffer() };
+	VkBuffer vertexBuffers[] = { MeshManager::getMesh(obj->getMeshName())->getVkVertexBuffer() };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj->getMeshId())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(cmdBuffer, MeshManager::getMesh(obj->getMeshName())->getVkIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 	VkPipelineLayout pipelineLayout = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_STANDARD].layout;
 
@@ -616,11 +616,11 @@ void threadRenderCode(Object3D* obj, Camera* cam,ThreadData* threadData, uint32_
 
 	MainPushConstantBlock pushConsts = {};
 	pushConsts.model_transform = obj->getMatrix();
-	pushConsts.textureIndex = TextureManager::getSceneTextureIndex(obj->getTextureId());
+	pushConsts.textureIndex = TextureManager::getSceneTextureIndex(obj->getTextureName());
 	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConsts), &pushConsts);
 
 
-	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj->getMeshId())->getIdxCount()), 1, 0, 0, 0);
+	vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(MeshManager::getMesh(obj->getMeshName())->getIdxCount()), 1, 0, 0, 0);
 	VkResult result = vkEndCommandBuffer(cmdBuffer);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("Command buffer ending failed");

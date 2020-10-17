@@ -60,9 +60,6 @@
     <ClInclude Include="Mesh.h">
       <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>
-    <ClInclude Include="Material.h">
-      <Filter>Header Files\AssetsManagement</Filter>
-    </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Header Files\AssetsManagement</Filter>
     </ClInclude>

@@ -8,6 +8,7 @@ public:
 	static void addMesh(std::string id, std::string mesh_path);
 	static Mesh3D* getMesh(unsigned id);
 	static Mesh3D* getMesh(std::string string_id);
+	static unsigned getMeshID(std::string string_id);
 	static std::vector<Mesh3D*> getMeshLibrary();
 	static std::vector<std::string> listLoadedMeshes();
 	static GuiMesh* getImGuiMesh(unsigned imageIndex);

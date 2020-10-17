@@ -6,11 +6,11 @@ using namespace glm;
 using namespace vkengine;
 
 Object3D::Object3D(unsigned id, std::string name, std::string mesh_id,
-	Material material, ObjTransformation transform)
+	std::string texture, ObjTransformation transform)
 	: SceneElement(id, name)
 {
-	this->mesh_id = mesh_id;
-	this->material = material;
+	this->mesh_name = mesh_id;
+	this->texture_name = texture;
 	this->transform = transform;
 	this->rotMatrix = glm::mat4(1.f);
 }
@@ -37,19 +37,14 @@ float vkengine::Object3D::getBoundingRadius()
 	this->transform.scale_vector.z) / 3.0f;
 }
 
-std::string Object3D::getMeshId()
+std::string Object3D::getMeshName()
 {
-	return mesh_id;
+	return mesh_name;
 }
 
-Material& Object3D::getMaterial()
+std::string Object3D::getTextureName()
 {
-	return this->material;
-}
-
-std::string Object3D::getTextureId()
-{
-	return material.texture_id;
+	return texture_name;
 }
 
 Object3D::~Object3D()

@@ -87,8 +87,8 @@ void Project::load()
 			vkengine::ObjectInitInfo obj_info = {};
 			obj_info.id = obj["id"];
 			obj_info.name = obj["name"];
-			obj_info.mesh_id = obj["mesh"];
-			obj_info.material.texture_id = obj["texture"];
+			obj_info.mesh_name = obj["mesh"];
+			obj_info.texture_name = obj["texture"];
 			obj_info.transformation = t;
 			s->addObject(obj_info);
 		}
@@ -177,8 +177,8 @@ void Project::save()
 			json j, trans;
 			j["id"] = id;
 			j["name"] = obj->name;
-			j["mesh"] = obj->getMeshId();
-			j["texture"] = obj->getTextureId();
+			j["mesh"] = obj->getMeshName();
+			j["texture"] = obj->getTextureName();
 			// transformation info			
 				vertex = glm::value_ptr(obj->getObjTransform().position);
 				v.assign(vertex, vertex + 3);

@@ -32,8 +32,23 @@ void DescriptorSetsFactory::initLayouts() {
 		accStructBinding.descriptorCount = 1;
 		accStructBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 		accStructBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		layouts[DSL_ACCELERATION_STRUCTURE].bindings = { accStructBinding };
-		layouts[DSL_ACCELERATION_STRUCTURE].layout = createDStLayout(layouts[DSL_ACCELERATION_STRUCTURE].bindings);
+		VkDescriptorSetLayoutBinding sceneDescBinding = {};
+		sceneDescBinding.binding = 1;
+		sceneDescBinding.descriptorCount = 1;
+		sceneDescBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		sceneDescBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		VkDescriptorSetLayoutBinding vertexStorageBinding = {};
+		vertexStorageBinding.binding = 2;
+		vertexStorageBinding.descriptorCount = 10; // TODO make dynamic
+		vertexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		vertexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		VkDescriptorSetLayoutBinding indexStorageBinding = {};
+		indexStorageBinding.binding = 3;
+		indexStorageBinding.descriptorCount = 10; // TODO  make dynamic
+		indexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		indexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		layouts[DSL_RAY_TRACING_SCENE].bindings = { accStructBinding,  sceneDescBinding, vertexStorageBinding, indexStorageBinding };
+		layouts[DSL_RAY_TRACING_SCENE].layout = createDStLayout(layouts[DSL_RAY_TRACING_SCENE].bindings);
 	}
 	// TEXTURE_ARRAY : 1 binding of 32 textures in fragment shader
 	{

@@ -1,6 +1,5 @@
 #pragma once
 #include "SceneElement.h"
-#include "Material.h"
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -20,28 +19,27 @@ namespace vkengine
 	typedef struct {
 		std::string name;
 		unsigned id;
-		std::string mesh_id;
-		Material material;
+		std::string mesh_name;
+		std::string texture_name;
 		ObjTransformation transformation;
 	} ObjectInitInfo;
 
 	class Object3D : public SceneElement
 	{
 	public:
-		Object3D(unsigned id, std::string name, std::string mesh_id, Material material_id, ObjTransformation transform);
+		Object3D(unsigned id, std::string name, std::string mesh_id, std::string texture_id, ObjTransformation transform);
 		glm::mat4 getMatrix();
 		ObjTransformation & getObjTransform();
 		// this is dumb and fake
 		float getBoundingRadius();
-		std::string getMeshId();
-		Material& getMaterial();
-		std::string getTextureId();
+		std::string getMeshName();
+		std::string getTextureName();
 		~Object3D();
 		bool visible = true;
 	private:
 		glm::mat4 rotMatrix;
-		std::string mesh_id;
-		Material material;
+		std::string mesh_name;
+		std::string texture_name;
 		ObjTransformation transform;
 	};
 }

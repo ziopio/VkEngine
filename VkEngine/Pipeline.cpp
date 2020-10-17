@@ -343,7 +343,7 @@ void PipelineFactory::createPipelineLayouts()
 	{		
 		std::vector<VkDescriptorSetLayout> layouts;
 		//layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY)->layout); // shared input with rasterizer
-		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_ACCELERATION_STRUCTURE)->layout); // ray-tracing only
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_RAY_TRACING_SCENE)->layout); // ray-tracing only
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE)->layout); // shared output with rasterizer
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -360,7 +360,7 @@ void PipelineFactory::createPipelineLayouts()
 		//bundle configuration
 		DescSetBundle bundle = {};
 		bundle.static_sets.push_back(
-			{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_ACCELERATION_STRUCTURE),nullptr });
+			{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_RAY_TRACING_SCENE),nullptr });
 		//bundle.static_sets.push_back(
 		//	{ DS_USAGE_ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY),nullptr });
 

@@ -55,6 +55,8 @@ private:
 	static VkPhysicalDeviceProperties2 deviceProperties2;
 	static VkPhysicalDeviceFeatures2 deviceFeatures2;
 	// Extra features and properties
+	//Descriptor indexing
+	static VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures;
 	// Buffer Device Address
 	static VkPhysicalDeviceBufferDeviceAddressFeaturesKHR deviceAddrFeatures;
 	// Ray Tracing

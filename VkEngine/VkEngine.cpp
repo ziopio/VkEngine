@@ -126,7 +126,7 @@ namespace vkengine
 		// Just in case resources like Textures were added / updated
 		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_STANDARD);
 		if (hasRayTracing()) {
-			RayTracer::updateRTPipelineResources();
+			RayTracer::updateRTPipelineResources(&scenes.at(active_scene));
 		}
 	}
 
@@ -187,7 +187,7 @@ namespace vkengine
 		// For this reason i have to update his descriptors
 		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_IMGUI);		
 		if (hasRayTracing()) {
-			RayTracer::updateRTPipelineResources();
+			RayTracer::updateRTPipelineResources(&scenes.at(active_scene));
 		}
 	}
 

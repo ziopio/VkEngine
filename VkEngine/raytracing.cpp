@@ -3,6 +3,7 @@
 #include "RenderPass.h"
 #include "Pipeline.h"
 #include "Device.h"
+#include "TextureManager.h"
 #include "MeshManager.h"
 #include "SwapChain.h"
 #include "PhysicalDevice.h"
@@ -20,6 +21,7 @@ std::vector<BottomLevelAS> RayTracer::BLASs;
 TopLevelAS RayTracer::TLAS;
 VkPipeline RayTracer::rayTracingPipeline;
 Buffer RayTracer::shaderBindingTable;
+Buffer RayTracer::sceneBuffer;
 
 uint64_t getBufferDeviceAddress(VkBuffer buffer)
 {
@@ -344,6 +346,28 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	vkFreeMemory(Device::get(), scratchBuffer.vkMemory, nullptr);
 }
 
+void RayTracer::createSceneBuffer(vkengine::Scene3D* scene)
+{
+	std::vector<SceneObjRtDescBlock> sceneDescription;
+	sceneDescription.reserve(scene->get_object_num());
+
+	for (auto objId : scene->listObjects()) {
+		auto obj = scene->getObject(objId);
+		sceneDescription.push_back({MeshManager::getMeshID(obj->getMeshName()),TextureManager::getSceneTextureIndex(obj->getTextureName())});
+	}
+
+	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * sceneDescription.size();
+
+	createBuffer(PhysicalDevice::get(), Device::get(), allocation_size,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		sceneBuffer.vkBuffer, sceneBuffer.vkMemory);
+
+	void* mapped = VK_NULL_HANDLE;
+	vkMapMemory(Device::get(), sceneBuffer.vkMemory, 0, allocation_size, 0, &mapped);
+	memcpy(mapped, sceneDescription.data(), allocation_size);
+	vkUnmapMemory(Device::get(), sceneBuffer.vkMemory);
+}
+
 void RayTracer::updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex)
 {
 	// begin main command recording
@@ -493,11 +517,15 @@ void RayTracer::createShaderBindingTable()
 	vkUnmapMemory(Device::get(), shaderBindingTable.vkMemory);
 }
 
-void RayTracer::updateRTPipelineResources()
+void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 {
 	VkAccelerationStructureKHR tlas = TLAS.as.accelerationStructure;
 	auto bundle = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].descriptors;
 	std::vector<VkWriteDescriptorSet> writes;
+	VkDescriptorBufferInfo sceneBuffInfo;
+	std::vector<VkDescriptorBufferInfo> vertexBuffersInfos;
+	std::vector<VkDescriptorBufferInfo> indexBuffersInfos;
+
 	VkWriteDescriptorSetAccelerationStructureKHR asDescrSetWrite{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR };
 	asDescrSetWrite.accelerationStructureCount = 1;
 	asDescrSetWrite.pAccelerationStructures = &tlas;
@@ -505,14 +533,42 @@ void RayTracer::updateRTPipelineResources()
 		VkWriteDescriptorSet accStructWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		accStructWrite.dstSet = bundle.static_sets[0].set;
 		accStructWrite.dstBinding = 0;
-		accStructWrite.dstArrayElement = 0;
 		accStructWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 		accStructWrite.descriptorCount = 1;
-		accStructWrite.pBufferInfo = nullptr;
-		accStructWrite.pImageInfo = nullptr;
 		// The specialized acceleration structure descriptor has to be chained
 		accStructWrite.pNext = &asDescrSetWrite;
 		writes.push_back(accStructWrite);
+
+		// Fill SceneDescriptionBuffer
+		VkWriteDescriptorSet sceneDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		sceneDescWrite.dstSet = bundle.static_sets[0].set;
+		sceneDescWrite.dstBinding = 1;
+		sceneDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		sceneDescWrite.descriptorCount = 1;
+		sceneBuffInfo = { sceneBuffer.vkBuffer, 0, VK_WHOLE_SIZE };
+		sceneDescWrite.pBufferInfo = &sceneBuffInfo;
+		writes.push_back(sceneDescWrite);
+
+		// Fill all vertex and all index buffers
+		for (auto mesh : MeshManager::getMeshLibrary()) {
+			vertexBuffersInfos.push_back({ mesh->getVkVertexBuffer(), 0, VK_WHOLE_SIZE });
+			indexBuffersInfos.push_back({ mesh->getVkIndexBuffer(), 0, VK_WHOLE_SIZE });
+		}
+		VkWriteDescriptorSet vertexDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		vertexDescWrite.dstSet = bundle.static_sets[0].set;
+		vertexDescWrite.dstBinding = 2;
+		vertexDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		vertexDescWrite.descriptorCount = vertexBuffersInfos.size();
+		vertexDescWrite.pBufferInfo = vertexBuffersInfos.data();
+		writes.push_back(vertexDescWrite);
+
+		VkWriteDescriptorSet indexDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		indexDescWrite.dstSet = bundle.static_sets[0].set;
+		indexDescWrite.dstBinding = 3;
+		indexDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		indexDescWrite.descriptorCount = indexBuffersInfos.size();
+		indexDescWrite.pBufferInfo = indexBuffersInfos.data();
+		writes.push_back(indexDescWrite);
 	}
 	std::vector<VkDescriptorImageInfo> imageDescriptors(bundle.frame_dependent_sets[0].size());
 	for (int i = 0; i < bundle.frame_dependent_sets[0].size(); i++)
@@ -520,10 +576,8 @@ void RayTracer::updateRTPipelineResources()
 		VkWriteDescriptorSet storageImgDescSet = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		storageImgDescSet.dstSet = bundle.frame_dependent_sets[0][i].set;
 		storageImgDescSet.dstBinding = 0;
-		storageImgDescSet.dstArrayElement = 0;
 		storageImgDescSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		storageImgDescSet.descriptorCount = 1;
-		storageImgDescSet.pBufferInfo = nullptr;
 		imageDescriptors[i].imageView = Renderer::getOffScreenFrameAttachment(i).imageView;
 		imageDescriptors[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		storageImgDescSet.pImageInfo = &imageDescriptors[i];
@@ -538,7 +592,6 @@ void RayTracer::updateRTPipelineResources()
 		VkWriteDescriptorSet uniformBufferDescSet = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		uniformBufferDescSet.dstSet = bundle.frame_dependent_sets[1][i].set;
 		uniformBufferDescSet.dstBinding = 0;
-		uniformBufferDescSet.dstArrayElement = 0;
 		uniformBufferDescSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		uniformBufferDescSet.descriptorCount = 1;
 		bufferDescriptors[i].buffer = DescriptorSetsFactory::getUniformBuffer();
@@ -557,12 +610,13 @@ void RayTracer::initialize()
 }
 
 void RayTracer::prepare(Scene3D * scene) {
-	destroyAS();
+	destroySceneAcceleration();
 	buildBottomLevelAS();
 	buildTopLevelAS(scene);
+	createSceneBuffer(scene);
 }
 
-void RayTracer::destroyAS()
+void RayTracer::destroySceneAcceleration()
 {	// Destroy TLAS resources
 	vkDestroyAccelerationStructureKHR(Device::get(), TLAS.as.accelerationStructure, nullptr);
 	vkFreeMemory(Device::get(), TLAS.as.memory, nullptr);
@@ -576,6 +630,9 @@ void RayTracer::destroyAS()
 		vkFreeMemory(Device::get(), blas.as.memory, nullptr);
 	}
 	BLASs.clear();
+	// destroy the scene descriptor uniform buffer
+	vkDestroyBuffer(Device::get(),sceneBuffer.vkBuffer, nullptr);
+	vkFreeMemory(Device::get(), sceneBuffer.vkMemory, nullptr);
 }
 
 
@@ -586,5 +643,5 @@ void RayTracer::cleanUP()
 	vkFreeMemory(Device::get(), shaderBindingTable.vkMemory, nullptr);
 	// Destroy Pipeline
 	vkDestroyPipeline(Device::get(), rayTracingPipeline, nullptr);
-	destroyAS();
+	destroySceneAcceleration();
 }

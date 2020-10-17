@@ -11,7 +11,7 @@ enum DescSetsLayouts {
 	DSL_TEXTURE_ARRAY,
 	DSL_FRAMEBUFFER_TEXTURE,
 	DSL_UNIFORM_BUFFER,
-	DSL_ACCELERATION_STRUCTURE, // Raytracing KHR
+	DSL_RAY_TRACING_SCENE, // Raytracing KHR
 	DSL_STORAGE_IMAGE,
 	DescSetsLayouts_END // must be last
 };
@@ -60,6 +60,12 @@ typedef struct {
 	*/
 	std::vector<std::vector<DescSet>> frame_dependent_sets;
 } DescSetBundle;
+
+// Used in the Ray-Tracing pipeline
+struct SceneObjRtDescBlock {
+	uint32_t meshID;
+	uint32_t textureID;
+};
 
 struct UniformBlock {
 	glm::mat4 P_matrix;

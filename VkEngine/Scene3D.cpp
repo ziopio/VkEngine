@@ -34,7 +34,7 @@ std::vector<unsigned> vkengine::Scene3D::listCameras()
 void Scene3D::addObject(vkengine::ObjectInitInfo obj_info)
 {
 	objects.insert({ obj_info.id,
-		Object3D(obj_info.id, obj_info.name, obj_info.mesh_id, obj_info.material, obj_info.transformation) } );
+		Object3D(obj_info.id, obj_info.name, obj_info.mesh_name, obj_info.texture_name, obj_info.transformation) } );
 }
 
 Object3D* Scene3D::getObject(unsigned id)
