@@ -46,6 +46,13 @@ void PipelineFactory::setVertexType(VertexTypes type)
 		setup->bindingDescriptions = { Vertex3D::getBindingDescription() };
 		setup->attributeDescriptions = Vertex3D::getAttributeDescriptions();
 		break;
+
+
+
+
+
+
+
 	default:
 		break;
 	}	
@@ -347,7 +354,6 @@ void PipelineFactory::createPipelineLayouts()
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE)->layout); // shared output with rasterizer
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-		pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 		pipelineLayoutInfo.setLayoutCount = layouts.size();
 		pipelineLayoutInfo.pSetLayouts = layouts.data();
 		if (vkCreatePipelineLayout(Device::get(),

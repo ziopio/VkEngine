@@ -55,7 +55,9 @@ private:
 	static VkPhysicalDeviceProperties2 deviceProperties2;
 	static VkPhysicalDeviceFeatures2 deviceFeatures2;
 	// Extra features and properties
-	//Descriptor indexing
+	// ScalarBlockLayout: to be able to specify a glsl layout as (scalar) and aligne struct member access to float 4 byte
+	static VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures;
+	//Descriptor indexing: to be able to index SSBO in the shaders with unpredictable indices
 	static VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures;
 	// Buffer Device Address
 	static VkPhysicalDeviceBufferDeviceAddressFeaturesKHR deviceAddrFeatures;

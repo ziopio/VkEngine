@@ -14,6 +14,7 @@ VkPhysicalDeviceFeatures PhysicalDevice::basicFeatures = {};
 VkPhysicalDeviceProperties2 PhysicalDevice::deviceProperties2 = {};
 VkPhysicalDeviceFeatures2 PhysicalDevice::deviceFeatures2 = {};
 
+VkPhysicalDeviceScalarBlockLayoutFeatures PhysicalDevice::scalarBlockLayoutFeatures = {};
 VkPhysicalDeviceDescriptorIndexingFeaturesEXT PhysicalDevice::descriptorIndexingFeatures = {};
 VkPhysicalDeviceBufferDeviceAddressFeaturesKHR PhysicalDevice::deviceAddrFeatures = {};
 
@@ -109,8 +110,11 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device)
 	deviceProperties2.pNext = &rayTracingProperties;
 	vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
 	// FEATURES //
+	// Scalar Block features
+	scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES_EXT;
 	// Runtime Descriptor Array
 	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+	descriptorIndexingFeatures.pNext = &scalarBlockLayoutFeatures;
 	//Buffer Device Address features
 	deviceAddrFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
 	deviceAddrFeatures.pNext = &descriptorIndexingFeatures;

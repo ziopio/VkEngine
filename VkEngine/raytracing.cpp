@@ -353,7 +353,7 @@ void RayTracer::createSceneBuffer(vkengine::Scene3D* scene)
 
 	for (auto objId : scene->listObjects()) {
 		auto obj = scene->getObject(objId);
-		sceneDescription.push_back({MeshManager::getMeshID(obj->getMeshName()),TextureManager::getSceneTextureIndex(obj->getTextureName())});
+		sceneDescription.push_back({MeshManager::getMeshID(obj->getMeshName()), 0 });//TextureManager::getSceneTextureIndex(obj->getTextureName())});
 	}
 
 	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * sceneDescription.size();
