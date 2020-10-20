@@ -349,7 +349,6 @@ void PipelineFactory::createPipelineLayouts()
 	// Ray_TRACING rendering pipeline layout---------------------------------------	
 	{		
 		std::vector<VkDescriptorSetLayout> layouts;
-		//layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY)->layout); // shared input with rasterizer
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_RAY_TRACING_SCENE)->layout); // ray-tracing only
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE)->layout); // shared output with rasterizer
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer

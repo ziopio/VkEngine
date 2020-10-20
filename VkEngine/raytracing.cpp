@@ -353,7 +353,10 @@ void RayTracer::createSceneBuffer(vkengine::Scene3D* scene)
 
 	for (auto objId : scene->listObjects()) {
 		auto obj = scene->getObject(objId);
-		sceneDescription.push_back({MeshManager::getMeshID(obj->getMeshName()), 0 });//TextureManager::getSceneTextureIndex(obj->getTextureName())});
+		sceneDescription.push_back({
+			MeshManager::getMeshID(obj->getMeshName()), 
+			TextureManager::getSceneTextureIndex(obj->getTextureName()),
+			obj->getMatrix()});
 	}
 
 	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * sceneDescription.size();
@@ -525,6 +528,11 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 	VkDescriptorBufferInfo sceneBuffInfo;
 	std::vector<VkDescriptorBufferInfo> vertexBuffersInfos;
 	std::vector<VkDescriptorBufferInfo> indexBuffersInfos;
+	std::vector<VkDescriptorImageInfo> textureSamplersInfos(
+		TEXTURE_ARRAY_LENGTH, // Pre-fill with default texture
+		{ TextureManager::getSceneTexture(0)->getTextureSampler(),
+		TextureManager::getSceneTexture(0)->getTextureImgView(),
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 
 	VkWriteDescriptorSetAccelerationStructureKHR asDescrSetWrite{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR };
 	asDescrSetWrite.accelerationStructureCount = 1;
@@ -569,6 +577,23 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		indexDescWrite.descriptorCount = indexBuffersInfos.size();
 		indexDescWrite.pBufferInfo = indexBuffersInfos.data();
 		writes.push_back(indexDescWrite);
+
+		//Get all texture samplers
+		for (int i=0; i < TextureManager::countSceneTextures(); i++) {
+			textureSamplersInfos[i] = {
+				TextureManager::getSceneTexture(i)->getTextureSampler(),
+				TextureManager::getSceneTexture(i)->getTextureImgView(),
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL 
+			};
+		}
+
+		VkWriteDescriptorSet texturesDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		texturesDescWrite.dstSet = bundle.static_sets[0].set;
+		texturesDescWrite.dstBinding = 4;
+		texturesDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		texturesDescWrite.descriptorCount = textureSamplersInfos.size();
+		texturesDescWrite.pImageInfo = textureSamplersInfos.data();
+		writes.push_back(texturesDescWrite);
 	}
 	std::vector<VkDescriptorImageInfo> imageDescriptors(bundle.frame_dependent_sets[0].size());
 	for (int i = 0; i < bundle.frame_dependent_sets[0].size(); i++)

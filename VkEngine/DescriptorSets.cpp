@@ -47,7 +47,12 @@ void DescriptorSetsFactory::initLayouts() {
 		indexStorageBinding.descriptorCount = 3; // TODO  make dynamic
 		indexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		indexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		layouts[DSL_RAY_TRACING_SCENE].bindings = { accStructBinding,  sceneDescBinding, vertexStorageBinding, indexStorageBinding };
+		VkDescriptorSetLayoutBinding samplerArrayBinding = {};
+		samplerArrayBinding.binding = 4;
+		samplerArrayBinding.descriptorCount = TEXTURE_ARRAY_LENGTH; // TODO  make dynamic
+		samplerArrayBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		samplerArrayBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		layouts[DSL_RAY_TRACING_SCENE].bindings = { accStructBinding,  sceneDescBinding, vertexStorageBinding, indexStorageBinding, samplerArrayBinding };
 		layouts[DSL_RAY_TRACING_SCENE].layout = createDStLayout(layouts[DSL_RAY_TRACING_SCENE].bindings);
 	}
 	// TEXTURE_ARRAY : 1 binding of 32 textures in fragment shader
@@ -80,7 +85,7 @@ void DescriptorSetsFactory::initLayouts() {
 		layouts[DSL_FRAMEBUFFER_TEXTURE].bindings = { samplerLayoutBinding };
 		layouts[DSL_FRAMEBUFFER_TEXTURE].layout = createDStLayout(layouts[DSL_FRAMEBUFFER_TEXTURE].bindings);
 	}
-	// Uniform set for drawing both in rasterization and in raaytracing
+	// Uniform set for drawing both in rasterization and in raytracing
 	{		
 		VkDescriptorSetLayoutBinding uniformMatLayoutBinding = {};
 		uniformMatLayoutBinding.binding = 0;

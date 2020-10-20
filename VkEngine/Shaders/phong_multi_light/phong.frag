@@ -1,5 +1,6 @@
 #version 450
 #extension GL_ARB_separate_shader_objects:enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 struct Light{
 	vec4 position;
@@ -16,7 +17,7 @@ layout(location=4)in vec3 Normal_cameraspace;
 layout(location=5)in vec3 EyeDirection_cameraspace;
 layout(location=6)in vec3 LightDirection_cameraspace[10];
 
-layout(set=0,binding=0)uniform sampler2D texSamplers[32];
+layout(set=0,binding=0)uniform sampler2D texSamplers[];
 layout(set=1,binding=0)uniform uniBlock{
 	mat4 P;
 	mat4 V;

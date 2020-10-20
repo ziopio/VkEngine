@@ -65,6 +65,7 @@ typedef struct {
 struct SceneObjRtDescBlock {
 	uint32_t meshID;
 	uint32_t textureID;
+	glm::mat4 transform;
 };
 
 struct UniformBlock {
