@@ -10,10 +10,11 @@ layout(location = 0) rayPayloadInEXT vec3 hitValue;
 hitAttributeEXT vec3 attribs;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT topLevelAS;
-layout(set = 0, binding = 1, scalar) buffer SceneDesc {ObjDesc obj[];} sceneObjects;
-layout(set = 0, binding = 2, scalar) buffer Vertices { Vertex3D vertices[]; } vertexBuffers[];
-layout(set = 0, binding = 3) buffer Indices { uint indices[]; } indexBuffers[];
-layout(set = 0, binding = 4) uniform sampler2D texSamplers[];
+layout(set = 0, binding = 1, scalar) buffer Vertices { Vertex3D vertices[]; } vertexBuffers[];
+layout(set = 0, binding = 2) buffer Indices { uint indices[]; } indexBuffers[];
+layout(set = 0, binding = 3) uniform sampler2D texSamplers[];
+
+layout(set = 1, binding = 1, scalar) buffer SceneDesc {ObjDesc obj[];} sceneObjects;
 
 layout(set = 2, binding = 0)uniform uniBlock {
 	mat4 P_inverted;

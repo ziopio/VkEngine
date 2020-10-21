@@ -91,6 +91,7 @@ public:
 	static void createShaderBindingTable();
 	static void updateRTPipelineResources(vkengine::Scene3D* scene);
 	static void prepare(vkengine::Scene3D * scene);
+	static void updateSceneBuffer(vkengine::Scene3D* scene, unsigned imageIndex);
 	static void updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex);
 	static void cleanUP();
 private:
@@ -112,6 +113,7 @@ private:
 
 	static VkPipeline rayTracingPipeline;
 	static Buffer shaderBindingTable;
+	static void* mappedSceneBuffer;
 	static Buffer sceneBuffer;
 
 	//

@@ -32,27 +32,22 @@ void DescriptorSetsFactory::initLayouts() {
 		accStructBinding.descriptorCount = 1;
 		accStructBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 		accStructBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		VkDescriptorSetLayoutBinding sceneDescBinding = {};
-		sceneDescBinding.binding = 1;
-		sceneDescBinding.descriptorCount = 1;
-		sceneDescBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		sceneDescBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding vertexStorageBinding = {};
-		vertexStorageBinding.binding = 2;
+		vertexStorageBinding.binding = 1;
 		vertexStorageBinding.descriptorCount = 3; // TODO make dynamic
 		vertexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		vertexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding indexStorageBinding = {};
-		indexStorageBinding.binding = 3;
+		indexStorageBinding.binding = 2;
 		indexStorageBinding.descriptorCount = 3; // TODO  make dynamic
 		indexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		indexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding samplerArrayBinding = {};
-		samplerArrayBinding.binding = 4;
+		samplerArrayBinding.binding = 3;
 		samplerArrayBinding.descriptorCount = TEXTURE_ARRAY_LENGTH; // TODO  make dynamic
 		samplerArrayBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		samplerArrayBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		layouts[DSL_RAY_TRACING_SCENE].bindings = { accStructBinding,  sceneDescBinding, vertexStorageBinding, indexStorageBinding, samplerArrayBinding };
+		layouts[DSL_RAY_TRACING_SCENE].bindings = { accStructBinding, vertexStorageBinding, indexStorageBinding, samplerArrayBinding };
 		layouts[DSL_RAY_TRACING_SCENE].layout = createDStLayout(layouts[DSL_RAY_TRACING_SCENE].bindings);
 	}
 	// TEXTURE_ARRAY : 1 binding of 32 textures in fragment shader
@@ -65,15 +60,20 @@ void DescriptorSetsFactory::initLayouts() {
 		layouts[DSL_TEXTURE_ARRAY].bindings = { samplerLayoutBinding };
 		layouts[DSL_TEXTURE_ARRAY].layout = createDStLayout(layouts[DSL_TEXTURE_ARRAY].bindings);
 	}
-	// STORAGE_IMAGE for RAYTRACING : 1 binding of 1 storage image in raytracing shaders
+	// STORAGE_IMAGE for RAYTRACING : 1 binding of 1 storage image and 1 sceneObj buffer in raytracing shaders
 	{
 		VkDescriptorSetLayoutBinding storageImgLayoutBinding = {};
 		storageImgLayoutBinding.binding = 0;
 		storageImgLayoutBinding.descriptorCount = 1;
 		storageImgLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		storageImgLayoutBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-		layouts[DSL_STORAGE_IMAGE].bindings = { storageImgLayoutBinding };
-		layouts[DSL_STORAGE_IMAGE].layout = createDStLayout(layouts[DSL_STORAGE_IMAGE].bindings);
+		VkDescriptorSetLayoutBinding sceneDescBinding = {};
+		sceneDescBinding.binding = 1;
+		sceneDescBinding.descriptorCount = 1;
+		sceneDescBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		sceneDescBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		layouts[DSL_RT_IMAGE_AND_OBJECTS].bindings = { storageImgLayoutBinding, sceneDescBinding };
+		layouts[DSL_RT_IMAGE_AND_OBJECTS].layout = createDStLayout(layouts[DSL_RT_IMAGE_AND_OBJECTS].bindings);
 	}
 	// FRAMEBUFFER_TEXTURE: a set with 1binding of 1 Texture : in fragment shader
 	{
@@ -237,9 +237,9 @@ void DescriptorSetsFactory::updateUniformBuffer(UniformBlock uniforms, int image
 {
 	VkDeviceSize minAlignement =
 		PhysicalDevice::getProperties().properties.limits.minUniformBufferOffsetAlignment;
-	VkDeviceSize alignemetPadding = minAlignement - (sizeof(UniformBlock) % minAlignement);
+	VkDeviceSize padding = minAlignement - (sizeof(UniformBlock) % minAlignement);
 
-	memcpy((char *)mappedUniformMemory + imageIndex * (sizeof(UniformBlock) + alignemetPadding),
+	memcpy((char *)mappedUniformMemory + imageIndex * (sizeof(UniformBlock) + padding),
 		&uniforms, sizeof(uniforms));
 }
 

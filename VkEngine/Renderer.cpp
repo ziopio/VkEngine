@@ -98,6 +98,9 @@ bool Renderer::prepareFrame()
 	Renderer::last_imageIndex = imageIndex;	
 	// Update the uniformBuffer
 	Renderer::updateUniforms(imageIndex);
+	if (useRayTracing) {
+		RayTracer::updateSceneBuffer(scene, imageIndex);
+	}
 	return true;
 }
 

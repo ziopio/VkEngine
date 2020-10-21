@@ -21,6 +21,7 @@ std::vector<BottomLevelAS> RayTracer::BLASs;
 TopLevelAS RayTracer::TLAS;
 VkPipeline RayTracer::rayTracingPipeline;
 Buffer RayTracer::shaderBindingTable;
+void* RayTracer::mappedSceneBuffer;
 Buffer RayTracer::sceneBuffer;
 
 uint64_t getBufferDeviceAddress(VkBuffer buffer)
@@ -349,27 +350,16 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 
 void RayTracer::createSceneBuffer(vkengine::Scene3D* scene)
 {
-	std::vector<SceneObjRtDescBlock> sceneDescription;
-	sceneDescription.reserve(scene->get_object_num());
-
-	for (auto objId : scene->listObjects()) {
-		auto obj = scene->getObject(objId);
-		sceneDescription.push_back({
-			MeshManager::getMeshID(obj->getMeshName()), 
-			TextureManager::getSceneTextureIndex(obj->getTextureName()),
-			obj->getMatrix()});
-	}
-
-	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * sceneDescription.size();
+	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->get_object_num();
+	VkDeviceSize minAlignement = PhysicalDevice::getProperties().properties.limits.minStorageBufferOffsetAlignment;
+	VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
+	allocation_size = (allocation_size + padding) * SwapChainMng::get()->getImageCount();
 
 	createBuffer(PhysicalDevice::get(), Device::get(), allocation_size,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		sceneBuffer.vkBuffer, sceneBuffer.vkMemory);
 
-	void* mapped = VK_NULL_HANDLE;
-	vkMapMemory(Device::get(), sceneBuffer.vkMemory, 0, allocation_size, 0, &mapped);
-	memcpy(mapped, sceneDescription.data(), allocation_size);
-	vkUnmapMemory(Device::get(), sceneBuffer.vkMemory);
+	vkMapMemory(Device::get(), sceneBuffer.vkMemory, 0, allocation_size, 0, &mappedSceneBuffer);
 }
 
 void RayTracer::updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex)
@@ -548,15 +538,6 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		accStructWrite.pNext = &asDescrSetWrite;
 		writes.push_back(accStructWrite);
 
-		// Fill SceneDescriptionBuffer
-		VkWriteDescriptorSet sceneDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-		sceneDescWrite.dstSet = bundle.static_sets[0].set;
-		sceneDescWrite.dstBinding = 1;
-		sceneDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		sceneDescWrite.descriptorCount = 1;
-		sceneBuffInfo = { sceneBuffer.vkBuffer, 0, VK_WHOLE_SIZE };
-		sceneDescWrite.pBufferInfo = &sceneBuffInfo;
-		writes.push_back(sceneDescWrite);
 
 		// Fill all vertex and all index buffers
 		for (auto mesh : MeshManager::getMeshLibrary()) {
@@ -565,7 +546,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		}
 		VkWriteDescriptorSet vertexDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		vertexDescWrite.dstSet = bundle.static_sets[0].set;
-		vertexDescWrite.dstBinding = 2;
+		vertexDescWrite.dstBinding = 1;
 		vertexDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		vertexDescWrite.descriptorCount = vertexBuffersInfos.size();
 		vertexDescWrite.pBufferInfo = vertexBuffersInfos.data();
@@ -573,7 +554,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 
 		VkWriteDescriptorSet indexDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		indexDescWrite.dstSet = bundle.static_sets[0].set;
-		indexDescWrite.dstBinding = 3;
+		indexDescWrite.dstBinding = 2;
 		indexDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		indexDescWrite.descriptorCount = indexBuffersInfos.size();
 		indexDescWrite.pBufferInfo = indexBuffersInfos.data();
@@ -590,7 +571,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 
 		VkWriteDescriptorSet texturesDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		texturesDescWrite.dstSet = bundle.static_sets[0].set;
-		texturesDescWrite.dstBinding = 4;
+		texturesDescWrite.dstBinding = 3;
 		texturesDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		texturesDescWrite.descriptorCount = textureSamplersInfos.size();
 		texturesDescWrite.pImageInfo = textureSamplersInfos.data();
@@ -608,6 +589,19 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		imageDescriptors[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		storageImgDescSet.pImageInfo = &imageDescriptors[i];
 		writes.push_back(storageImgDescSet);
+
+		// Fill SceneBufferDescriptor at each offset
+		VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->get_object_num();
+		VkDeviceSize minAlignement = PhysicalDevice::getProperties().properties.limits.minStorageBufferOffsetAlignment;
+		VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
+		VkWriteDescriptorSet sceneDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		sceneDescWrite.dstSet = bundle.frame_dependent_sets[0][i].set;
+		sceneDescWrite.dstBinding = 1;
+		sceneDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		sceneDescWrite.descriptorCount = 1;
+		sceneBuffInfo = { sceneBuffer.vkBuffer, i*(allocation_size + padding), allocation_size };
+		sceneDescWrite.pBufferInfo = &sceneBuffInfo;
+		writes.push_back(sceneDescWrite);
 	}
 	std::vector<VkDescriptorBufferInfo> bufferDescriptors(bundle.frame_dependent_sets[1].size());
 	VkDeviceSize minAlignement =
@@ -642,6 +636,26 @@ void RayTracer::prepare(Scene3D * scene) {
 	createSceneBuffer(scene);
 }
 
+void RayTracer::updateSceneBuffer(vkengine::Scene3D* scene, unsigned imageIndex)
+{
+	std::vector<SceneObjRtDescBlock> sceneDescription;
+	sceneDescription.reserve(scene->get_object_num());
+
+	for (auto objId : scene->listObjects()) {
+		auto obj = scene->getObject(objId);
+		sceneDescription.push_back({
+			MeshManager::getMeshID(obj->getMeshName()),
+			TextureManager::getSceneTextureIndex(obj->getTextureName()),
+			obj->getMatrix() });
+	}
+	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * sceneDescription.size();
+	VkDeviceSize minAlignement =
+		PhysicalDevice::getProperties().properties.limits.minStorageBufferOffsetAlignment;
+	VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
+
+	memcpy((char*)mappedSceneBuffer + (allocation_size + padding)*imageIndex, sceneDescription.data(), allocation_size);
+}
+
 void RayTracer::destroySceneAcceleration()
 {	// Destroy TLAS resources
 	vkDestroyAccelerationStructureKHR(Device::get(), TLAS.as.accelerationStructure, nullptr);
@@ -657,6 +671,9 @@ void RayTracer::destroySceneAcceleration()
 	}
 	BLASs.clear();
 	// destroy the scene descriptor uniform buffer
+	if (mappedSceneBuffer != nullptr) {
+		vkUnmapMemory(Device::get(), sceneBuffer.vkMemory);
+	}
 	vkDestroyBuffer(Device::get(),sceneBuffer.vkBuffer, nullptr);
 	vkFreeMemory(Device::get(), sceneBuffer.vkMemory, nullptr);
 }

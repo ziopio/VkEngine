@@ -350,7 +350,7 @@ void PipelineFactory::createPipelineLayouts()
 	{		
 		std::vector<VkDescriptorSetLayout> layouts;
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_RAY_TRACING_SCENE)->layout); // ray-tracing only
-		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE)->layout); // shared output with rasterizer
+		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_RT_IMAGE_AND_OBJECTS)->layout); // shared output with rasterizer
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 		pipelineLayoutInfo.setLayoutCount = layouts.size();
@@ -372,7 +372,7 @@ void PipelineFactory::createPipelineLayouts()
 		bundle.frame_dependent_sets.push_back({});
 		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {
 			bundle.frame_dependent_sets[0].push_back(
-				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_STORAGE_IMAGE),nullptr });
+				{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_RT_IMAGE_AND_OBJECTS),nullptr });
 		}		
 		bundle.frame_dependent_sets.push_back({});
 		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {

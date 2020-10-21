@@ -12,7 +12,7 @@ enum DescSetsLayouts {
 	DSL_FRAMEBUFFER_TEXTURE,
 	DSL_UNIFORM_BUFFER,
 	DSL_RAY_TRACING_SCENE, // Raytracing KHR
-	DSL_STORAGE_IMAGE,
+	DSL_RT_IMAGE_AND_OBJECTS,
 	DescSetsLayouts_END // must be last
 };
 /* This is needed to choose which group of assets should 
