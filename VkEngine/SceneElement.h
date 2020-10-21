@@ -21,5 +21,6 @@ namespace vkengine
 		std::string name;
 	protected:
 		unsigned id;
+
 	};
 }

@@ -18,7 +18,6 @@ namespace vkengine
 
 	typedef struct {
 		std::string name;
-		unsigned id;
 		std::string mesh_name;
 		std::string texture_name;
 		ObjTransformation transformation;

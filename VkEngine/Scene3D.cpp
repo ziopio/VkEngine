@@ -5,14 +5,20 @@
 using namespace glm;
 using namespace vkengine;
 
+unsigned getNewUniversalID() {
+	static unsigned next_id = 0;
+	return next_id++;
+}
+
 Scene3D::Scene3D(std::string id, std::string name)
 {
 	this->id = id;
 	this->name = name;
 }
 
-void Scene3D:: addCamera(unsigned id, std::string name, ViewSetup view, PerspectiveSetup perspective)
+void Scene3D::addCamera(std::string name, ViewSetup view, PerspectiveSetup perspective)
 {
+	unsigned id = getNewUniversalID();
 	this->cameras.insert( { id, Camera( id, name,view, perspective) } );
 	this->current_camera = id;
 }
@@ -33,8 +39,9 @@ std::vector<unsigned> vkengine::Scene3D::listCameras()
 
 void Scene3D::addObject(vkengine::ObjectInitInfo obj_info)
 {
-	objects.insert({ obj_info.id,
-		Object3D(obj_info.id, obj_info.name, obj_info.mesh_name, obj_info.texture_name, obj_info.transformation) } );
+	unsigned id = getNewUniversalID();
+	objects.insert({ id,
+		Object3D(id, obj_info.name, obj_info.mesh_name, obj_info.texture_name, obj_info.transformation) } );
 }
 
 Object3D* Scene3D::getObject(unsigned id)
@@ -58,7 +65,8 @@ void Scene3D::removeObject(unsigned id)
 
 void Scene3D::addLight(vkengine::PointLightInfo info)
 {
-	lights.insert({ info.id, LightSource(info.id, info.name, glm::make_vec3(info.position), glm::make_vec3(info.color), info.power) } );
+	unsigned id = getNewUniversalID();
+	lights.insert({ id, LightSource(id, info.name, glm::make_vec3(info.position), glm::make_vec3(info.color), info.power) } );
 }
 
 LightSource* Scene3D::getLight(unsigned id)

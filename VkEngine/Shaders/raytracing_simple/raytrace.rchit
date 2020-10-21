@@ -60,7 +60,7 @@ void main()
   vec2 UV = v0.texCoord * barycentrics.x + 
             v1.texCoord * barycentrics.y + 
             v2.texCoord * barycentrics.z;
-  vec4 albedo = texture(texSamplers[object.textureId],UV);
+  vec4 albedo = texture(texSamplers[nonuniformEXT(object.textureId)],UV);
   vec3  color = albedo.xyz / 10.0;
   // Point light
   if(uniforms.light_count >= 0)

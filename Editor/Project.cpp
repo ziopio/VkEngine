@@ -53,14 +53,14 @@ void Project::load()
 		vkengine::Scene3D* s = vkengine::getScene(scene["id"]);
 
 		for (const auto & light : scene["lights"]) {
-			vkengine::PointLightInfo i = { light["id"], light["name"], 
+			vkengine::PointLightInfo i = {light["name"], 
 				{light["position"][0], light["position"][1], light["position"][2]},
 				{light["color"][0], light["color"][1], light["color"][2]},
 				light["power"] };
 			s->addLight(i);
 		}
 		for (const auto & camera : scene["cameras"]) {
-			s->addCamera(camera["id"],camera["name"], 
+			s->addCamera(camera["name"], 
 				{
 				  glm::vec3(camera["position"][0], camera["position"][1], camera["position"][2]),
 				  glm::vec3(camera["target"][0], camera["target"][1], camera["target"][2]),
@@ -85,7 +85,6 @@ void Project::load()
 			t.scale_vector = glm::make_vec3(scale_vector);
 
 			vkengine::ObjectInitInfo obj_info = {};
-			obj_info.id = obj["id"];
 			obj_info.name = obj["name"];
 			obj_info.mesh_name = obj["mesh"];
 			obj_info.texture_name = obj["texture"];
@@ -127,7 +126,6 @@ void Project::save()
 			std::vector<float> v;
 			auto cam = scene->getCamera(id);
 			json j;
-			j["id"] = id;
 			j["name"] = cam->name;
 			vertex = glm::value_ptr(cam->getViewSetup().position);
 			v.assign(vertex, vertex + 3);
@@ -154,7 +152,6 @@ void Project::save()
 			std::vector<float> v;
 			auto light = scene->getLight(id);
 			json j;
-			j["id"] = id;
 			j["name"] = light->name;
 			vertex = glm::value_ptr(light->getData().position);
 			v.assign(vertex, vertex + 3);
@@ -175,7 +172,6 @@ void Project::save()
 			std::vector<float> v;
 			auto obj = scene->getObject(id);
 			json j, trans;
-			j["id"] = id;
 			j["name"] = obj->name;
 			j["mesh"] = obj->getMeshName();
 			j["texture"] = obj->getTextureName();

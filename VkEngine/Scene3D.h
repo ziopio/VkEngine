@@ -17,7 +17,7 @@ namespace vkengine
 	public:
 		Scene3D(std::string id, std::string name);
 
-		void addCamera(unsigned id, std::string name, ViewSetup view, PerspectiveSetup perspective);
+		void addCamera(std::string name, ViewSetup view, PerspectiveSetup perspective);
 		Camera* getCamera(unsigned);
 		std::vector<unsigned> listCameras();
 
@@ -31,7 +31,6 @@ namespace vkengine
 		LightSource* getLight(unsigned id);
 		std::vector<unsigned> listLights();
 		void removeLight(unsigned id);
-
 		std::vector<SceneElement*> getAllElements();
 
 		~Scene3D();

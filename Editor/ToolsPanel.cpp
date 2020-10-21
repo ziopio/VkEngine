@@ -30,8 +30,8 @@ void ToolsPanel::draw(int w_width, int w_height)
 	{
 		static std::string selected_mesh = "cube.obj", selected_texture = "default";
 		static char obj_name[20] = "Sample";
-		static char new_obj_id[32] = "obj_id";
-		ImGui::InputText("Unique ID", new_obj_id, sizeof(new_obj_id));
+		//static char new_obj_id[32] = "obj_id";
+		//ImGui::InputText("Unique ID", new_obj_id, sizeof(new_obj_id));
 		ImGui::InputText("Name", obj_name, sizeof(obj_name));
 		ImGui::Separator();
 		ImGui::Text("The object transformations are fixed for now...");
@@ -77,27 +77,19 @@ void ToolsPanel::draw(int w_width, int w_height)
 		if (ImGui::Button("OK", ImVec2(120, 0))) 
 		{
 			auto scene_id = this->UI->getEditor()->loadedProject->getActiveScene();
-			auto objs = vkengine::getScene(scene_id)->listObjects();
-			if (std::find(objs.begin(), objs.end(), atoi(new_obj_id)) == objs.end())
-			{
-				vkengine::ObjTransformation transform = {};
-				transform.scale_vector = { 1,1,1 };
-				transform.rotation_vector = { 0,1,0 };
-				vkengine::ObjectInitInfo obj_info = {};
-				obj_info.id = atoi(new_obj_id);
-				obj_info.name = obj_name;
-				obj_info.texture_name = selected_texture;
-				obj_info.mesh_name = selected_mesh;
-				obj_info.transformation = transform;
+			vkengine::ObjTransformation transform = {};
+			transform.scale_vector = { 1,1,1 };
+			transform.rotation_vector = { 0,1,0 };
+			vkengine::ObjectInitInfo obj_info = {};
+			obj_info.name = obj_name;
+			obj_info.texture_name = selected_texture;
+			obj_info.mesh_name = selected_mesh;
+			obj_info.transformation = transform;
 
-				vkengine::getScene(scene_id)->addObject(obj_info);
-				vkengine::loadScene(scene_id);
+			vkengine::getScene(scene_id)->addObject(obj_info);
+			vkengine::loadScene(scene_id);
 
-				ImGui::CloseCurrentPopup();
-			}
-			else {
-				ImGui::OpenPopup(title);
-			}
+			ImGui::CloseCurrentPopup();
 		}
 		if (ImGui::BeginPopupModal(title))
 		{

@@ -234,9 +234,10 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	TLAS.instances.reserve((scene->get_object_num()));
 	for (auto & obj_id : scene->listObjects()) {
 		Object3D* obj = scene->getObject(obj_id);
+		unsigned mesh_id = MeshManager::getMeshID(obj->getMeshName());
 
 		VkAccelerationStructureDeviceAddressInfoKHR addressInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
-		addressInfo.accelerationStructure = BLASs[obj_id].as.accelerationStructure;
+		addressInfo.accelerationStructure = BLASs[mesh_id].as.accelerationStructure;
 		VkDeviceAddress blasAddress = vkGetAccelerationStructureDeviceAddressKHR(Device::get(), &addressInfo);
 
 		TLAS_Instance instance = {};

@@ -9,7 +9,6 @@ namespace vkengine
 {
 
 	typedef struct {
-		unsigned id;
 		std::string name;
 		float position[3];
 		float color[3];
