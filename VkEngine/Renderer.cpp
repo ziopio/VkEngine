@@ -99,7 +99,7 @@ bool Renderer::prepareFrame()
 	// Update the uniformBuffer
 	Renderer::updateUniforms(imageIndex);
 	if (useRayTracing) {
-		RayTracer::updateSceneBuffer(scene, imageIndex);
+		RayTracer::updateSceneData(scene, imageIndex);
 	}
 	return true;
 }
