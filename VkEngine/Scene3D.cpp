@@ -5,6 +5,8 @@
 using namespace glm;
 using namespace vkengine;
 
+constexpr const unsigned INITIAL_CAPACITY = 32;
+
 unsigned getNewUniversalID() {
 	static unsigned next_id = 0;
 	return next_id++;
@@ -12,6 +14,7 @@ unsigned getNewUniversalID() {
 
 Scene3D::Scene3D(std::string id, std::string name)
 {
+	this->object_capacity = INITIAL_CAPACITY;
 	this->id = id;
 	this->name = name;
 }
@@ -42,6 +45,7 @@ void Scene3D::addObject(vkengine::ObjectInitInfo obj_info)
 	unsigned id = getNewUniversalID();
 	objects.insert({ id,
 		Object3D(id, obj_info.name, obj_info.mesh_name, obj_info.texture_name, obj_info.transformation) } );
+	if (objects.size() > object_capacity) object_capacity *= 2;
 }
 
 Object3D* Scene3D::getObject(unsigned id)
@@ -61,6 +65,7 @@ std::vector<unsigned> vkengine::Scene3D::listObjects()
 void Scene3D::removeObject(unsigned id)
 {
 	objects.erase(id);
+	if (objects.size() < object_capacity/2) object_capacity /= 2;
 }
 
 void Scene3D::addLight(vkengine::PointLightInfo info)

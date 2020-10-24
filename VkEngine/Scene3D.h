@@ -32,6 +32,11 @@ namespace vkengine
 		std::vector<unsigned> listLights();
 		void removeLight(unsigned id);
 		std::vector<SceneElement*> getAllElements();
+		/*
+		* Used by the engine to manage allocation depending on the instance count in the scene.
+		* The capacity is managed by the Scene3D to always be >= then the number of objects.
+		*/
+		inline unsigned getCurrentObjectCapacity() { return object_capacity; };
 
 		~Scene3D();
 	public:
@@ -39,6 +44,7 @@ namespace vkengine
 		std::string name;
 	private:
 		std::string id;
+		unsigned object_capacity;
 		std::unordered_map<unsigned, Camera> cameras;
 		std::unordered_map<unsigned, Object3D> objects;
 		std::unordered_map<unsigned, LightSource> lights;

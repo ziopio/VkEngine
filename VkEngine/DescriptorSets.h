@@ -2,7 +2,13 @@
 #include "commons.h"
 #include "LightSource.h"
 
-constexpr const unsigned TEXTURE_ARRAY_LENGTH = 32;
+/*
+* Starting limits for pipeline descriptors.
+* If reached they should be extended to load more data.
+* Note: this will require a pipeline rebuild
+*/
+
+
 /*
  A library of pre-defined descriptors sets layouts identified by an enumeration
 */

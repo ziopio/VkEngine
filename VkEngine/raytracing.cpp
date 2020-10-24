@@ -285,8 +285,8 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 		TLAS.stagebuffer.vkBuffer, TLAS.stagebuffer.vkMemory);
-	vkMapMemory(Device::get(), TLAS.stagebuffer.vkMemory,0, TLAS.bufferSize, 0, &TLAS.mappedStage);
-	memcpy(TLAS.mappedStage, geometryInstances.data(), TLAS.bufferSize);
+	vkMapMemory(Device::get(), TLAS.stagebuffer.vkMemory,0, TLAS.bufferSize, 0, &TLAS.stagebuffer.mappedMemory);
+	memcpy(TLAS.stagebuffer.mappedMemory, geometryInstances.data(), TLAS.bufferSize);
 	//Final TLAS instance buffer loading
 	createBuffer(PhysicalDevice::get(), Device::get(), TLAS.bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -390,7 +390,8 @@ void RayTracer::recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf)
 
 void RayTracer::createSceneBuffer(vkengine::Scene3D* scene)
 {
-	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->get_object_num();
+	//VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->get_object_num();
+	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->getCurrentObjectCapacity();
 	VkDeviceSize minAlignement = PhysicalDevice::getProperties().properties.limits.minStorageBufferOffsetAlignment;
 	VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
 	allocation_size = (allocation_size + padding) * SwapChainMng::get()->getImageCount();
@@ -560,10 +561,14 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 	auto bundle = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].descriptors;
 	std::vector<VkWriteDescriptorSet> writes;
 	VkDescriptorBufferInfo sceneBuffInfo;
-	std::vector<VkDescriptorBufferInfo> vertexBuffersInfos;
-	std::vector<VkDescriptorBufferInfo> indexBuffersInfos;
+	std::vector<VkDescriptorBufferInfo> vertexBuffersInfos{ 
+		SUPPORTED_MESH_COUNT,
+		{MeshManager::getMesh(0)->getVkVertexBuffer(), 0, VK_WHOLE_SIZE} };
+	std::vector<VkDescriptorBufferInfo> indexBuffersInfos{
+		SUPPORTED_MESH_COUNT,
+		{MeshManager::getMesh(0)->getVkIndexBuffer(), 0, VK_WHOLE_SIZE} };
 	std::vector<VkDescriptorImageInfo> textureSamplersInfos(
-		TEXTURE_ARRAY_LENGTH, // Pre-fill with default texture
+		SUPPORTED_TEXTURE_COUNT, // Pre-fill with default texture
 		{ TextureManager::getSceneTexture(0)->getTextureSampler(),
 		TextureManager::getSceneTexture(0)->getTextureImgView(),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
@@ -583,9 +588,9 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 
 
 		// Fill all vertex and all index buffers
-		for (auto mesh : MeshManager::getMeshLibrary()) {
-			vertexBuffersInfos.push_back({ mesh->getVkVertexBuffer(), 0, VK_WHOLE_SIZE });
-			indexBuffersInfos.push_back({ mesh->getVkIndexBuffer(), 0, VK_WHOLE_SIZE });
+		for (int i = 0; i < MeshManager::countLoadedMeshes(); i++) {
+			vertexBuffersInfos[i] = { MeshManager::getMesh(i)->getVkVertexBuffer(), 0, VK_WHOLE_SIZE };
+			indexBuffersInfos[i] = { MeshManager::getMesh(i)->getVkIndexBuffer(), 0, VK_WHOLE_SIZE };
 		}
 		VkWriteDescriptorSet vertexDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		vertexDescWrite.dstSet = bundle.static_sets[0].set;
@@ -634,7 +639,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		writes.push_back(storageImgDescSet);
 
 		// Fill SceneBufferDescriptor at each offset
-		VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->get_object_num();
+		VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->getCurrentObjectCapacity();
 		VkDeviceSize minAlignement = PhysicalDevice::getProperties().properties.limits.minStorageBufferOffsetAlignment;
 		VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
 		VkWriteDescriptorSet sceneDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
@@ -683,7 +688,7 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 {
 	// Updating the storage buffer with objects setting taken from the scene
 	std::vector<SceneObjRtDescBlock> sceneDescription;
-	sceneDescription.reserve(scene->get_object_num());
+	sceneDescription.reserve(scene->getCurrentObjectCapacity());
 	for (auto objId : scene->listObjects()) {
 		auto obj = scene->getObject(objId);
 		sceneDescription.push_back({
@@ -691,7 +696,7 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 			TextureManager::getSceneTextureIndex(obj->getTextureName()),
 			obj->getMatrix() });
 	}
-	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * sceneDescription.size();
+	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->getCurrentObjectCapacity();
 	VkDeviceSize minAlignement =
 		PhysicalDevice::getProperties().properties.limits.minStorageBufferOffsetAlignment;
 	VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
@@ -705,13 +710,13 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 		geometryInstances.push_back(instance.to_VkAcInstanceKHR());
 	}
 	//Memcpy data to the stage buffer, ready for transfer
-	memcpy(TLAS.mappedStage, geometryInstances.data(), TLAS.bufferSize);
+	memcpy(TLAS.stagebuffer.mappedMemory, geometryInstances.data(), TLAS.bufferSize);
 }
 
 void RayTracer::destroySceneAcceleration()
 {	// Destroy TLAS resources
 
-	if (TLAS.mappedStage != nullptr) {
+	if (TLAS.stagebuffer.mappedMemory != nullptr) {
 		vkUnmapMemory(Device::get(), TLAS.stagebuffer.vkMemory);
 	}
 	vkDestroyBuffer(Device::get(), TLAS.stagebuffer.vkBuffer, nullptr);

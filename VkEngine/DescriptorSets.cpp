@@ -3,6 +3,7 @@
 #include "Device.h"
 #include "Pipeline.h"
 #include "ApiUtils.h"
+#include "MeshManager.h"
 #include "TextureManager.h"
 #include "Renderer.h"
 
@@ -34,17 +35,17 @@ void DescriptorSetsFactory::initLayouts() {
 		accStructBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding vertexStorageBinding = {};
 		vertexStorageBinding.binding = 1;
-		vertexStorageBinding.descriptorCount = 3; // TODO make dynamic
+		vertexStorageBinding.descriptorCount = SUPPORTED_MESH_COUNT; // TODO make dynamic
 		vertexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		vertexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding indexStorageBinding = {};
 		indexStorageBinding.binding = 2;
-		indexStorageBinding.descriptorCount = 3; // TODO  make dynamic
+		indexStorageBinding.descriptorCount = SUPPORTED_MESH_COUNT; // TODO  make dynamic
 		indexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		indexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding samplerArrayBinding = {};
 		samplerArrayBinding.binding = 3;
-		samplerArrayBinding.descriptorCount = TEXTURE_ARRAY_LENGTH; // TODO  make dynamic
+		samplerArrayBinding.descriptorCount = SUPPORTED_TEXTURE_COUNT; // TODO  make dynamic
 		samplerArrayBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		samplerArrayBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		layouts[DSL_RAY_TRACING_SCENE].bindings = { accStructBinding, vertexStorageBinding, indexStorageBinding, samplerArrayBinding };
@@ -54,7 +55,7 @@ void DescriptorSetsFactory::initLayouts() {
 	{
 		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 		samplerLayoutBinding.binding = 0;
-		samplerLayoutBinding.descriptorCount = TEXTURE_ARRAY_LENGTH;
+		samplerLayoutBinding.descriptorCount = SUPPORTED_TEXTURE_COUNT;
 		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		layouts[DSL_TEXTURE_ARRAY].bindings = { samplerLayoutBinding };
@@ -287,8 +288,8 @@ std::vector<VkDescriptorImageInfo> DescriptorSetsFactory::gatherImageInfos(DescS
 		switch (usage)
 		{
 		case DescSetUsage::DS_USAGE_ALBEDO_TEXTURE:
-			imagesInfo.resize(TEXTURE_ARRAY_LENGTH);
-			for (int i = 0; i < TEXTURE_ARRAY_LENGTH; i++) {
+			imagesInfo.resize(SUPPORTED_TEXTURE_COUNT);
+			for (int i = 0; i < SUPPORTED_TEXTURE_COUNT; i++) {
 				imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				if (i < TextureManager::countSceneTextures()) {
 					imagesInfo[i].imageView = TextureManager::getSceneTexture(i)->getTextureImgView();
@@ -306,8 +307,8 @@ std::vector<VkDescriptorImageInfo> DescriptorSetsFactory::gatherImageInfos(DescS
 		switch (usage)
 		{
 		case DescSetUsage::DS_USAGE_ALBEDO_TEXTURE:
-			imagesInfo.resize(TEXTURE_ARRAY_LENGTH);
-			for (int i = 0; i < TEXTURE_ARRAY_LENGTH; i++) {
+			imagesInfo.resize(SUPPORTED_TEXTURE_COUNT);
+			for (int i = 0; i < SUPPORTED_TEXTURE_COUNT; i++) {
 				imagesInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				if (i < TextureManager::countImGuiTextures()) {
 					imagesInfo[i].imageView = TextureManager::getImGuiTexture(i)->getTextureImgView();

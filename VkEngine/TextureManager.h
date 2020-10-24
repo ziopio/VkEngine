@@ -1,6 +1,8 @@
 #pragma once
 #include "Texture.h"
 
+constexpr const unsigned SUPPORTED_TEXTURE_COUNT = 32;
+
 class TextureManager
 {
 public:

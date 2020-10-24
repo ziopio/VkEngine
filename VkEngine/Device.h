@@ -5,6 +5,7 @@ struct Buffer {
 	VkBuffer vkBuffer;
 	VkDeviceMemory vkMemory;
 	VkDeviceAddress deviceAddr;
+	void* mappedMemory;
 };
 
 struct Image {

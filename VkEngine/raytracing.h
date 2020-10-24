@@ -68,7 +68,6 @@ struct TopLevelAS {
 	Buffer instanceBuffer;
 	Buffer scratchBuffer;
 	Buffer stagebuffer;
-	void* mappedStage;
 	VkDeviceSize bufferSize;
 };
 
@@ -83,7 +82,7 @@ uint64_t getBufferDeviceAddress(VkBuffer buffer);
 AccelerationStructureGeometry mesh3DToASGeometryKHR(const Mesh3D * model);
 
 /*
-	Creates an Acceleration Structure Vulkan object from give create infos, 
+	Creates an Acceleration Structure Vulkan object from given create infos, 
 	then takes care to alloc and bind memory for it.
 */
 AccelerationStructure createAcceleration(VkAccelerationStructureCreateInfoKHR& accel_);

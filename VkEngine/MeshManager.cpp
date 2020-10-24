@@ -5,7 +5,7 @@
 
 using namespace vkengine;
 
-
+unsigned MeshManager::mesh_capacity = SUPPORTED_MESH_COUNT;
 std::unordered_map<std::string, unsigned> MeshManager::mesh_ids;
 std::vector<Mesh3D*> MeshManager::mesh_library;
 std::vector<GuiMesh*> MeshManager::per_frame_imguis;
