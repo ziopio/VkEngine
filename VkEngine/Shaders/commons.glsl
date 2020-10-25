@@ -20,6 +20,10 @@ struct Light{
 	vec4 power;
 };
 
+bool facingLight(vec3 normal, vec3 light_dir){
+  return dot(normal, light_dir) > 0;
+}
+
 vec3 computeDiffuse(vec3 matColor, Light light,vec3 lightDir, vec3 normal)
 {
   // Lambertian

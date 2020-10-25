@@ -14,7 +14,7 @@ using namespace vkengine;
 
 #define INDEX_RAYGEN_GROUP 0
 #define INDEX_MISS_GROUP 1
-#define INDEX_CLOSEST_HIT_GROUP 2
+#define INDEX_CLOSEST_HIT_GROUP 3
 
 
 std::vector<BottomLevelAS> RayTracer::BLASs;
@@ -432,7 +432,7 @@ void RayTracer::updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::v
 	VkDeviceSize rayGenOffset = 0u * progSize;  // Start at the beginning of the shaderBindingTable
 	VkDeviceSize missOffset = 1u * progSize;  // Jump over raygen
 	VkDeviceSize missStride = progSize;
-	VkDeviceSize hitGroupOffset = 2u * progSize;  // Jump over the previous shaders
+	VkDeviceSize hitGroupOffset = 3u * progSize;  // Jump over the previous shaders
 	VkDeviceSize hitGroupStride = progSize;
 
 	// since 3 are the shader groups of 1 shader all the same size
@@ -470,13 +470,14 @@ void RayTracer::createRayTracingPipeline()
 {	
 	Shader rayGen("VkEngine/Shaders/raytracing_simple/rgen.spv", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 	Shader rayMiss("VkEngine/Shaders/raytracing_simple/rmiss.spv", VK_SHADER_STAGE_MISS_BIT_KHR);
+	Shader rayShadowMiss("VkEngine/Shaders/raytracing_simple/shadow.rmiss.spv", VK_SHADER_STAGE_MISS_BIT_KHR);
 	Shader rayClosestHit("VkEngine/Shaders/raytracing_simple/rchit.spv", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-	std::array<VkPipelineShaderStageCreateInfo, 3> stages{ rayGen.getStage(), rayMiss.getStage(), rayClosestHit.getStage() };
+	std::array<VkPipelineShaderStageCreateInfo, 4> stages{ rayGen.getStage(), rayMiss.getStage(), rayShadowMiss.getStage(), rayClosestHit.getStage() };
 
 	/* Shaders are gathered in groups 
 		INDEX_RAYGEN=0	-> those who generate
-		INDEX_MISS=1	-> those who handle miss
-		CLOSEST_HIT=2	-> those involved in hit payload generation
+		INDEX_MISS=1	-> those who handle miss [rmiss and shadow.rmiss]
+		CLOSEST_HIT=3	-> those involved in hit payload generation
 	*/
 	std::vector<VkRayTracingShaderGroupCreateInfoKHR >shaderGroups;
 	/*
@@ -498,6 +499,8 @@ void RayTracer::createRayTracingPipeline()
 	missGroupCI.anyHitShader = VK_SHADER_UNUSED_KHR;
 	missGroupCI.intersectionShader = VK_SHADER_UNUSED_KHR;
 	shaderGroups.push_back(missGroupCI);
+	missGroupCI.generalShader = INDEX_MISS_GROUP + 1;
+	shaderGroups.push_back(missGroupCI);
 	// Hit Group: Closest Hit + AnyHit
 	VkRayTracingShaderGroupCreateInfoKHR closesHitGroupCI{ VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR };
 	closesHitGroupCI.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR; // could also be procedural instead
@@ -516,7 +519,7 @@ void RayTracer::createRayTracingPipeline()
 	rayPipelineInfo.pStages = stages.data();
 	rayPipelineInfo.groupCount = static_cast<uint32_t>(shaderGroups.size());  // 1-raygen, n-miss, n-(hit[+anyhit+intersect])
 	rayPipelineInfo.pGroups = shaderGroups.data();
-	rayPipelineInfo.maxRecursionDepth = 1; // 1 forces a Miss call if a trace call happens after the first hit
+	rayPipelineInfo.maxRecursionDepth = 2; // 1 forces a Miss call if a trace call happens after the first hit
 	rayPipelineInfo.libraries = { VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR };
 
 	if (vkCreateRayTracingPipelinesKHR(Device::get(), nullptr, 1, & rayPipelineInfo, nullptr, &RayTracer::rayTracingPipeline) != VK_SUCCESS) {
@@ -526,8 +529,8 @@ void RayTracer::createRayTracingPipeline()
 
 void RayTracer::createShaderBindingTable()
 {
-	// 3 shaders: raygen, miss, chit
-	auto groupCount = 3;               
+	// 3 shader groups: raygen, miss, chit
+	auto groupCount = 4;               
 	// Size of a program identifier
 	uint32_t groupHandleSize = PhysicalDevice::getPhysicalDeviceRayTracingProperties().shaderGroupHandleSize;
 	// Size of shader alignment
@@ -742,7 +745,6 @@ void RayTracer::destroySceneAcceleration()
 	vkDestroyBuffer(Device::get(),sceneBuffer.vkBuffer, nullptr);
 	vkFreeMemory(Device::get(), sceneBuffer.vkMemory, nullptr);
 }
-
 
 void RayTracer::cleanUP()
 {

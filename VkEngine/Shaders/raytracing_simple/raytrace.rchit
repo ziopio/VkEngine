@@ -6,8 +6,10 @@
 #include "..\commons.glsl"
 #include "raycommon.glsl"
 
-layout(location = 0) rayPayloadInEXT vec3 hitValue;
-hitAttributeEXT vec3 attribs;
+hitAttributeEXT vec2 attribs;
+
+layout(location = 0) rayPayloadInEXT hitPayload prd;
+layout(location = 1) rayPayloadEXT bool isShadowed;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT topLevelAS;
 layout(set = 0, binding = 1, scalar) buffer Vertices { Vertex3D vertices[]; } vertexBuffers[];
@@ -23,7 +25,7 @@ layout(set = 2, binding = 0)uniform uniBlock {
 	int light_count;
 } uniforms;
 
-
+// void castShadow();
 
 void main()
 {
@@ -63,13 +65,45 @@ void main()
             v2.texCoord * barycentrics.z;
   vec4 albedo = texture(texSamplers[nonuniformEXT(object.textureId)],UV);
   vec3  color = albedo.xyz / 10.0;
+  float shadow_attenuation = 1.0;
   // Point light
   if(uniforms.light_count >= 0)
   {
-    vec3 lDir = normalize(uniforms.lights[0].position.xyz - worldPos);
+    vec3 lightDistance = uniforms.lights[0].position.xyz - worldPos;
+    vec3 lDir = normalize(lightDistance);
     color += computeDiffuse(albedo.xyz, uniforms.lights[0], lDir, normal);
-    color += computeSpecular(gl_WorldRayDirectionEXT, lDir, normal) * uniforms.lights[0].power.w;
+    if( facingLight(normal, lDir) )
+    {
+      float tMin = 0.001;
+      float tMax = length(lightDistance);
+      vec3  origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+      vec3  rayDir = lDir;
+      uint  flags = 
+      gl_RayFlagsTerminateOnFirstHitEXT | // The first hit is always good.
+      gl_RayFlagsOpaqueEXT | // Will not call the any hit shader, so all objects will be opaque.
+      gl_RayFlagsSkipClosestHitShaderEXT; // Will not invoke the hit shader, only the miss shader.
+      isShadowed = true;
+      traceRayEXT(topLevelAS,  // acceleration structure
+            flags,       // rayFlags
+            0xFF,        // cullMask
+            0,           // sbtRecordOffset
+            0,           // sbtRecordStride
+            1,           // missIndex
+            origin,      // ray origin
+            tMin,        // ray min range
+            rayDir,      // ray direction
+            tMax,        // ray max range
+            1            // payload (location = 1)
+      );
+      if(isShadowed)
+      {
+        shadow_attenuation = 0.3;
+      }else // we skip specular light when in shadow
+      {
+        color += computeSpecular(gl_WorldRayDirectionEXT, lDir, normal) * uniforms.lights[0].power.w;
+      }
+    }  
   }
 
-  hitValue = vec3(color);
+  prd.hitValue = vec3(color * shadow_attenuation);
 }
