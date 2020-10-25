@@ -64,14 +64,15 @@ void main()
             v1.texCoord * barycentrics.y + 
             v2.texCoord * barycentrics.z;
   vec4 albedo = texture(texSamplers[nonuniformEXT(object.textureId)],UV);
-  vec3  color = albedo.xyz / 10.0;
-  float shadow_attenuation = 1.0;
-  // Point light
-  if(uniforms.light_count >= 0)
-  {
-    vec3 lightDistance = uniforms.lights[0].position.xyz - worldPos;
+  vec3 ambient = albedo.xyz / 10.0;
+  float shadow_attenuation = 0.3;
+  vec3 color = {0,0,0};
+  // Point lights
+  for (int i = 0; i < uniforms.light_count ;i++){
+    vec3 c;
+    vec3 lightDistance = uniforms.lights[i].position.xyz - worldPos;
     vec3 lDir = normalize(lightDistance);
-    color += computeDiffuse(albedo.xyz, uniforms.lights[0], lDir, normal);
+    c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
     if( facingLight(normal, lDir) )
     {
       float tMin = 0.001;
@@ -96,14 +97,11 @@ void main()
             1            // payload (location = 1)
       );
       if(isShadowed)
-      {
-        shadow_attenuation = 0.3;
-      }else // we skip specular light when in shadow
-      {
-        color += computeSpecular(gl_WorldRayDirectionEXT, lDir, normal) * uniforms.lights[0].power.w;
-      }
-    }  
+        c *= shadow_attenuation;
+      else // we skip specular light when in shadow
+        c += computeSpecular(gl_WorldRayDirectionEXT, lDir, normal) * uniforms.lights[i].power.w;
+    }
+    color += c;
   }
-
-  prd.hitValue = vec3(color * shadow_attenuation);
+  prd.hitValue = vec3(ambient + color / uniforms.light_count);
 }
