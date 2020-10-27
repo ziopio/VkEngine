@@ -52,6 +52,13 @@ void Project::load()
 		vkengine::createScene(scene["id"], scene["title"]);
 		vkengine::Scene3D* s = vkengine::getScene(scene["id"]);
 
+		auto global = scene["global_light"];
+		s->globalLight = {
+		{global["position"][0], global["position"][1], global["position"][2], 1.0f},
+		{ global["color"][0], global["color"][1], global["color"][2], 1.0f },
+		{global["power"], global["power"], global["power"], global["power"]	}
+		};
+
 		for (const auto & light : scene["lights"]) {
 			vkengine::PointLightInfo i = {light["name"], 
 				{light["position"][0], light["position"][1], light["position"][2]},
@@ -145,24 +152,39 @@ void Project::save()
 		s_save["cameras"] = cams;
 
 		// Dumping lights
-		auto lights_ids = scene->listLights();
-		std::vector<json> lights;
-		for (auto & id : lights_ids) {
-			float *vertex;
+		{
+			// Global
+			float* vertex;
 			std::vector<float> v;
-			auto light = scene->getLight(id);
-			json j;
-			j["name"] = light->name;
-			vertex = glm::value_ptr(light->getData().position);
+			json g;
+			g["name"] = "global";
+			vertex = glm::value_ptr(scene->globalLight.position);
 			v.assign(vertex, vertex + 3);
-			j["position"] = v;
-			vertex = glm::value_ptr(light->getData().color);
+			g["position"] = v;
+			vertex = glm::value_ptr(scene->globalLight.color);
 			v.assign(vertex, vertex + 3);
-			j["color"] = v;
-			j["power"] = light->getData().power[0];
-			lights.push_back(j);
+			g["color"] = v;
+			g["power"] = scene->globalLight.power[0];
+			s_save["global_light"] = g;
+			// Point lights
+			std::vector<json> lights;
+			auto lights_ids = scene->listLights();
+			for (auto& id : lights_ids) 			{
+				auto light = scene->getLight(id);
+				json j;
+				j["name"] = light->name;
+				vertex = glm::value_ptr(light->getData().position);
+				v.assign(vertex, vertex + 3);
+				j["position"] = v;
+				vertex = glm::value_ptr(light->getData().color);
+				v.assign(vertex, vertex + 3);
+				j["color"] = v;
+				j["power"] = light->getData().power[0];
+				lights.push_back(j);
+			}
+			s_save["lights"] = lights;
 		}
-		s_save["lights"] = lights;
+
 
 		// Dumping Objects		
 		auto objs_ids = scene->listObjects();

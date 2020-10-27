@@ -21,11 +21,12 @@ layout(set = 1, binding = 1, scalar) buffer SceneDesc {ObjDesc obj[];} sceneObje
 layout(set = 2, binding = 0)uniform uniBlock {
 	mat4 P_inverted;
 	mat4 V_inverted;
+  Light global_light;
 	Light lights[10];
 	int light_count;
 } uniforms;
 
-// void castShadow();
+void castShadowRay(vec3 lightDirection, float lightDistance);
 
 void main()
 {
@@ -64,17 +65,43 @@ void main()
             v1.texCoord * barycentrics.y + 
             v2.texCoord * barycentrics.z;
   vec4 albedo = texture(texSamplers[nonuniformEXT(object.textureId)],UV);
-  vec3 ambient = albedo.xyz / 10.0;
+  vec3 ambient = albedo.xyz * 0.1;
   float shadow_attenuation = 0.3;
   vec3 color = {0,0,0};
+  //Global direcitonal light
+  vec3 L = normalize(uniforms.global_light.position.xyz);
+  float sun_distance = 1000000.0;
+  color = computeDiffuse(albedo.xyz, uniforms.global_light, L, normal);
+  if( facingLight(normal, L) )
+  {
+      castShadowRay(L, sun_distance);
+      if(isShadowed)
+        color *= shadow_attenuation;
+      else
+        color += computeSpecular(uniforms.global_light, gl_WorldRayDirectionEXT, L, normal);
+  }
   // Point lights
   for (int i = 0; i < uniforms.light_count ;i++){
-    vec3 c;
-    vec3 lightDistance = uniforms.lights[i].position.xyz - worldPos;
-    vec3 lDir = normalize(lightDistance);
-    c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
+    vec3 lightVector = uniforms.lights[i].position.xyz - worldPos;
+    vec3 lDir = normalize(lightVector);
+    float lightDistance = length(lightVector);    
+    vec3 c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
     if( facingLight(normal, lDir) )
     {
+      castShadowRay(lDir, lightDistance);
+      if(isShadowed)
+        c *= shadow_attenuation;
+      else
+        c += computeSpecular(uniforms.lights[i], gl_WorldRayDirectionEXT, lDir, normal);
+    }
+    c *= LIGTH_ATTENUATION(lightDistance);
+    color += c;
+  }
+
+  prd.hitValue = vec3(ambient + color / (uniforms.light_count + 1));
+}
+
+void castShadowRay(vec3 lDir, float lightDistance){
       float tMin = 0.001;
       float tMax = length(lightDistance);
       vec3  origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
@@ -96,12 +123,5 @@ void main()
             tMax,        // ray max range
             1            // payload (location = 1)
       );
-      if(isShadowed)
-        c *= shadow_attenuation;
-      else // we skip specular light when in shadow
-        c += computeSpecular(gl_WorldRayDirectionEXT, lDir, normal) * uniforms.lights[i].power.w;
-    }
-    color += c;
-  }
-  prd.hitValue = vec3(ambient + color / uniforms.light_count);
 }
+

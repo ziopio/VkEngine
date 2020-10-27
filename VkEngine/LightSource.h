@@ -22,13 +22,13 @@ namespace vkengine
 		glm::vec4 power;
 	};
 
-	class LightSource : public SceneElement
+	class PointLight : public SceneElement
 	{
 	public:
-		LightSource(unsigned id, std::string name,
+		PointLight(unsigned id, std::string name,
 			glm::vec3 pos, glm::vec3 color, float power);
 		LightData& getData();
-		~LightSource();
+		~PointLight();
 	private:
 		LightData light_data;
 	};

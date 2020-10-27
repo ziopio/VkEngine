@@ -71,18 +71,18 @@ void Scene3D::removeObject(unsigned id)
 void Scene3D::addLight(vkengine::PointLightInfo info)
 {
 	unsigned id = getNewUniversalID();
-	lights.insert({ id, LightSource(id, info.name, glm::make_vec3(info.position), glm::make_vec3(info.color), info.power) } );
+	point_lights.insert({ id, PointLight(id, info.name, glm::make_vec3(info.position), glm::make_vec3(info.color), info.power) } );
 }
 
-LightSource* Scene3D::getLight(unsigned id)
+PointLight* Scene3D::getLight(unsigned id)
 {
-	return &lights.at(id);
+	return &point_lights.at(id);
 }
 
 std::vector<unsigned> vkengine::Scene3D::listLights()
 {
 	std::vector<unsigned> keys;
-	for (auto entry : lights) {
+	for (auto entry : point_lights) {
 		keys.push_back(entry.first);
 	}
 	return keys;
@@ -90,7 +90,7 @@ std::vector<unsigned> vkengine::Scene3D::listLights()
 
 void Scene3D::removeLight(unsigned id)
 {
-	lights.erase(id);
+	point_lights.erase(id);
 }
 
 std::vector<SceneElement*> vkengine::Scene3D::getAllElements()
@@ -99,8 +99,8 @@ std::vector<SceneElement*> vkengine::Scene3D::getAllElements()
 	for (auto entry : objects) {
 		vec.push_back(&objects.at(entry.first));
 	}
-	for (auto entry : lights) {
-		vec.push_back(&lights.at(entry.first));
+	for (auto entry : point_lights) {
+		vec.push_back(&point_lights.at(entry.first));
 	}
 	for (auto entry : cameras) {
 		vec.push_back(&cameras.at(entry.first));

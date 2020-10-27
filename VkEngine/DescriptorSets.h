@@ -77,7 +77,8 @@ struct SceneObjRtDescBlock {
 struct UniformBlock {
 	glm::mat4 P_matrix;
 	glm::mat4 V_matrix;
-	vkengine::LightData lights[10];
+	vkengine::LightData global_light;
+	vkengine::LightData pointLights[10];
 	uint32_t light_count;
 };
 

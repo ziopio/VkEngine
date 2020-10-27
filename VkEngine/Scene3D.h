@@ -28,7 +28,7 @@ namespace vkengine
 		inline unsigned get_object_num() { return objects.size(); }
 
 		void addLight(vkengine::PointLightInfo);
-		LightSource* getLight(unsigned id);
+		PointLight* getLight(unsigned id);
 		std::vector<unsigned> listLights();
 		void removeLight(unsigned id);
 		std::vector<SceneElement*> getAllElements();
@@ -42,12 +42,13 @@ namespace vkengine
 	public:
 		unsigned current_camera;
 		std::string name;
+		LightData globalLight;
 	private:
 		std::string id;
 		unsigned object_capacity;
 		std::unordered_map<unsigned, Camera> cameras;
 		std::unordered_map<unsigned, Object3D> objects;
-		std::unordered_map<unsigned, LightSource> lights;
+		std::unordered_map<unsigned, PointLight> point_lights;
 
 	};
 }

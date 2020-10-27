@@ -14,6 +14,11 @@ struct ObjDesc
   mat4 transform;
 };
 
+#define Kc 1.0
+#define Kl 0.35
+#define Kq 0.44
+#define LIGTH_ATTENUATION(dst) 1.0 / (Kc + Kl*dst + Kq*dst*dst)
+
 struct Light{
 	vec4 position;
 	vec4 color;
@@ -24,17 +29,17 @@ bool facingLight(vec3 normal, vec3 light_dir){
   return dot(normal, light_dir) > 0;
 }
 
-vec3 computeDiffuse(vec3 matColor, Light light,vec3 lightDir, vec3 normal)
+vec3 computeDiffuse(vec3 matColor, Light light, vec3 lightDir, vec3 normal)
 {
   // Lambertian
   float dotNL = max(dot(normal, lightDir), 0.0);
   return matColor * dotNL * light.power.w;
 }
 
-vec3 computeSpecular( vec3 viewDir, vec3 lightDir, vec3 normal)
+vec3 computeSpecular(Light light, vec3 viewDir, vec3 lightDir, vec3 normal)
 {
   vec3        V                   = normalize(-viewDir);
   vec3        R                   = reflect(-lightDir, normal);
   float       specular            = pow(max(dot(V, R), 0.0), 100);
-  return vec3(1.,1.,1.) * specular;
+  return vec3(1.,1.,1.) * specular * light.power.w;
 }

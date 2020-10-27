@@ -363,8 +363,9 @@ void Renderer::updateUniforms(uint32_t frameBufferIndex)
 	uniforms.P_matrix[1][1] *= -1; // invert openGL Y sign
 	uniforms.light_count = lights.size();
 	for (int i = 0; i < uniforms.light_count; i++) {
-		uniforms.lights[i] = Renderer::scene->getLight(lights[i])->getData();
+		uniforms.pointLights[i] = Renderer::scene->getLight(lights[i])->getData();
 	}
+	uniforms.global_light = scene->globalLight;
 
 	if (useRayTracing) {
 		uniforms.V_matrix = glm::inverse(uniforms.V_matrix);

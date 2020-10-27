@@ -3,7 +3,7 @@
 
 using namespace vkengine;
 
-LightSource::LightSource(unsigned id, std::string name,
+PointLight::PointLight(unsigned id, std::string name,
 	glm::vec3 pos, glm::vec3 color, float power)
 	: SceneElement(id, name)
 {
@@ -12,12 +12,12 @@ LightSource::LightSource(unsigned id, std::string name,
 	this->light_data.power = glm::vec4(power);
 }
 
-LightData& LightSource::getData()
+LightData& PointLight::getData()
 {
 	return this->light_data;
 }
 
 
-LightSource::~LightSource()
+PointLight::~PointLight()
 {
 }
