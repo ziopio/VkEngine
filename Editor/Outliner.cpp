@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-const float d_min = -1000.f, d_max = 1000.0;
+const float d_min = -1000.f, l_min= 0.0f, d_max = 1000.0;
 
 static const ImGuiTreeNodeFlags base_flags =
 	ImGuiTreeNodeFlags_DefaultOpen |
@@ -19,7 +19,7 @@ void showSceneProperties(vkengine::Scene3D* scene);
 void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id);
 void showLightProperties(vkengine::Scene3D* scene, unsigned light_id);
 void showCameraProperties(vkengine::Scene3D* scene, unsigned cam_id);
-void showVectorControls(std::string name, glm::vec3* vec);
+void showVectorControls(glm::vec3* vec);
 //void showVectorControls(std::string name, glm::vec4* vec);
 
 Outliner::Outliner(EditorUI * UI) : EditorComponent(UI)
@@ -137,48 +137,51 @@ Outliner::~Outliner() = default;
 void showSceneProperties(vkengine::Scene3D* scene)
 {
 	ImGui::Text("Global Light");
-	showVectorControls("Direction", (glm::vec3* )&scene->globalLight.position);
-	ImGui::ColorPicker3("Color", glm::value_ptr(*(glm::vec3*) & scene->globalLight.color));
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragScalar("Power", ImGuiDataType_Float, &(scene->globalLight.power.w), 0.01f, &l_min, &d_max, "%f", 1.0f);
+	ImGui::Text("Direction");
+	showVectorControls( (glm::vec3* )&scene->globalLight.position);
 }
 
 void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id)
 {
 	auto obj = scene->getObject(obj_id);
 	ImGui::Text(obj->name.c_str()); 
-	showVectorControls("Position", &obj->getObjTransform().position);
-	showVectorControls("Scale", &obj->getObjTransform().scale_vector);
+	ImGui::Text("Position");
+	showVectorControls(&obj->getObjTransform().position);
+	ImGui::Text("Scale");
+	showVectorControls(&obj->getObjTransform().scale_vector);
 }
 
 void showLightProperties(vkengine::Scene3D* scene, unsigned light_id)
 {
 	auto light = scene->getLight(light_id);
 	ImGui::Text(light->name.c_str());
-	showVectorControls("Position", (glm::vec3*)&light->getData().position);
-	ImGui::ColorPicker3("Color", glm::value_ptr(*(glm::vec3*) & light->getData().color));
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragScalar("Power", ImGuiDataType_Float, &(light->getData().power.w), 0.01f, &l_min, &d_max, "%f", 1.0f);
+	showVectorControls((glm::vec3*)&light->getData().position);
+	ImGui::ColorEdit3("Color", glm::value_ptr(*(glm::vec3*) & light->getData().color));
 }
 
 void showCameraProperties(vkengine::Scene3D* scene, unsigned cam_id)
 {
 	auto cam = scene->getCamera(cam_id);
-	ImGui::Text(cam->name.c_str()); 
-	showVectorControls("Eye", &cam->getViewSetup().position);
-
-	showVectorControls("Target", &cam->getViewSetup().target);
-
-	showVectorControls("Up", &cam->getViewSetup().upVector);
+	ImGui::Text(cam->name.c_str());
+	ImGui::Text("Eye");
+	showVectorControls(&cam->getViewSetup().position);
+	ImGui::Text("Target");
+	showVectorControls(&cam->getViewSetup().target);
+	ImGui::Text("Up");
+	showVectorControls(&cam->getViewSetup().upVector);
 }
 
-void showVectorControls(std::string name, glm::vec3* vec)
+void showVectorControls(glm::vec3* vec)
 {
-	ImGui::DragScalar((name + " X").c_str(), ImGuiDataType_Float, &(*vec).x, 0.05f, &d_min, &d_max, "%f", 1.0f);
-	ImGui::DragScalar((name + " Y").c_str(), ImGuiDataType_Float, &(*vec).y, 0.05f, &d_min, &d_max, "%f", 1.0f);
-	ImGui::DragScalar((name + " Z").c_str(), ImGuiDataType_Float, &(*vec).z, 0.05f, &d_min, &d_max, "%f", 1.0f);
-}
-
-void showColorControls(std::string name, glm::vec3* vec)
-{
-	
-	//ImGui::DragScalar((name + " X").c_str(), ImGuiDataType_Float, &(*vec).x, 0.05f, &d_min, &d_max, "%f", 1.0f);
-	//ImGui::DragScalar((name + " Y").c_str(), ImGuiDataType_Float, &(*vec).y, 0.05f, &d_min, &d_max, "%f", 1.0f);
-	//ImGui::DragScalar((name + " Z").c_str(), ImGuiDataType_Float, &(*vec).z, 0.05f, &d_min, &d_max, "%f", 1.0f);
+	const char* format = "%0.2f";
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragScalar("X", ImGuiDataType_Float, &(*vec).x, 0.05f, &d_min, &d_max, format, 1.0f);
+	ImGui::SameLine(); ImGui::SetNextItemWidth(50);
+	ImGui::DragScalar("Y", ImGuiDataType_Float, &(*vec).y, 0.05f, &d_min, &d_max, format, 1.0f);
+	ImGui::SameLine(); ImGui::SetNextItemWidth(50);
+	ImGui::DragScalar("Z", ImGuiDataType_Float, &(*vec).z, 0.05f, &d_min, &d_max, format, 1.0f);
 }

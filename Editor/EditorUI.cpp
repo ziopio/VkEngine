@@ -74,12 +74,9 @@ vkengine::UiDrawData EditorUI::drawUI()
 		ImGui::BeginMainMenuBar();
 		if(vkengine::hasRayTracing()){ 
 			ImGui::Checkbox("Ray Tracing: ", vkengine::rayTracing());
-		} else { ImGui::Text("device not capable :P"); }
+		} else { ImGui::Text("Ray Tracing: device not capable :P"); }
 		ImGui::SameLine(ImGui::GetWindowWidth() - 150);
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		//ImGui::Text("Test performance:");
-		//ImGui::Checkbox("Multithreaded Rendering", vkengine::multithreadedRendering());
-		//if (ImGui::Button("KILL ENGINE")) this->editor->spawnHell();
 		ImGui::EndMainMenuBar();
 	}
 
