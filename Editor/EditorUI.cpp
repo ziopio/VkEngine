@@ -111,15 +111,15 @@ vkengine::UiDrawData EditorUI::drawUI()
 		ImGui::Begin("Temprergetegtge", NULL, ImGuiWindowFlags_NoTitleBar);
 		if (ImGui::BeginTabBar("MyTabBar", 0))
 		{
-			if (ImGui::BeginTabItem("Assets"))
-			{
-				ImGui::Text("This is the Assets tab!\nblah blah blah blah blah");
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Console"))
+			//if (ImGui::BeginTabItem("Assets"))
+			//{
+			//	ImGui::Text("This is the Assets tab!\nblah blah blah blah blah");
+			//	ImGui::EndTabItem();
+			//}
+			if (ImGui::BeginTabItem("Log"))
 			{
 				for (auto log : debug_logs) {
-					ImGui::Text(log.c_str());
+					ImGui::TextWrapped(log.c_str());
 				}
 				ImGui::EndTabItem();
 			}

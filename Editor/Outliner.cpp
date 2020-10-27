@@ -3,6 +3,8 @@
 #include "Editor.h"
 #include "Project.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 
 const float d_min = -1000.f, d_max = 1000.0;
 
@@ -135,7 +137,8 @@ Outliner::~Outliner() = default;
 void showSceneProperties(vkengine::Scene3D* scene)
 {
 	ImGui::Text("Global Light");
-	showVectorControls("Position", (glm::vec3* )&scene->globalLight.position);
+	showVectorControls("Direction", (glm::vec3* )&scene->globalLight.position);
+	ImGui::ColorPicker3("Color", glm::value_ptr(*(glm::vec3*) & scene->globalLight.color));
 }
 
 void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id)
@@ -151,6 +154,7 @@ void showLightProperties(vkengine::Scene3D* scene, unsigned light_id)
 	auto light = scene->getLight(light_id);
 	ImGui::Text(light->name.c_str());
 	showVectorControls("Position", (glm::vec3*)&light->getData().position);
+	ImGui::ColorPicker3("Color", glm::value_ptr(*(glm::vec3*) & light->getData().color));
 }
 
 void showCameraProperties(vkengine::Scene3D* scene, unsigned cam_id)
@@ -169,4 +173,12 @@ void showVectorControls(std::string name, glm::vec3* vec)
 	ImGui::DragScalar((name + " X").c_str(), ImGuiDataType_Float, &(*vec).x, 0.05f, &d_min, &d_max, "%f", 1.0f);
 	ImGui::DragScalar((name + " Y").c_str(), ImGuiDataType_Float, &(*vec).y, 0.05f, &d_min, &d_max, "%f", 1.0f);
 	ImGui::DragScalar((name + " Z").c_str(), ImGuiDataType_Float, &(*vec).z, 0.05f, &d_min, &d_max, "%f", 1.0f);
+}
+
+void showColorControls(std::string name, glm::vec3* vec)
+{
+	
+	//ImGui::DragScalar((name + " X").c_str(), ImGuiDataType_Float, &(*vec).x, 0.05f, &d_min, &d_max, "%f", 1.0f);
+	//ImGui::DragScalar((name + " Y").c_str(), ImGuiDataType_Float, &(*vec).y, 0.05f, &d_min, &d_max, "%f", 1.0f);
+	//ImGui::DragScalar((name + " Z").c_str(), ImGuiDataType_Float, &(*vec).z, 0.05f, &d_min, &d_max, "%f", 1.0f);
 }

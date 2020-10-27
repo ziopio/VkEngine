@@ -23,7 +23,8 @@ layout(set=1,binding=0)uniform uniBlock{
 layout(location=0)out vec4 outColor;
 
 void main(){
-	vec4 texel = texture(texSamplers[inTextureIndex],fragTexCoord);	
+	vec4 texel = texture(texSamplers[inTextureIndex],fragTexCoord);
+	
 	vec3 color = {0,0,0};
 	vec3 ambient = texel.xyz * 0.1;
 	vec3 N = normalize(normal);

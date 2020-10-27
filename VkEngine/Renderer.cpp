@@ -264,10 +264,11 @@ void Renderer::createOffScreenAttachments() {
 		offScreenAttachments[i].imageView = createImageView(Device::get(), offScreenAttachments[i].image, 
 			format, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		// Default Layout is set to best fit its use in the offscreen renderpass
+		// For the offscreen renderpass COLOR_ATTACHMENT_OPTIMAL, GENERAL for ray-tracing
 		transitionImageLayout(command,
 			offScreenAttachments[i].image, format,
-			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+			VK_IMAGE_LAYOUT_UNDEFINED, 
+			rayTracing() && useRayTracing ?  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		VkSamplerCreateInfo samplerInfo = {};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

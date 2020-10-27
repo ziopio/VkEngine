@@ -10,7 +10,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallbackFunction(
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData) {
-	std::string msg = "validation layer: ";
+	std::string msg = "VULKAN: ";
 	msg.append(pCallbackData->pMessage);
 	msg.append("\n");
 	std::cerr << msg.c_str() << std::endl;

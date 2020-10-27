@@ -33,7 +33,7 @@ vec3 computeDiffuse(vec3 matColor, Light light, vec3 lightDir, vec3 normal)
 {
   // Lambertian
   float dotNL = max(dot(normal, lightDir), 0.0);
-  return matColor * dotNL * light.power.w;
+  return matColor * light.color.xyz * dotNL * light.power.w;
 }
 
 vec3 computeSpecular(Light light, vec3 viewDir, vec3 lightDir, vec3 normal)
@@ -41,5 +41,5 @@ vec3 computeSpecular(Light light, vec3 viewDir, vec3 lightDir, vec3 normal)
   vec3        V                   = normalize(-viewDir);
   vec3        R                   = reflect(-lightDir, normal);
   float       specular            = pow(max(dot(V, R), 0.0), 100);
-  return vec3(1.,1.,1.) * specular * light.power.w;
+  return light.color.xyz * specular * light.power.w;
 }
