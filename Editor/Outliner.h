@@ -3,10 +3,11 @@
 #include <string>
 #include <vector>
 
-enum NodeType {
+enum class NodeType {
 	OBJECT,
 	CAMERA,
-	LIGHT
+	LIGHT,
+	SCENE
 };
 //
 //struct SceneNode {

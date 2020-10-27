@@ -13,10 +13,12 @@ static const ImGuiTreeNodeFlags base_flags =
 	ImGuiTreeNodeFlags_SpanAvailWidth;
 static const ImGuiTreeNodeFlags leaf_flags = base_flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-void showOjectProperties(std::string scene, unsigned obj_id);
-void showLightProperties(std::string scene, unsigned light_id);
-void showCameraProperties(std::string scene, unsigned cam_id);
+void showSceneProperties(vkengine::Scene3D* scene);
+void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id);
+void showLightProperties(vkengine::Scene3D* scene, unsigned light_id);
+void showCameraProperties(vkengine::Scene3D* scene, unsigned cam_id);
 void showVectorControls(std::string name, glm::vec3* vec);
+//void showVectorControls(std::string name, glm::vec4* vec);
 
 Outliner::Outliner(EditorUI * UI) : EditorComponent(UI)
 {
@@ -46,6 +48,11 @@ void Outliner::draw(int w_width, int w_height)
 		ImGuiWindowFlags_NoMove);
 
 	if (ImGui::TreeNodeEx(scene->name.c_str(), base_flags)) {
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+			selected_element = 0;
+			selected_elem_type = NodeType::SCENE;
+		}
+
 		char buff[32];
 		if (ImGui::TreeNodeEx("Oggetti", base_flags)) {
 			static unsigned context_menu_id;
@@ -111,9 +118,10 @@ void Outliner::draw(int w_width, int w_height)
 	if (selected_element != -1) {
 		switch (selected_elem_type)
 		{
-		case NodeType::OBJECT: showOjectProperties(scene_id, selected_element); break;
-		case NodeType::LIGHT: showLightProperties(scene_id, selected_element); break;
-		case NodeType::CAMERA: showCameraProperties(scene_id, selected_element); break;
+		case NodeType::OBJECT: showOjectProperties(scene, selected_element); break;
+		case NodeType::LIGHT: showLightProperties(scene, selected_element); break;
+		case NodeType::CAMERA: showCameraProperties(scene, selected_element); break;
+		case NodeType::SCENE: showSceneProperties(scene); break;
 		default:
 			break;
 		}
@@ -124,24 +132,30 @@ void Outliner::draw(int w_width, int w_height)
 
 Outliner::~Outliner() = default;
 
-void showOjectProperties(std::string scene, unsigned obj_id)
+void showSceneProperties(vkengine::Scene3D* scene)
 {
-	auto obj = vkengine::getScene(scene)->getObject(obj_id);
+	ImGui::Text("Global Light");
+	showVectorControls("Position", (glm::vec3* )&scene->globalLight.position);
+}
+
+void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id)
+{
+	auto obj = scene->getObject(obj_id);
 	ImGui::Text(obj->name.c_str()); 
 	showVectorControls("Position", &obj->getObjTransform().position);
 	showVectorControls("Scale", &obj->getObjTransform().scale_vector);
 }
 
-void showLightProperties(std::string scene, unsigned light_id)
+void showLightProperties(vkengine::Scene3D* scene, unsigned light_id)
 {
-	auto light = vkengine::getScene(scene)->getLight(light_id);
+	auto light = scene->getLight(light_id);
 	ImGui::Text(light->name.c_str());
 	showVectorControls("Position", (glm::vec3*)&light->getData().position);
 }
 
-void showCameraProperties(std::string scene, unsigned cam_id)
+void showCameraProperties(vkengine::Scene3D* scene, unsigned cam_id)
 {
-	auto cam = vkengine::getScene(scene)->getCamera(cam_id);
+	auto cam = scene->getCamera(cam_id);
 	ImGui::Text(cam->name.c_str()); 
 	showVectorControls("Eye", &cam->getViewSetup().position);
 
@@ -152,7 +166,6 @@ void showCameraProperties(std::string scene, unsigned cam_id)
 
 void showVectorControls(std::string name, glm::vec3* vec)
 {
-	ImGui::Text(name.c_str());
 	ImGui::DragScalar((name + " X").c_str(), ImGuiDataType_Float, &(*vec).x, 0.05f, &d_min, &d_max, "%f", 1.0f);
 	ImGui::DragScalar((name + " Y").c_str(), ImGuiDataType_Float, &(*vec).y, 0.05f, &d_min, &d_max, "%f", 1.0f);
 	ImGui::DragScalar((name + " Z").c_str(), ImGuiDataType_Float, &(*vec).z, 0.05f, &d_min, &d_max, "%f", 1.0f);
