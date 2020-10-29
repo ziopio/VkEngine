@@ -22,7 +22,7 @@ glm::mat4 Object3D::getMatrix()
 	//float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	//startTime = currentTime;
 	this->rotMatrix = glm::rotate(rotMatrix, (float)vkengine::unified_delta_time * glm::radians(transform.angle), transform.rotation_vector);
-	return glm::translate(glm::mat4(1), transform.position) * this->rotMatrix * glm::scale(glm::mat4(1.f), transform.scale_vector);
+	return glm::translate(glm::mat4(1), transform.position) * this->rotMatrix * glm::scale(glm::mat4(1.f),glm::vec3(transform.scale_factor));
 }
 
 ObjTransformation & vkengine::Object3D::getObjTransform()
@@ -32,9 +32,7 @@ ObjTransformation & vkengine::Object3D::getObjTransform()
 
 float vkengine::Object3D::getBoundingRadius()
 { // big brain code...
-	return (this->transform.scale_vector.x +
-		this->transform.scale_vector.y +
-	this->transform.scale_vector.z) / 3.0f;
+	return this->transform.scale_factor;
 }
 
 std::string Object3D::getMeshName()

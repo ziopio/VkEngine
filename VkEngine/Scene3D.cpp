@@ -45,6 +45,7 @@ void Scene3D::addObject(vkengine::ObjectInitInfo obj_info)
 	unsigned id = getNewUniversalID();
 	objects.insert({ id,
 		Object3D(id, obj_info.name, obj_info.mesh_name, obj_info.texture_name, obj_info.transformation) } );
+	objects.at(id).reflective = obj_info.reflective;
 	if (objects.size() > object_capacity) object_capacity *= 2;
 }
 

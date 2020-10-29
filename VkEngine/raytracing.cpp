@@ -697,7 +697,8 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 		sceneDescription.push_back({
 			MeshManager::getMeshID(obj->getMeshName()),
 			TextureManager::getSceneTextureIndex(obj->getTextureName()),
-			obj->getMatrix() });
+			obj->getMatrix(),
+			obj->reflective});
 	}
 	VkDeviceSize allocation_size = sizeof(SceneObjRtDescBlock) * scene->getCurrentObjectCapacity();
 	VkDeviceSize minAlignement =

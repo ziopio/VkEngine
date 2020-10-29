@@ -13,13 +13,14 @@ namespace vkengine
 		/* Axis of the rotation	*/
 		glm::vec3 rotation_vector;
 		float angle;
-		glm::vec3 scale_vector;
+		float scale_factor;
 	} ObjTransformation;
 
 	typedef struct {
 		std::string name;
 		std::string mesh_name;
 		std::string texture_name;
+		bool reflective;
 		ObjTransformation transformation;
 	} ObjectInitInfo;
 
@@ -35,6 +36,7 @@ namespace vkengine
 		std::string getTextureName();
 		~Object3D();
 		bool visible = true;
+		bool reflective = false;
 	private:
 		glm::mat4 rotMatrix;
 		std::string mesh_name;

@@ -65,13 +65,13 @@ void main()
             v1.texCoord * barycentrics.y + 
             v2.texCoord * barycentrics.z;
   vec4 albedo = texture(texSamplers[nonuniformEXT(object.textureId)],UV);
-  vec3 ambient = albedo.xyz * 0.1;
+  vec3 ambient = albedo.xyz * 0.01;
   float shadow_attenuation = 0.3;
   vec3 color = {0,0,0};
   //Global direcitonal light
   vec3 L = normalize(uniforms.global_light.position.xyz);
   float sun_distance = 1000000.0;
-  color = computeDiffuse(albedo.xyz, uniforms.global_light, L, normal);
+  if(object.reflective==0) color = computeDiffuse(albedo.xyz, uniforms.global_light, L, normal);
   if( facingLight(normal, L) )
   {
       castShadowRay(L, sun_distance);
@@ -84,8 +84,9 @@ void main()
   for (int i = 0; i < uniforms.light_count ;i++){
     vec3 lightVector = uniforms.lights[i].position.xyz - worldPos;
     vec3 lDir = normalize(lightVector);
-    float lightDistance = length(lightVector);    
-    vec3 c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
+    float lightDistance = length(lightVector); 
+    vec3 c= {0,0,0};
+    if(object.reflective==0) c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
     if( facingLight(normal, lDir) )
     {
       castShadowRay(lDir, lightDistance);
@@ -98,14 +99,25 @@ void main()
     color += c;
   }
 
+
   prd.hitValue = vec3(ambient + color / (uniforms.light_count + 1));
+
+  // Reflection
+  if(object.reflective > 0)
+  {
+    vec3 origin = worldPos;
+    vec3 rayDir = reflect(gl_WorldRayDirectionEXT, normal);
+    prd.attenuation *= 1.0f; //mat.specular;
+    prd.done      = 0;
+    prd.rayOrigin = origin;
+    prd.rayDir    = rayDir;
+  }
 }
 
-void castShadowRay(vec3 lDir, float lightDistance){
+void castShadowRay(vec3 rayDir, float lightDistance){
       float tMin = 0.001;
       float tMax = length(lightDistance);
       vec3  origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
-      vec3  rayDir = lDir;
       uint  flags = 
       gl_RayFlagsTerminateOnFirstHitEXT | // The first hit is always good.
       gl_RayFlagsOpaqueEXT | // Will not call the any hit shader, so all objects will be opaque.

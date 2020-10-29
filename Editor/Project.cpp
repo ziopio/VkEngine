@@ -85,16 +85,17 @@ void Project::load()
 			vkengine::ObjTransformation t = {};
 			float position[] = { trans["pos"][0], trans["pos"][1], trans["pos"][2] };
 			float rotation_vector[] = { trans["rot-axis"][0], trans["rot-axis"][1], trans["rot-axis"][2] };
-			float scale_vector[] = { trans["scale"][0], trans["scale"][1], trans["scale"][2] };
+			float scale = trans["scale"];
 			t.angle = trans["rotation"]; // just for testing
 			t.position = glm::make_vec3(position);
 			t.rotation_vector = glm::make_vec3(rotation_vector);
-			t.scale_vector = glm::make_vec3(scale_vector);
+			t.scale_factor = scale;
 
 			vkengine::ObjectInitInfo obj_info = {};
 			obj_info.name = obj["name"];
 			obj_info.mesh_name = obj["mesh"];
 			obj_info.texture_name = obj["texture"];
+			obj_info.reflective = obj["reflective"];
 			obj_info.transformation = t;
 			s->addObject(obj_info);
 		}
@@ -164,7 +165,7 @@ void Project::save()
 			vertex = glm::value_ptr(scene->globalLight.color);
 			v.assign(vertex, vertex + 3);
 			g["color"] = v;
-			g["power"] = scene->globalLight.power[0];
+			g["power"] = scene->globalLight.power.w;
 			s_save["global_light"] = g;
 			// Point lights
 			std::vector<json> lights;
@@ -179,7 +180,7 @@ void Project::save()
 				vertex = glm::value_ptr(light->getData().color);
 				v.assign(vertex, vertex + 3);
 				j["color"] = v;
-				j["power"] = light->getData().power[0];
+				j["power"] = light->getData().power.w;
 				lights.push_back(j);
 			}
 			s_save["lights"] = lights;
@@ -196,14 +197,13 @@ void Project::save()
 			json j, trans;
 			j["name"] = obj->name;
 			j["mesh"] = obj->getMeshName();
+			j["reflective"] = obj->reflective;
 			j["texture"] = obj->getTextureName();
 			// transformation info			
 				vertex = glm::value_ptr(obj->getObjTransform().position);
 				v.assign(vertex, vertex + 3);
 				trans["pos"] = v;
-				vertex = glm::value_ptr(obj->getObjTransform().scale_vector);
-				v.assign(vertex, vertex + 3);
-				trans["scale"] = v;
+				trans["scale"] = obj->getObjTransform().scale_factor;
 				vertex = glm::value_ptr(obj->getObjTransform().rotation_vector);
 				v.assign(vertex, vertex + 3);
 				trans["rot-axis"] = v;

@@ -26,7 +26,7 @@ void main(){
 	vec4 texel = texture(texSamplers[inTextureIndex],fragTexCoord);
 	
 	vec3 color = {0,0,0};
-	vec3 ambient = texel.xyz * 0.1;
+	vec3 ambient = texel.xyz * 0.01;
 	vec3 N = normalize(normal);
 	vec3 E = normalize(eyeDir);
 

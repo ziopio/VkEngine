@@ -30,19 +30,40 @@ void main()
     float tMin     = 0.001;
     float tMax     = 10000.0;
 
-    traceRayEXT(topLevelAS,     // acceleration structure
-        rayFlags,       // rayFlags
-        0xFF,           // cullMask
-        0,              // sbtRecordOffset
-        0,              // sbtRecordStride
-        0,              // missIndex
-        origin.xyz,     // ray origin
-        tMin,           // ray min range
-        direction.xyz,  // ray direction
-        tMax,           // ray max range
-        0               // payload (location = 0)
-    );
+
+    prd.depth       = 0;
+    prd.done        = 1;
+    prd.rayOrigin   = origin.xyz;
+    prd.rayDir      = direction.xyz;    
+    prd.attenuation = vec3(1.f, 1.f, 1.f);
+    vec3 finalHitValue = vec3(0);
+
+    for(;;)
+    {
+        traceRayEXT(topLevelAS,     // acceleration structure
+            rayFlags,       // rayFlags
+            0xFF,           // cullMask
+            0,              // sbtRecordOffset
+            0,              // sbtRecordStride
+            0,              // missIndex
+            origin.xyz,     // ray origin
+            tMin,           // ray min range
+            direction.xyz,  // ray direction
+            tMax,           // ray max range
+            0               // payload (location = 0)
+        );
+
+        finalHitValue += prd.hitValue * prd.attenuation;
+
+        prd.depth++;
+        if(prd.done == 1 || prd.depth >= 10)
+        break;
+
+        origin.xyz    = prd.rayOrigin;
+        direction.xyz = prd.rayDir;
+        prd.done      = 1; // Will stop if a reflective material isn't hit
+    }
 
   
-    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(prd.hitValue, 1.0));
+    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(finalHitValue, 1.0));
 }

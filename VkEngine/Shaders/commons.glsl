@@ -12,6 +12,7 @@ struct ObjDesc
   uint meshId;
   uint textureId;
   mat4 transform;
+  uint reflective;
 };
 
 #define Kc 1.0
