@@ -45,5 +45,5 @@ void main(){
 		vec3 specular = computeSpecular(uniforms.lights[i], E, L, N);
 		color += (diffuse * attenuation + specular * attenuation);
 	}
-	outColor = vec4 (ambient + color / (uniforms.light_count + 1) ,texel.a); // alpha correction
+	outColor = vec4 (ambient + color / (uniforms.light_count + 1) ,texel.a);// alpha correction
 }

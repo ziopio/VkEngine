@@ -26,17 +26,18 @@ void main()
     vec4 target    = uniforms.P_inverted * vec4(d.x, d.y, 1, 1);
     vec4 direction = uniforms.V_inverted * vec4(normalize(target.xyz), 0);
     
-    uint  rayFlags = gl_RayFlagsOpaqueEXT;
+    uint  rayFlags = gl_RayFlagsNoneEXT;//gl_RayFlagsOpaqueEXT;
     float tMin     = 0.001;
     float tMax     = 10000.0;
 
 
+    prd.hitValue    = vec4(0,0,0,0);
     prd.depth       = 0;
     prd.done        = 1;
     prd.rayOrigin   = origin.xyz;
     prd.rayDir      = direction.xyz;    
     prd.attenuation = vec3(1.f, 1.f, 1.f);
-    vec3 finalHitValue = vec3(0);
+    vec4 finalHitValue = vec4(0,0,0,1);
 
     for(;;)
     {
@@ -53,7 +54,10 @@ void main()
             0               // payload (location = 0)
         );
 
-        finalHitValue += prd.hitValue * prd.attenuation;
+        finalHitValue.xyz = prd.hitValue.xyz * prd.attenuation;
+        //finalHitValue.a += prd.hitValue.a;
+
+        prd.hitValue = vec4(0);
 
         prd.depth++;
         if(prd.done == 1 || prd.depth >= 10)
@@ -65,5 +69,5 @@ void main()
     }
 
   
-    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(finalHitValue, 1.0));
+    imageStore(image, ivec2(gl_LaunchIDEXT.xy), finalHitValue);
 }

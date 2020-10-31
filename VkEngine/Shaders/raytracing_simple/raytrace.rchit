@@ -100,7 +100,11 @@ void main()
   }
 
 
-  prd.hitValue = vec3(ambient + color / (uniforms.light_count + 1));
+  // BLENDING
+  prd.hitValue.xyz =  
+  vec3(ambient + color / (uniforms.light_count + 1)) * (1.f - prd.hitValue.a) 
+  + prd.hitValue.xyz * (prd.hitValue.a);
+  prd.hitValue.a += albedo.a;
 
   // Reflection
   if(object.reflective > 0)
@@ -119,14 +123,14 @@ void castShadowRay(vec3 rayDir, float lightDistance){
       float tMax = length(lightDistance);
       vec3  origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
       uint  flags = 
-      gl_RayFlagsTerminateOnFirstHitEXT | // The first hit is always good.
-      gl_RayFlagsOpaqueEXT | // Will not call the any hit shader, so all objects will be opaque.
+      //gl_RayFlagsTerminateOnFirstHitEXT | // The first hit is always good.
+      //gl_RayFlagsOpaqueEXT | // Will not call the any hit shader, so all objects will be opaque.
       gl_RayFlagsSkipClosestHitShaderEXT; // Will not invoke the hit shader, only the miss shader.
       isShadowed = true;
       traceRayEXT(topLevelAS,  // acceleration structure
             flags,       // rayFlags
             0xFF,        // cullMask
-            0,           // sbtRecordOffset
+            1,           // sbtRecordOffset
             0,           // sbtRecordStride
             1,           // missIndex
             origin,      // ray origin

@@ -42,7 +42,10 @@ namespace vkengine
 		PhysicalDevice::get();
 		if (Instance::hasValidation()) Device::enableDeviceValidation();
 		Device::get();
-		if (hasRayTracing()) RayTracer::initialize();
+		if (hasRayTracing()) {
+			RayTracer::initialize();
+			Renderer::useRayTracing = true;
+		}
 		SwapChainMng::init(surfaceOwner);
 		RenderPassCatalog::init();
 		PipelineFactory::init();

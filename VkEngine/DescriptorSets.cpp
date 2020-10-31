@@ -92,7 +92,8 @@ void DescriptorSetsFactory::initLayouts() {
 		uniformMatLayoutBinding.binding = 0;
 		uniformMatLayoutBinding.descriptorCount = 1;
 		uniformMatLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR 
+			| VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
 		layouts[DSL_UNIFORM_BUFFER].bindings = { uniformMatLayoutBinding };
 		layouts[DSL_UNIFORM_BUFFER].layout = createDStLayout(layouts[DSL_UNIFORM_BUFFER].bindings);
 	}
