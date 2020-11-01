@@ -104,7 +104,7 @@ void main()
   prd.hitValue.xyz =  
   vec3(ambient + color / (uniforms.light_count + 1)) * (1.f - prd.hitValue.a) 
   + prd.hitValue.xyz * (prd.hitValue.a);
-  prd.hitValue.a += albedo.a;
+  
 
   // Reflection
   if(object.reflective > 0)
@@ -115,6 +115,10 @@ void main()
     prd.done      = 0;
     prd.rayOrigin = origin;
     prd.rayDir    = rayDir;
+
+  } else 
+  {
+    prd.hitValue.a += albedo.a;
   }
 }
 

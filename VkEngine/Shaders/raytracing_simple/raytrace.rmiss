@@ -5,8 +5,11 @@
 
 layout(location = 0) rayPayloadInEXT hitPayload prd;
 
+const vec3 clear_color = {0.0, 0.1, 0.3};
 
 void main()
 {
-    prd.hitValue = vec4(0.0, 0.1, 0.3, 1.0);
+    prd.hitValue.xyz = clear_color * (1.f - prd.hitValue.a)
+                        + prd.hitValue.xyz * (prd.hitValue.a);
+    prd.hitValue.a = 1.f;
 }

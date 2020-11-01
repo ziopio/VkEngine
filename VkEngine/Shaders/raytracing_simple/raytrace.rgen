@@ -37,7 +37,7 @@ void main()
     prd.rayOrigin   = origin.xyz;
     prd.rayDir      = direction.xyz;    
     prd.attenuation = vec3(1.f, 1.f, 1.f);
-    vec4 finalHitValue = vec4(0,0,0,1);
+    vec4 finalHitValue = vec4(0,0,0,0);
 
     for(;;)
     {
@@ -54,8 +54,10 @@ void main()
             0               // payload (location = 0)
         );
 
-        finalHitValue.xyz = prd.hitValue.xyz * prd.attenuation;
-        //finalHitValue.a += prd.hitValue.a;
+        //finalHitValue.xyz = prd.hitValue.xyz * prd.attenuation;
+        finalHitValue.xyz = (prd.hitValue.xyz * prd.attenuation ) * (1.f - finalHitValue.a)
+        + (finalHitValue.xyz * finalHitValue.a);
+        finalHitValue.a += prd.hitValue.a;
 
         prd.hitValue = vec4(0);
 
