@@ -41,6 +41,7 @@ void main()
 
     for(;;)
     {
+
         traceRayEXT(topLevelAS,     // acceleration structure
             rayFlags,       // rayFlags
             0xFF,           // cullMask

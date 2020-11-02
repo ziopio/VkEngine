@@ -9,7 +9,7 @@
 hitAttributeEXT vec2 attribs;
 
 layout(location = 0) rayPayloadInEXT hitPayload prd;
-layout(location = 1) rayPayloadEXT bool isShadowed;
+layout(location = 1) rayPayloadEXT shadowPayload shadow;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT topLevelAS;
 layout(set = 0, binding = 1, scalar) buffer Vertices { Vertex3D vertices[]; } vertexBuffers[];
@@ -75,13 +75,14 @@ void main()
   if( facingLight(normal, L) )
   {
       castShadowRay(L, sun_distance);
-      if(isShadowed)
-        color *= shadow_attenuation;
+      if(shadow.shadow_alpha > 0)
+        color *= 1 - clamp(shadow.shadow_alpha,0,1);
       else
         color += computeSpecular(uniforms.global_light, gl_WorldRayDirectionEXT, L, normal);
   }
   // Point lights
-  for (int i = 0; i < uniforms.light_count ;i++){
+  for (int i = 0; i < uniforms.light_count ;i++)
+  {
     vec3 lightVector = uniforms.lights[i].position.xyz - worldPos;
     vec3 lDir = normalize(lightVector);
     float lightDistance = length(lightVector); 
@@ -90,8 +91,8 @@ void main()
     if( facingLight(normal, lDir) )
     {
       castShadowRay(lDir, lightDistance);
-      if(isShadowed)
-        c *= shadow_attenuation;
+      if(shadow.shadow_alpha > 0)
+        c *= 1 - clamp(shadow.shadow_alpha,0,1);
       else
         c += computeSpecular(uniforms.lights[i], gl_WorldRayDirectionEXT, lDir, normal);
     }
@@ -130,7 +131,7 @@ void castShadowRay(vec3 rayDir, float lightDistance){
       //gl_RayFlagsTerminateOnFirstHitEXT | // The first hit is always good.
       //gl_RayFlagsOpaqueEXT | // Will not call the any hit shader, so all objects will be opaque.
       gl_RayFlagsSkipClosestHitShaderEXT; // Will not invoke the hit shader, only the miss shader.
-      isShadowed = true;
+      shadow.shadow_alpha = 0;
       traceRayEXT(topLevelAS,  // acceleration structure
             flags,       // rayFlags
             0xFF,        // cullMask

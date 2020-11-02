@@ -9,7 +9,7 @@
 #ifdef PAYLOAD_0
 layout(location = 0) rayPayloadInEXT hitPayload prd;
 #elif defined(PAYLOAD_1)
-layout(location = 1) rayPayloadInEXT bool isShadowed;
+layout(location = 1) rayPayloadInEXT shadowPayload shadow;
 #endif
 
 hitAttributeEXT vec2 attribs;
@@ -106,8 +106,14 @@ void main()
     prd.hitValue.a += albedo.a;
     //prd.hitValue.xyz = prd.hitValue.xyz * (1.f - albedo.a) + (albedo.xyz * albedo.a);
 #endif
+#ifdef PAYLOAD_1
+  shadow.shadow_alpha += albedo.a;
+#endif
     ignoreIntersectionEXT();
   }
   else 
+#ifdef PAYLOAD_1
+  shadow.shadow_alpha += albedo.a;
+#endif
     return;
 }

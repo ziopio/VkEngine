@@ -10,4 +10,9 @@ struct hitPayload
   vec4 hitValue;
 };
 
+struct shadowPayload
+{
+  float shadow_alpha;
+};
+
 
