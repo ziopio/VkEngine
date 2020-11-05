@@ -149,6 +149,8 @@ void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id)
 	ImGui::Text(obj->name.c_str()); 
 	ImGui::Text("Position");
 	showVectorControls("Position",  &obj->getObjTransform().position);
+	ImGui::Text("Rotation XYZ");
+	showVectorControls("Rotation", &obj->getObjTransform().eulerAngles);
 
 	ImGui::DragScalar("Scale", ImGuiDataType_Float, 
 		&obj->getObjTransform().scale_factor, 0.05f, &d_min, &d_max, "%0.2f", 1.0f);

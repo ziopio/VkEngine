@@ -79,7 +79,7 @@ void ToolsPanel::draw(int w_width, int w_height)
 			auto scene_id = this->UI->getEditor()->loadedProject->getActiveScene();
 			vkengine::ObjTransformation transform = {};
 			transform.scale_factor = 1.f;
-			transform.rotation_vector = { 0,1,0 };
+			transform.eulerAngles = { 0,1,0 };
 			vkengine::ObjectInitInfo obj_info = {};
 			obj_info.name = obj_name;
 			obj_info.texture_name = selected_texture;

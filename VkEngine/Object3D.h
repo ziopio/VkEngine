@@ -3,15 +3,15 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <string>
 
 namespace vkengine
 {
-
 	typedef struct {
 		glm::vec3 position;
 		/* Axis of the rotation	*/
-		glm::vec3 rotation_vector;
+		glm::vec3 eulerAngles;
 		float angle;
 		float scale_factor;
 	} ObjTransformation;
@@ -38,7 +38,6 @@ namespace vkengine
 		bool visible = true;
 		bool reflective = false;
 	private:
-		glm::mat4 rotMatrix;
 		std::string mesh_name;
 		std::string texture_name;
 		ObjTransformation transform;

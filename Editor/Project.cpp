@@ -84,11 +84,10 @@ void Project::load()
 
 			vkengine::ObjTransformation t = {};
 			float position[] = { trans["pos"][0], trans["pos"][1], trans["pos"][2] };
-			float rotation_vector[] = { trans["rot-axis"][0], trans["rot-axis"][1], trans["rot-axis"][2] };
+			float rotation_vector[] = { trans["EulerAngles"][0], trans["EulerAngles"][1], trans["EulerAngles"][2] };
 			float scale = trans["scale"];
-			t.angle = trans["rotation"]; // just for testing
 			t.position = glm::make_vec3(position);
-			t.rotation_vector = glm::make_vec3(rotation_vector);
+			t.eulerAngles = glm::make_vec3(rotation_vector);
 			t.scale_factor = scale;
 
 			vkengine::ObjectInitInfo obj_info = {};
@@ -204,10 +203,9 @@ void Project::save()
 				v.assign(vertex, vertex + 3);
 				trans["pos"] = v;
 				trans["scale"] = obj->getObjTransform().scale_factor;
-				vertex = glm::value_ptr(obj->getObjTransform().rotation_vector);
+				vertex = glm::value_ptr(obj->getObjTransform().eulerAngles);
 				v.assign(vertex, vertex + 3);
-				trans["rot-axis"] = v;
-				trans["rotation"] = obj->getObjTransform().angle;
+				trans["EulerAngles"] = v;
 				j["transformation"] = trans;
 			objects.push_back(j);
 		}
