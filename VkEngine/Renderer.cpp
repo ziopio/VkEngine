@@ -87,7 +87,8 @@ void Renderer::prepareScene(Scene3D* scene)
 bool Renderer::prepareFrame()
 {
 	// Wait for fence to signal that all command buffers are ready
-	vkWaitForFences(Device::get(), 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+	VkResult error = vkWaitForFences(Device::get(), 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+	if (error == VK_TIMEOUT) std::cout << "FRAME exeeded max rendering time: FENCE timed OUT!" << std::endl;
 	vkResetFences(Device::get(), 1, &inFlightFences[currentFrame]);
 
 	// Prendo l'indice dell'immagine su cui disegnare dalla swapchain

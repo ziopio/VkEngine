@@ -113,13 +113,14 @@ void main()
     vec3 origin = worldPos;
     vec3 rayDir = reflect(gl_WorldRayDirectionEXT, normal);
     prd.attenuation *= 1.0f; //mat.specular;
-    prd.done      = 0;
+    prd.stop = 0;
     prd.rayOrigin = origin;
     prd.rayDir    = rayDir;
-
   } else 
   {
     prd.hitValue.a += albedo.a;
+    prd.rayOrigin = worldPos;
+    prd.rayDir    = gl_WorldRayDirectionEXT;
   }
 }
 

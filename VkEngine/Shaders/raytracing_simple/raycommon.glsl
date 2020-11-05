@@ -2,7 +2,7 @@
 
 struct hitPayload
 { 
-  uint done;
+  uint stop;
   uint depth;
   vec3 attenuation;
   vec3 rayOrigin;

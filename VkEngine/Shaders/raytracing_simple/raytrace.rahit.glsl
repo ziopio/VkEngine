@@ -21,13 +21,13 @@ layout(set = 0, binding = 3) uniform sampler2D texSamplers[];
 
 layout(set = 1, binding = 1, scalar) buffer SceneDesc {ObjDesc obj[];} sceneObjects;
 
-layout(set = 2, binding = 0)uniform uniBlock {
-	mat4 P_inverted;
-	mat4 V_inverted;
-  Light global_light;
-	Light lights[10];
-	int light_count;
-} uniforms;
+// layout(set = 2, binding = 0)uniform uniBlock {
+// 	mat4 P_inverted;
+// 	mat4 V_inverted;
+//   Light global_light;
+// 	Light lights[10];
+// 	int light_count;
+// } uniforms;
 // clang-format on
 
 void main()
@@ -65,55 +65,14 @@ void main()
             v2.texCoord * barycentrics.z;
   vec4 albedo = texture(texSamplers[nonuniformEXT(object.textureId)],UV);
 
-
-  if (albedo.a < 1.0f){
-#ifdef PAYLOAD_0
-//--------------------------------------
-    vec3 ambient = albedo.xyz * 0.01;
-    float shadow_attenuation = 0.3;
-    vec3 color = {0,0,0};
-    //Global direcitonal light
-    vec3 L = normalize(uniforms.global_light.position.xyz);
-    float sun_distance = 1000000.0;
-    if(object.reflective==0) color = computeDiffuse(albedo.xyz, uniforms.global_light, L, normal);
-    if( facingLight(normal, L) )
-    {
-          color += computeSpecular(uniforms.global_light, gl_WorldRayDirectionEXT, L, normal);
-    }
-    // Point lights
-    for (int i = 0; i < uniforms.light_count ;i++)
-    {
-      vec3 lightVector = uniforms.lights[i].position.xyz - worldPos;
-      vec3 lDir = normalize(lightVector);
-      float lightDistance = length(lightVector); 
-      vec3 c= {0,0,0};
-      if(object.reflective==0) c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
-      if( facingLight(normal, lDir) )
-      {
-          c += computeSpecular(uniforms.lights[i], gl_WorldRayDirectionEXT, lDir, normal);
-      }
-      c *= LIGTH_ATTENUATION(lightDistance);
-      color += c;
-    }
-
-
-
-    prd.hitValue.xyz = vec3(ambient + color / (uniforms.light_count + 1)) * (1.f - prd.hitValue.a) 
-                    + prd.hitValue.xyz * (prd.hitValue.a);
-    if (prd.hitValue.a + albedo.a >= 1.f){
-      return;
-    }
-    prd.hitValue.a += albedo.a;
-    //prd.hitValue.xyz = prd.hitValue.xyz * (1.f - albedo.a) + (albedo.xyz * albedo.a);
-#endif
 #ifdef PAYLOAD_1
   shadow.shadow_alpha += albedo.a;
 #endif
+
+  if (albedo.a > 0.0f){
+    return;
+  }
+  else {
     ignoreIntersectionEXT();
   }
-  else 
-#ifdef PAYLOAD_1
-  shadow.shadow_alpha += albedo.a;
-#endif
-    return;
 }
