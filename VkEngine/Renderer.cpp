@@ -131,6 +131,7 @@ void Renderer::renderScene()
 	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
+
 	Renderer::updateFinalPassCommandBuffer(Renderer::last_imageIndex);
 
 	submitInfo.pWaitSemaphores = &offScreenRenderReadySemaphores[currentFrame];

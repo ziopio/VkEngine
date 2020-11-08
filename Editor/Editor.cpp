@@ -41,6 +41,7 @@ void Editor::execute()
 		last_iteration = now;
 
 		vkengine::updateImGuiData(this->UI->drawUI());
+		//vkengine::getScene("scene_1")->getObject(3)->getObjTransform().position.x += 0.2f;
 		vkengine::renderFrame();
 	}
 }

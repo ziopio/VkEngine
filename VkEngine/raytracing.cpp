@@ -14,7 +14,7 @@ using namespace vkengine;
 
 
 std::vector<BottomLevelAS> RayTracer::BLASs;
-TopLevelAS RayTracer::TLAS;
+std::vector<TopLevelAS> RayTracer::TLASs;
 VkPipeline RayTracer::rayTracingPipeline;
 Buffer RayTracer::shaderBindingTable;
 void* RayTracer::mappedSceneBuffer;
@@ -226,9 +226,9 @@ void RayTracer::buildBottomLevelAS()
 	vkFreeMemory(Device::get(), scratchBuffer.vkMemory, nullptr);
 }
 
-void RayTracer::buildTopLevelAS(Scene3D * scene)
+void RayTracer::buildTopLevelAS(Scene3D * scene, TopLevelAS* tlas)
 {
-	TLAS.instances.reserve((scene->get_object_num()));
+	tlas->instances.reserve((scene->get_object_num()));
 	for (auto & obj_id : scene->listObjects()) {
 		Object3D* obj = scene->getObject(obj_id);
 		unsigned mesh_id = MeshManager::getMeshID(obj->getMeshName());
@@ -243,12 +243,12 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 		instance.hitGroupId = 0;  // We will use the same hit group for all objects
 		instance.matrix = obj->getMatrix();  // Position of the instance
 		instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-		TLAS.instances.push_back(instance);
+		tlas->instances.push_back(instance);
 	}
 	// This AS does not contain geometry data so CreateGeometryTypeInfo is set to VK_GEOMETRY_TYPE_INSTANCES_KHR
 	VkAccelerationStructureCreateGeometryTypeInfoKHR instanceCreate{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR };
 	instanceCreate.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-	instanceCreate.maxPrimitiveCount = static_cast<uint32_t>(TLAS.instances.size()); // max instances 
+	instanceCreate.maxPrimitiveCount = static_cast<uint32_t>(tlas->instances.size()); // max instances 
 	instanceCreate.allowsTransforms = VK_TRUE;
 
 	VkAccelerationStructureCreateInfoKHR asCreateInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
@@ -257,43 +257,43 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	asCreateInfo.maxGeometryCount = 1; // Must be one to comply specification
 	asCreateInfo.pGeometryInfos = &instanceCreate;
 
-	TLAS.as = createAcceleration(asCreateInfo);
+	tlas->as = createAcceleration(asCreateInfo);
 
 	// Compute the amount of scratch memory required by the acceleration structure builder
-	VkDeviceSize scratchSize = getScratchMemoryRequirements(TLAS.as);
+	VkDeviceSize scratchSize = getScratchMemoryRequirements(tlas->as);
 
 	//SCRATCH BUFFER CREATION
-	TLAS.scratchBuffer = createScratchBuffer(scratchSize);
+	tlas->scratchBuffer = createScratchBuffer(scratchSize);
 
 	// For each instance, build the corresponding instance descriptor
 	std::vector<VkAccelerationStructureInstanceKHR> geometryInstances;
-	geometryInstances.reserve(TLAS.instances.size());
-	for (const auto& inst : TLAS.instances)
+	geometryInstances.reserve(tlas->instances.size());
+	for (const auto& inst : tlas->instances)
 	{
 		geometryInstances.push_back(inst.to_VkAcInstanceKHR());
 	}
 	// We must load the AS instances in GPU memory
 	// SIZE
-	TLAS.bufferSize = geometryInstances.size() * sizeof(VkAccelerationStructureInstanceKHR);
+	tlas->bufferSize = geometryInstances.size() * sizeof(VkAccelerationStructureInstanceKHR);
 	//--------------------------------------------------------------------------------------------------------------
 	// STAGE buffer loading
-	createBuffer(PhysicalDevice::get(), Device::get(), TLAS.bufferSize,
+	createBuffer(PhysicalDevice::get(), Device::get(), tlas->bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-		TLAS.stagebuffer.vkBuffer, TLAS.stagebuffer.vkMemory);
-	vkMapMemory(Device::get(), TLAS.stagebuffer.vkMemory,0, TLAS.bufferSize, 0, &TLAS.stagebuffer.mappedMemory);
-	memcpy(TLAS.stagebuffer.mappedMemory, geometryInstances.data(), TLAS.bufferSize);
+		tlas->stagebuffer.vkBuffer, tlas->stagebuffer.vkMemory);
+	vkMapMemory(Device::get(), tlas->stagebuffer.vkMemory,0, tlas->bufferSize, 0, &tlas->stagebuffer.mappedMemory);
+	memcpy(tlas->stagebuffer.mappedMemory, geometryInstances.data(), tlas->bufferSize);
 	//Final TLAS instance buffer loading
-	createBuffer(PhysicalDevice::get(), Device::get(), TLAS.bufferSize,
+	createBuffer(PhysicalDevice::get(), Device::get(), tlas->bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		TLAS.instanceBuffer.vkBuffer, TLAS.instanceBuffer.vkMemory);
+		tlas->instanceBuffer.vkBuffer, tlas->instanceBuffer.vkMemory);
 	//--------------------------------------------------------------------------------------------------------------
 	// Copy data in GPU memory
 	VkCommandBuffer cmdBuffer = beginSingleTimeCommandBuffer(Device::get(), Device::getGraphicCmdPool());
 	VkBufferCopy copyRegion = {};
-	copyRegion.size = TLAS.bufferSize;
-	vkCmdCopyBuffer(cmdBuffer, TLAS.stagebuffer.vkBuffer, TLAS.instanceBuffer.vkBuffer, 1, &copyRegion);
+	copyRegion.size = tlas->bufferSize;
+	vkCmdCopyBuffer(cmdBuffer, tlas->stagebuffer.vkBuffer, tlas->instanceBuffer.vkBuffer, 1, &copyRegion);
 	//We put a barrier to make all as_structure build operations to wait for previous commands to end their write operations
 	VkMemoryBarrier barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER};
 	barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
@@ -305,7 +305,7 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	//FINALLY we have the data in device local memory safely written ready for the TLAS build
 	VkAccelerationStructureGeometryDataKHR gData = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR };
 	gData.instances.arrayOfPointers = VK_FALSE;
-	gData.instances.data.deviceAddress = getBufferDeviceAddress(TLAS.instanceBuffer.vkBuffer);
+	gData.instances.data.deviceAddress = getBufferDeviceAddress(tlas->instanceBuffer.vkBuffer);
 	VkAccelerationStructureGeometryKHR topASGeometry = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
 	topASGeometry.geometryType = VkGeometryTypeKHR::VK_GEOMETRY_TYPE_INSTANCES_KHR;
 	topASGeometry.geometry = gData;
@@ -315,14 +315,14 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	topASInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 	topASInfo.update = VK_FALSE;
 	topASInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-	topASInfo.dstAccelerationStructure = TLAS.as.accelerationStructure;
+	topASInfo.dstAccelerationStructure = tlas->as.accelerationStructure;
 	topASInfo.geometryArrayOfPointers = VK_FALSE;
 	topASInfo.geometryCount = 1;
 	VkAccelerationStructureGeometryKHR * pTopGeom = &topASGeometry;
 	topASInfo.ppGeometries = &pTopGeom;
-	topASInfo.scratchData.deviceAddress = TLAS.scratchBuffer.deviceAddr;
+	topASInfo.scratchData.deviceAddress = tlas->scratchBuffer.deviceAddr;
 
-	VkAccelerationStructureBuildOffsetInfoKHR offsets = {static_cast<uint32_t>(TLAS.instances.size()),0,0,0};
+	VkAccelerationStructureBuildOffsetInfoKHR offsets = {static_cast<uint32_t>(tlas->instances.size()),0,0,0};
 	const VkAccelerationStructureBuildOffsetInfoKHR* pOffsets = &offsets;
 
 	vkCmdBuildAccelerationStructureKHR(cmdBuffer, 1, &topASInfo, &pOffsets);
@@ -331,16 +331,15 @@ void RayTracer::buildTopLevelAS(Scene3D * scene)
 	submitAndWaitCommandBuffers(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(), buffers);
 	//--------------------------------------------------------------------------------------------------------------
 
-	TLAS.instanceBuffer.deviceAddr = getBufferDeviceAddress(TLAS.instanceBuffer.vkBuffer);
+	tlas->instanceBuffer.deviceAddr = getBufferDeviceAddress(tlas->instanceBuffer.vkBuffer);
 
 }
 
-void RayTracer::recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf)
+void RayTracer::recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf, TopLevelAS * tlas)
 {
-	//auto cmd_buf = beginSingleTimeCommandBuffer(Device::get(),Device::getGraphicCmdPool());
 	// COPY to GPU
-	VkBufferCopy region = { 0, 0, TLAS.bufferSize };
-	vkCmdCopyBuffer(cmd_buf, TLAS.stagebuffer.vkBuffer, TLAS.instanceBuffer.vkBuffer, 1, &region);
+	VkBufferCopy region = { 0, 0, tlas->bufferSize };
+	vkCmdCopyBuffer(cmd_buf, tlas->stagebuffer.vkBuffer, tlas->instanceBuffer.vkBuffer, 1, &region);
 	VkMemoryBarrier barrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER };
 	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
@@ -349,7 +348,7 @@ void RayTracer::recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf)
 
 	VkAccelerationStructureGeometryDataKHR geometry{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR };
 	geometry.instances.arrayOfPointers = VK_FALSE;
-	geometry.instances.data.deviceAddress = TLAS.instanceBuffer.deviceAddr;
+	geometry.instances.data.deviceAddress = tlas->instanceBuffer.deviceAddr;
 	VkAccelerationStructureGeometryKHR topASGeometry{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
 	topASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
 	topASGeometry.geometry = geometry;
@@ -360,14 +359,14 @@ void RayTracer::recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf)
 	topASInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 	topASInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 	topASInfo.update = VK_TRUE; //VK_TRUE parameter to trigger the update
-	topASInfo.srcAccelerationStructure = TLAS.as.accelerationStructure; //the existing TLAS being passed and updated in place
-	topASInfo.dstAccelerationStructure = TLAS.as.accelerationStructure;
+	topASInfo.srcAccelerationStructure = tlas->as.accelerationStructure; //the existing TLAS being passed and updated in place
+	topASInfo.dstAccelerationStructure = tlas->as.accelerationStructure;
 	topASInfo.geometryArrayOfPointers = VK_FALSE;
 	topASInfo.geometryCount = 1;
 	topASInfo.ppGeometries = &pGeometry;
-	topASInfo.scratchData.deviceAddress = TLAS.scratchBuffer.deviceAddr;
+	topASInfo.scratchData.deviceAddress = tlas->scratchBuffer.deviceAddr;
 
-	uint32_t                                         nbInstances = (uint32_t)TLAS.instances.size();
+	uint32_t                                         nbInstances = (uint32_t)tlas->instances.size();
 	VkAccelerationStructureBuildOffsetInfoKHR        buildOffsetInfo = { nbInstances, 0, 0, 0 };
 	const VkAccelerationStructureBuildOffsetInfoKHR* pBuildOffsetInfo = &buildOffsetInfo;
 
@@ -381,7 +380,6 @@ void RayTracer::recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf)
 	vkCmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
 		0, 1, &postUpdate, 0, nullptr, 0, nullptr);
 
-	//submitAndWaitCommandBuffer(Device::get(),Device::getGraphicQueue(), Device::getGraphicCmdPool(), cmd_buf);
 }
 
 void RayTracer::createSceneBuffer(vkengine::Scene3D* scene)
@@ -408,7 +406,7 @@ void RayTracer::updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::v
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 
-	RayTracer::recordCmdUpdateTopLevelAS(cmdBuffers[frameIndex]);
+	RayTracer::recordCmdUpdateTopLevelAS(cmdBuffers[frameIndex], &TLASs[frameIndex]);
 
 	auto Playout = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING];
 	std::vector<VkDescriptorSet> descrSets;
@@ -563,7 +561,6 @@ void RayTracer::createShaderBindingTable()
 
 void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 {
-	VkAccelerationStructureKHR tlas = TLAS.as.accelerationStructure;
 	auto bundle = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].descriptors;
 	std::vector<VkWriteDescriptorSet> writes;
 	VkDescriptorBufferInfo sceneBuffInfo;
@@ -579,20 +576,8 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		TextureManager::getSceneTexture(0)->getTextureImgView(),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 
-	VkWriteDescriptorSetAccelerationStructureKHR asDescrSetWrite{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR };
-	asDescrSetWrite.accelerationStructureCount = 1;
-	asDescrSetWrite.pAccelerationStructures = &tlas;
+
 	{
-		VkWriteDescriptorSet accStructWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-		accStructWrite.dstSet = bundle.static_sets[0].set;
-		accStructWrite.dstBinding = 0;
-		accStructWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-		accStructWrite.descriptorCount = 1;
-		// The specialized acceleration structure descriptor has to be chained
-		accStructWrite.pNext = &asDescrSetWrite;
-		writes.push_back(accStructWrite);
-
-
 		// Fill all vertex and all index buffers
 		for (int i = 0; i < MeshManager::countLoadedMeshes(); i++) {
 			vertexBuffersInfos[i] = { MeshManager::getMesh(i)->getVkVertexBuffer(), 0, VK_WHOLE_SIZE };
@@ -600,7 +585,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		}
 		VkWriteDescriptorSet vertexDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		vertexDescWrite.dstSet = bundle.static_sets[0].set;
-		vertexDescWrite.dstBinding = 1;
+		vertexDescWrite.dstBinding = 0;
 		vertexDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		vertexDescWrite.descriptorCount = vertexBuffersInfos.size();
 		vertexDescWrite.pBufferInfo = vertexBuffersInfos.data();
@@ -608,7 +593,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 
 		VkWriteDescriptorSet indexDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		indexDescWrite.dstSet = bundle.static_sets[0].set;
-		indexDescWrite.dstBinding = 2;
+		indexDescWrite.dstBinding = 1;
 		indexDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		indexDescWrite.descriptorCount = indexBuffersInfos.size();
 		indexDescWrite.pBufferInfo = indexBuffersInfos.data();
@@ -625,18 +610,32 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 
 		VkWriteDescriptorSet texturesDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		texturesDescWrite.dstSet = bundle.static_sets[0].set;
-		texturesDescWrite.dstBinding = 3;
+		texturesDescWrite.dstBinding = 2;
 		texturesDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		texturesDescWrite.descriptorCount = textureSamplersInfos.size();
 		texturesDescWrite.pImageInfo = textureSamplersInfos.data();
 		writes.push_back(texturesDescWrite);
 	}
+
+	std::vector<VkWriteDescriptorSetAccelerationStructureKHR> accStructureWrites(bundle.frame_dependent_sets[0].size());
 	std::vector<VkDescriptorImageInfo> imageDescriptors(bundle.frame_dependent_sets[0].size());
 	for (int i = 0; i < bundle.frame_dependent_sets[0].size(); i++)
 	{
+		VkWriteDescriptorSet accStructWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		accStructWrite.dstSet = bundle.frame_dependent_sets[0][i].set;
+		accStructWrite.dstBinding = 0;
+		accStructWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		accStructWrite.descriptorCount = 1;
+		// The specialized acceleration structure descriptor has to be chained
+		accStructureWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+		accStructureWrites[i].accelerationStructureCount = 1;
+		accStructureWrites[i].pAccelerationStructures = &TLASs[i].as.accelerationStructure;
+		accStructWrite.pNext = &accStructureWrites[i];
+		writes.push_back(accStructWrite);
+
 		VkWriteDescriptorSet storageImgDescSet = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		storageImgDescSet.dstSet = bundle.frame_dependent_sets[0][i].set;
-		storageImgDescSet.dstBinding = 0;
+		storageImgDescSet.dstBinding = 1;
 		storageImgDescSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		storageImgDescSet.descriptorCount = 1;
 		imageDescriptors[i].imageView = Renderer::getOffScreenFrameAttachment(i).imageView;
@@ -650,7 +649,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
 		VkWriteDescriptorSet sceneDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		sceneDescWrite.dstSet = bundle.frame_dependent_sets[0][i].set;
-		sceneDescWrite.dstBinding = 1;
+		sceneDescWrite.dstBinding = 2;
 		sceneDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		sceneDescWrite.descriptorCount = 1;
 		sceneBuffInfo = { sceneBuffer.vkBuffer, i*(allocation_size + padding), allocation_size };
@@ -686,7 +685,10 @@ void RayTracer::initialize()
 void RayTracer::prepare(Scene3D * scene) {
 	destroySceneAcceleration();
 	buildBottomLevelAS();
-	buildTopLevelAS(scene);
+	TLASs.resize(SwapChainMng::get()->getImageCount());
+	for (int i = 0; i < TLASs.size(); i++) {
+		buildTopLevelAS(scene, &TLASs[i]);
+	}
 	createSceneBuffer(scene);
 }
 
@@ -711,31 +713,33 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 
 	// Update matrix data for each instance and retrieve Vulkan struct
 	std::vector<VkAccelerationStructureInstanceKHR> geometryInstances;
-	geometryInstances.reserve(TLAS.instances.size());
-	for (auto& instance : TLAS.instances) {
+	geometryInstances.reserve(TLASs[imageIndex].instances.size());
+	for (auto& instance : TLASs[imageIndex].instances) {
 		instance.matrix = scene->getObject(instance.customID)->getMatrix();
 		geometryInstances.push_back(instance.to_VkAcInstanceKHR());
 	}
 	//Memcpy data to the stage buffer, ready for transfer
-	memcpy(TLAS.stagebuffer.mappedMemory, geometryInstances.data(), TLAS.bufferSize);
+	memcpy(TLASs[imageIndex].stagebuffer.mappedMemory, geometryInstances.data(), TLASs[imageIndex].bufferSize);
 }
 
 void RayTracer::destroySceneAcceleration()
 {	// Destroy TLAS resources
+	for (auto& tlas : TLASs) {
+		if (tlas.stagebuffer.mappedMemory != nullptr) {
+			vkUnmapMemory(Device::get(), tlas.stagebuffer.vkMemory);
+		}
+		vkDestroyBuffer(Device::get(), tlas.stagebuffer.vkBuffer, nullptr);
+		vkFreeMemory(Device::get(), tlas.stagebuffer.vkMemory, nullptr);
+		vkDestroyBuffer(Device::get(), tlas.scratchBuffer.vkBuffer, nullptr);
+		vkFreeMemory(Device::get(), tlas.scratchBuffer.vkMemory, nullptr);
+		vkDestroyAccelerationStructureKHR(Device::get(), tlas.as.accelerationStructure, nullptr);
+		vkFreeMemory(Device::get(), tlas.as.memory, nullptr);
+		vkDestroyBuffer(Device::get(), tlas.instanceBuffer.vkBuffer, nullptr);
+		vkFreeMemory(Device::get(), tlas.instanceBuffer.vkMemory, nullptr);
+		tlas.instances.clear();
 
-	if (TLAS.stagebuffer.mappedMemory != nullptr) {
-		vkUnmapMemory(Device::get(), TLAS.stagebuffer.vkMemory);
 	}
-	vkDestroyBuffer(Device::get(), TLAS.stagebuffer.vkBuffer, nullptr);
-	vkFreeMemory(Device::get(), TLAS.stagebuffer.vkMemory, nullptr);
-	vkDestroyBuffer(Device::get(), TLAS.scratchBuffer.vkBuffer, nullptr);
-	vkFreeMemory(Device::get(), TLAS.scratchBuffer.vkMemory, nullptr);
-	vkDestroyAccelerationStructureKHR(Device::get(), TLAS.as.accelerationStructure, nullptr);
-	vkFreeMemory(Device::get(), TLAS.as.memory, nullptr);
-	vkDestroyBuffer(Device::get(), TLAS.instanceBuffer.vkBuffer, nullptr);
-	vkFreeMemory(Device::get(), TLAS.instanceBuffer.vkMemory, nullptr);
-	TLAS.instances.clear();
-
+	
 	// Destroy BLAS resources
 	for (auto & blas : BLASs) {
 		vkDestroyAccelerationStructureKHR(Device::get(), blas.as.accelerationStructure, nullptr);

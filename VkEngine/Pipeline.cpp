@@ -46,13 +46,6 @@ void PipelineFactory::setVertexType(VertexTypes type)
 		setup->bindingDescriptions = { Vertex3D::getBindingDescription() };
 		setup->attributeDescriptions = Vertex3D::getAttributeDescriptions();
 		break;
-
-
-
-
-
-
-
 	default:
 		break;
 	}	

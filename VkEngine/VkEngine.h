@@ -70,7 +70,7 @@ namespace vkengine
 
 	void loadFontAtlas(unsigned char* pixels, int * width, int * height);
 	void updateImGuiData(UiDrawData draw_data);
-
+	// to be called every time an element in the scene is added or removed
 	void loadScene(std::string scene_id);
 	// Intended as parallel CMD buffer recording CPU-side
 	bool* multithreadedRendering();

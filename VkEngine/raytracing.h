@@ -63,7 +63,7 @@ struct TLAS_Instance {
 };
 
 struct TopLevelAS {
-	AccelerationStructure as;
+	AccelerationStructure as; // one each frame
 	std::vector<TLAS_Instance> instances;
 	Buffer instanceBuffer;
 	Buffer scratchBuffer;
@@ -99,13 +99,15 @@ public:
 	static void cleanUP();
 private:
 	static void buildBottomLevelAS();
-	static void buildTopLevelAS(vkengine::Scene3D * scene);
-	static void recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf);
+	static void buildTopLevelAS(vkengine::Scene3D * scene, TopLevelAS* tlas);
+	static void recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf, TopLevelAS* tlas);
 	static void createSceneBuffer(vkengine::Scene3D* scene);
 	static void destroySceneAcceleration();
 private:
 	// Accelleration structures
-	static TopLevelAS TLAS;
+	// one for each frame in flight
+	static std::vector<TopLevelAS> TLASs;
+	// one for each mesh
 	static std::vector<BottomLevelAS> BLASs;
 
 	/*

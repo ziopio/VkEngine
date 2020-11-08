@@ -26,29 +26,25 @@ VkDescriptorSetLayout createDStLayout(std::vector<VkDescriptorSetLayoutBinding> 
 void DescriptorSetsFactory::initLayouts() {
 	DescriptorSetsFactory::layouts.resize(DescSetsLayouts::DescSetsLayouts_END);
 
-	// ACCELERATION STRUCTURE : 1 binding of 1 ACs in raytracing shaders
+	// RT STATIC DESC_SET : 1 binding of 1 ACs in raytracing shaders
 	{
-		VkDescriptorSetLayoutBinding accStructBinding = {};
-		accStructBinding.binding = 0;
-		accStructBinding.descriptorCount = 1;
-		accStructBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-		accStructBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+
 		VkDescriptorSetLayoutBinding vertexStorageBinding = {};
-		vertexStorageBinding.binding = 1;
+		vertexStorageBinding.binding = 0;
 		vertexStorageBinding.descriptorCount = SUPPORTED_MESH_COUNT; // TODO make dynamic
 		vertexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		vertexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding indexStorageBinding = {};
-		indexStorageBinding.binding = 2;
+		indexStorageBinding.binding = 1;
 		indexStorageBinding.descriptorCount = SUPPORTED_MESH_COUNT; // TODO  make dynamic
 		indexStorageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		indexStorageBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding samplerArrayBinding = {};
-		samplerArrayBinding.binding = 3;
+		samplerArrayBinding.binding = 2;
 		samplerArrayBinding.descriptorCount = SUPPORTED_TEXTURE_COUNT; // TODO  make dynamic
 		samplerArrayBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		samplerArrayBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		layouts[DSL_RAY_TRACING_SCENE].bindings = { accStructBinding, vertexStorageBinding, indexStorageBinding, samplerArrayBinding };
+		layouts[DSL_RAY_TRACING_SCENE].bindings = { vertexStorageBinding, indexStorageBinding, samplerArrayBinding };
 		layouts[DSL_RAY_TRACING_SCENE].layout = createDStLayout(layouts[DSL_RAY_TRACING_SCENE].bindings);
 	}
 	// TEXTURE_ARRAY : 1 binding of 32 textures in fragment shader
@@ -63,17 +59,22 @@ void DescriptorSetsFactory::initLayouts() {
 	}
 	// STORAGE_IMAGE for RAYTRACING : 1 binding of 1 storage image and 1 sceneObj buffer in raytracing shaders
 	{
+		VkDescriptorSetLayoutBinding accStructBinding = {};
+		accStructBinding.binding = 0;
+		accStructBinding.descriptorCount = 1;
+		accStructBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		accStructBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		VkDescriptorSetLayoutBinding storageImgLayoutBinding = {};
-		storageImgLayoutBinding.binding = 0;
+		storageImgLayoutBinding.binding = 1;
 		storageImgLayoutBinding.descriptorCount = 1;
 		storageImgLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		storageImgLayoutBinding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
 		VkDescriptorSetLayoutBinding sceneDescBinding = {};
-		sceneDescBinding.binding = 1;
+		sceneDescBinding.binding = 2;
 		sceneDescBinding.descriptorCount = 1;
 		sceneDescBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		sceneDescBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		layouts[DSL_RT_IMAGE_AND_OBJECTS].bindings = { storageImgLayoutBinding, sceneDescBinding };
+		layouts[DSL_RT_IMAGE_AND_OBJECTS].bindings = { accStructBinding, storageImgLayoutBinding, sceneDescBinding };
 		layouts[DSL_RT_IMAGE_AND_OBJECTS].layout = createDStLayout(layouts[DSL_RT_IMAGE_AND_OBJECTS].bindings);
 	}
 	// FRAMEBUFFER_TEXTURE: a set with 1binding of 1 Texture : in fragment shader
@@ -92,8 +93,8 @@ void DescriptorSetsFactory::initLayouts() {
 		uniformMatLayoutBinding.binding = 0;
 		uniformMatLayoutBinding.descriptorCount = 1;
 		uniformMatLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR 
-			| VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+		uniformMatLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | 
+										VK_SHADER_STAGE_RAYGEN_BIT_KHR 	| VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 		layouts[DSL_UNIFORM_BUFFER].bindings = { uniformMatLayoutBinding };
 		layouts[DSL_UNIFORM_BUFFER].layout = createDStLayout(layouts[DSL_UNIFORM_BUFFER].bindings);
 	}
