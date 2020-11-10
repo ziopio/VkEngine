@@ -20,7 +20,10 @@ namespace vkengine
 	};
 
 	struct PerspectiveSetup {
-		float fovY, aspect, near, far;
+		float fovY;
+		float aspect;
+		float near;
+		float far;
 	};
 
 	class Camera : public SceneElement

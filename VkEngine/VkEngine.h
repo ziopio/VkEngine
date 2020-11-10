@@ -67,12 +67,15 @@ namespace vkengine
 
 	std::vector<const char*> list_scenes();
 	void createScene(std::string scene_id, std::string name );
+	Scene3D* getActiveScene();
 	Scene3D* getScene(std::string scene_id);
 	void removeScene(std::string scene_id);
 
 	void loadFontAtlas(unsigned char* pixels, int * width, int * height);
 	void updateImGuiData(UiDrawData draw_data);
-	// to be called every time an element in the scene is added or removed
+	// reloads last loaded scene
+	void reloadScene();
+	// loads another scene
 	void loadScene(std::string scene_id);
 	// Intended as parallel CMD buffer recording CPU-side
 	bool* multithreadedRendering();

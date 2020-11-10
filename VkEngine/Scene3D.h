@@ -16,7 +16,7 @@ namespace vkengine
 	{
 	public:
 		Scene3D(std::string id, std::string name);
-
+		inline std::string getId() { return id; };
 		void addCamera(std::string name, ViewSetup view, PerspectiveSetup perspective);
 		Camera* getCamera(unsigned);
 		std::vector<unsigned> listCameras();
@@ -43,6 +43,7 @@ namespace vkengine
 		unsigned current_camera;
 		std::string name;
 		LightData globalLight;
+		Camera default_camera;
 	private:
 		std::string id;
 		unsigned object_capacity;

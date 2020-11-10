@@ -110,6 +110,11 @@ namespace vkengine
 		scenes.insert( { scene_id, Scene3D(scene_id, name) } );
 	}
 
+	Scene3D* getActiveScene()
+	{
+		return &scenes.at(active_scene);
+	}
+
 	Scene3D* getScene(std::string scene_id)
 	{
 		return &scenes.at(scene_id);
@@ -130,6 +135,11 @@ namespace vkengine
 	{
 		MeshManager::updateImGuiBuffers(draw_data,
 			Renderer::getNextFrameBufferIndex());
+	}
+
+	void reloadScene()
+	{
+		return loadScene(active_scene);
 	}
 
 	void loadScene(std::string scene_id)

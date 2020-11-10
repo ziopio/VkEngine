@@ -331,17 +331,25 @@ void RayTracer::buildTopLevelAS(Scene3D * scene, TopLevelAS* tlas)
 	{
 		geometryInstances.push_back(inst.to_VkAcInstanceKHR());
 	}
-	// We must load the AS instances in GPU memory
 	// SIZE
-	tlas->bufferSize = geometryInstances.size() * sizeof(VkAccelerationStructureInstanceKHR);
-	//--------------------------------------------------------------------------------------------------------------
+	if (geometryInstances.size() > 0)
+	{
+		tlas->bufferSize = geometryInstances.size() * sizeof(VkAccelerationStructureInstanceKHR);
+	}
+	else {
+		tlas->bufferSize = 256; // If there are no objects to render we still need a buffer
+	}
 	// STAGE buffer loading
 	createBuffer(PhysicalDevice::get(), Device::get(), tlas->bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		tlas->stagebuffer.vkBuffer, tlas->stagebuffer.vkMemory);
-	vkMapMemory(Device::get(), tlas->stagebuffer.vkMemory,0, tlas->bufferSize, 0, &tlas->stagebuffer.mappedMemory);
-	memcpy(tlas->stagebuffer.mappedMemory, geometryInstances.data(), tlas->bufferSize);
+	vkMapMemory(Device::get(), tlas->stagebuffer.vkMemory, 0, tlas->bufferSize, 0, &tlas->stagebuffer.mappedMemory);
+	if (geometryInstances.size() > 0)
+	{		
+		// We must load the AS instances in GPU memory
+		memcpy(tlas->stagebuffer.mappedMemory, geometryInstances.data(), tlas->bufferSize);
+	}
 	//Final TLAS instance buffer loading
 	createBuffer(PhysicalDevice::get(), Device::get(), tlas->bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -779,7 +787,8 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 		geometryInstances.push_back(TLASs[imageIndex].instances[i].to_VkAcInstanceKHR());
 	}
 	//Memcpy data to the stage buffer, ready for transfer
-	memcpy(TLASs[imageIndex].stagebuffer.mappedMemory, geometryInstances.data(), TLASs[imageIndex].bufferSize);
+	memcpy(TLASs[imageIndex].stagebuffer.mappedMemory, geometryInstances.data(), 
+		geometryInstances.size()*sizeof(VkAccelerationStructureInstanceKHR));
 }
 
 void RayTracer::destroySceneAcceleration()

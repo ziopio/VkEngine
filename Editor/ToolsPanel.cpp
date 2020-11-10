@@ -76,7 +76,7 @@ void ToolsPanel::draw(int w_width, int w_height)
 		const char* title = "ID Error";
 		if (ImGui::Button("OK", ImVec2(120, 0))) 
 		{
-			auto scene_id = this->UI->getEditor()->loadedProject->getActiveScene();
+			auto scene = vkengine::getActiveScene();
 			vkengine::ObjTransformation transform = {};
 			transform.scale_factor = 1.f;
 			transform.eulerAngles = { 0,1,0 };
@@ -86,8 +86,8 @@ void ToolsPanel::draw(int w_width, int w_height)
 			obj_info.mesh_name = selected_mesh;
 			obj_info.transformation = transform;
 
-			vkengine::getScene(scene_id)->addObject(obj_info);
-			vkengine::loadScene(scene_id);
+			scene->addObject(obj_info);
+			vkengine::reloadScene();
 
 			ImGui::CloseCurrentPopup();
 		}

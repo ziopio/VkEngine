@@ -7,7 +7,6 @@ class Project
 public:
 	Project(const char* project_dir);
 	void load();
-	std::string getActiveScene();
 	void save();
 	~Project();
 private:

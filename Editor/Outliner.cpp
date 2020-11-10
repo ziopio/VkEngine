@@ -34,9 +34,7 @@ void Outliner::draw(int w_width, int w_height)
 	static bool scene_open = true, obj_open = true, lights_open = true, cameras_open = true;
 	if (!visible) { return; }
 
-	auto scene_id = UI->getEditor()->loadedProject.get()->getActiveScene();
-
-	auto scene = vkengine::getScene(scene_id);
+	auto scene = vkengine::getActiveScene();
 	auto objs = scene->listObjects();
 	auto cams = scene->listCameras();
 	auto lights = scene->listLights();
@@ -73,7 +71,7 @@ void Outliner::draw(int w_width, int w_height)
 					if (ImGui::Button("Delete")) {
 						if (selected_element == context_menu_id) selected_element = -1;
 						scene->removeObject(context_menu_id);
-						vkengine::loadScene(scene_id);
+						vkengine::reloadScene();
 					}
 					ImGui::EndPopup();
 				}

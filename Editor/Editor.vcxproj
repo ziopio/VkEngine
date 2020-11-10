@@ -131,6 +131,7 @@
     <ClInclude Include="EditorComponent.h" />
     <ClInclude Include="EditorUI.h" />
     <ClInclude Include="json.hpp" />
+    <ClInclude Include="MainMenuBar.h" />
     <ClInclude Include="Outliner.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="ToolsPanel.h" />
@@ -140,6 +141,7 @@
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
+    <ClCompile Include="MainMenuBar.cpp" />
     <ClCompile Include="Outliner.cpp" />
     <ClCompile Include="Project.cpp" />
     <ClCompile Include="ToolsPanel.cpp" />

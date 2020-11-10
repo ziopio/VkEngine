@@ -6,17 +6,21 @@ using namespace glm;
 using namespace vkengine;
 
 constexpr const unsigned INITIAL_CAPACITY = 32;
-
+// This is a runtime ID unique across all scenes!
 unsigned getNewUniversalID() {
 	static unsigned next_id = 0;
 	return next_id++;
 }
 
-Scene3D::Scene3D(std::string id, std::string name)
+Scene3D::Scene3D(std::string id, std::string name) :
+	default_camera(getNewUniversalID(), "def_cam", 
+		{ {10.f,10.f,10.f}, {0.f, 0.f, 0.f}, {0.f, 1.f, 0.f} }, { 45.f, 16.f / 9.f, 1.f, 10000.f }),
+	globalLight{ {1,1,1,1},{1,1,1,1},{1,1,1,1} }
 {
 	this->object_capacity = INITIAL_CAPACITY;
 	this->id = id;
 	this->name = name;
+	this->current_camera = 0;
 }
 
 void Scene3D::addCamera(std::string name, ViewSetup view, PerspectiveSetup perspective)
@@ -28,7 +32,13 @@ void Scene3D::addCamera(std::string name, ViewSetup view, PerspectiveSetup persp
 
 Camera* vkengine::Scene3D::getCamera(unsigned id)
 {
-	return &cameras.at(id);
+	if (id == 0) 
+	{
+		return &default_camera;
+	}
+	else {
+		return &cameras.at(id);
+	}
 }
 
 std::vector<unsigned> vkengine::Scene3D::listCameras()

@@ -55,7 +55,7 @@ void View3D::draw(int w_width, int w_height)
 		{
 			auto delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right, 0.f);
 			ImGui::GetIO().MouseClickedPos[ImGuiMouseButton_Right] = ImGui::GetMousePos();
-			auto scene = vkengine::getScene(UI->getEditor()->loadedProject.get()->getActiveScene());
+			auto scene = vkengine::getActiveScene();
 			auto cam = scene->getCamera(scene->current_camera);
 			cam->rotate_FPS_style(delta);
 

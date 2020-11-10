@@ -103,23 +103,23 @@ void Project::load()
 	}
 }
 
-std::string Project::getActiveScene()
-{
-	return this->data->active_scene;
-}
+//std::string Project::getActiveScene()
+//{
+//	return this->data->active_scene;
+//}
 
 void Project::save()
 {
 	// Main project settings
 	json save;
 	save["name"] = this->data->name;
-	save["active-scene"] = this->data->active_scene;
-	save["scenes"] = this->data->scenes;
+	save["active-scene"] = vkengine::getActiveScene()->getId();
+	save["scenes"] = vkengine::list_scenes();
 	std::ofstream save_file((std::string(this->data->project_dir) + "proj_config.json").c_str());
 	save_file << std::setw(4) << save << std::endl;
 
 	// scene files
-	for (auto & s : data->scenes) {
+	for (auto & s : vkengine::list_scenes()) {
 		auto scene = vkengine::getScene(s);
 		json s_save;
 		s_save["id"] = s;
