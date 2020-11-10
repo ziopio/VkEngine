@@ -287,6 +287,7 @@ void RayTracer::buildBottomLevelAS()
 void RayTracer::buildTopLevelAS(Scene3D * scene, TopLevelAS* tlas)
 {
 	tlas->instances.reserve((scene->get_object_num()));
+	int i = 0;
 	for (auto & obj_id : scene->listObjects()) {
 		Object3D* obj = scene->getObject(obj_id);
 		unsigned mesh_id = MeshManager::getMeshID(obj->getMeshName());
@@ -296,7 +297,7 @@ void RayTracer::buildTopLevelAS(Scene3D * scene, TopLevelAS* tlas)
 		VkDeviceAddress blasAddress = vkGetAccelerationStructureDeviceAddressKHR(Device::get(), &addressInfo);
 
 		TLAS_Instance instance = {};
-		instance.customID = obj_id; // return by gl_InstaceID
+		instance.customID = i++; // return by gl_InstaceID
 		instance.blasAddr = blasAddress;
 		instance.hitGroupId = 0;  // We will use the same hit group for all objects
 		instance.matrix = obj->getMatrix();  // Position of the instance
@@ -752,11 +753,11 @@ void RayTracer::prepare(Scene3D * scene) {
 
 void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 {
-	//vkQueueWaitIdle(Device::getGraphicQueue());
+	auto obj_ids = scene->listObjects();
 	// Updating the storage buffer with objects setting taken from the scene
 	std::vector<SceneObjRtDescBlock> sceneDescription;
 	sceneDescription.reserve(scene->getCurrentObjectCapacity());
-	for (auto objId : scene->listObjects()) {
+	for (auto objId : obj_ids) {
 		auto obj = scene->getObject(objId);
 		sceneDescription.push_back({
 			MeshManager::getMeshID(obj->getMeshName()),
@@ -773,13 +774,12 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 	// Update matrix data for each instance and retrieve Vulkan struct
 	std::vector<VkAccelerationStructureInstanceKHR> geometryInstances;
 	geometryInstances.reserve(TLASs[imageIndex].instances.size());
-	for (auto& instance : TLASs[imageIndex].instances) {
-		instance.matrix = scene->getObject(instance.customID)->getMatrix();
-		geometryInstances.push_back(instance.to_VkAcInstanceKHR());
+	for (int i = 0; i < obj_ids.size(); i++) {
+		TLASs[imageIndex].instances[i].matrix = scene->getObject(obj_ids[i])->getMatrix();
+		geometryInstances.push_back(TLASs[imageIndex].instances[i].to_VkAcInstanceKHR());
 	}
 	//Memcpy data to the stage buffer, ready for transfer
 	memcpy(TLASs[imageIndex].stagebuffer.mappedMemory, geometryInstances.data(), TLASs[imageIndex].bufferSize);
-	//vkQueueWaitIdle(Device::getGraphicQueue());
 }
 
 void RayTracer::destroySceneAcceleration()

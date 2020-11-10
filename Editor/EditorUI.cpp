@@ -17,7 +17,7 @@
 static constexpr float DEF_ASPECT_RATIO = 16.f / 9.f;
 
 static bool show_demo_window = false;
-constexpr const char* scene_create_popup = "scene_popup";
+constexpr const char* scene_create_popup = "Add New Scene";
 
 void setClipboardText(void* user_pointer, const char* text);
 const char* getClipboardText(void* user_pointer);
@@ -125,7 +125,7 @@ vkengine::UiDrawData EditorUI::drawUI()
 		if (ImGui::Button("OK", ImVec2(120, 0)))
 		{
 			vkengine::createScene(scene_name, scene_name);
-			//vkengine::loadScene(scene_name);
+			vkengine::loadScene(scene_name);
 			ImGui::CloseCurrentPopup();
 		}		
 		ImGui::EndPopup();
