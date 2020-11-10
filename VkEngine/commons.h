@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <functional>
 #include <cstdlib>
+#include <string.h>
 #include <vector>
 #include <queue>
 #include <set>

@@ -9,6 +9,7 @@
 #include "PhysicalDevice.h"
 #include "ApiUtils.h"
 #include "vk_extensions.h"
+#include "commons.h"
 
 using namespace vkengine;
 
@@ -17,7 +18,6 @@ std::vector<BottomLevelAS> RayTracer::BLASs;
 std::vector<TopLevelAS> RayTracer::TLASs;
 VkPipeline RayTracer::rayTracingPipeline;
 Buffer RayTracer::shaderBindingTable;
-void* RayTracer::mappedSceneBuffer;
 Buffer RayTracer::sceneBuffer;
 
 uint64_t getBufferDeviceAddress(VkBuffer buffer)
@@ -40,10 +40,10 @@ Buffer createScratchBuffer(VkDeviceSize size) {
 	return Buffer{ scratchBuffer,scratchMem, scratchAddress };
 }
 
-VkDeviceSize getScratchMemoryRequirements(AccelerationStructure AS) {
+VkDeviceSize getAsBuildSize(AccelerationStructure AS, VkAccelerationStructureMemoryRequirementsTypeKHR req_type) {
 	VkAccelerationStructureMemoryRequirementsInfoKHR memoryReqInfo{
 				  VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR };
-	memoryReqInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR; // scratch
+	memoryReqInfo.type = req_type;
 	memoryReqInfo.accelerationStructure = AS.accelerationStructure;
 	memoryReqInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
 	VkMemoryRequirements2 reqMem{ VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
@@ -141,7 +141,7 @@ AccelerationStructure createAcceleration(VkAccelerationStructureCreateInfoKHR & 
 void RayTracer::buildBottomLevelAS()
 {
 	// Mesh to geometry traslation and setup of the BLAS vector
-	for (auto & mesh : MeshManager::getMeshLibrary())
+	for (auto& mesh : MeshManager::getMeshLibrary())
 	{
 		// for simplicity we define one blas for each mesh
 		BottomLevelAS blas = {};
@@ -152,14 +152,14 @@ void RayTracer::buildBottomLevelAS()
 		blas.offsets.push_back(ASG.offset);
 		BLASs.push_back(blas);
 	}
-
+	std::vector<VkDeviceSize> originalSizes;
 	// For each blas we create its AccelerationStructure and query its memory requirements
 	VkDeviceSize maxScratch{ 0 }; // we want to find the worst case scratch size we could need
-	for (auto & blas : BLASs) {
+	for (auto& blas : BLASs) {
 		/////// BLAS CREATION (vulkan object)
 		VkAccelerationStructureCreateInfoKHR asCreateInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
 		asCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		asCreateInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		asCreateInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
 		asCreateInfo.maxGeometryCount = (uint32_t)blas.gCreateinfos.size();
 		asCreateInfo.pGeometryInfos = blas.gCreateinfos.data();
 		// Create an acceleration structure identifier and allocate memory to
@@ -169,16 +169,24 @@ void RayTracer::buildBottomLevelAS()
 		// Estimate the amount of scratch memory required to build the BLAS, and
 		// update the size of the scratch buffer that will be allocated to
 		// sequentially build all BLASes		
-		VkDeviceSize scratchSize = getScratchMemoryRequirements(blas.as);
+		VkDeviceSize scratchSize = getAsBuildSize(blas.as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
 		maxScratch = std::max(maxScratch, scratchSize);
-
-		// TODO query the true sizes of each blas [optional]
+		//Memory size of the future build result
+		VkDeviceSize objectSize = getAsBuildSize(blas.as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
+		originalSizes.push_back(objectSize);
 	}
 
 	// SCRATCH BUFFER CREATION
 	Buffer scratchBuffer = createScratchBuffer(maxScratch);
 
-	// TODO // Prepare the Query for the size of compact BLAS
+	//EXTRA
+	// Query for the size of compacted BLASs
+	VkQueryPoolCreateInfo qpci{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
+	qpci.queryCount = (uint32_t)BLASs.size();
+	qpci.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR;
+	VkQueryPool queryPool;
+	vkCreateQueryPool(Device::get(), &qpci, nullptr, &queryPool);
+	int queryCtr = 0;
 
 	// Record CMDs to build the final BLAS, 
 	// We use 1 cmdBuffer x blas to allow the driver to allow system interuption 
@@ -192,7 +200,7 @@ void RayTracer::buildBottomLevelAS()
 
 		VkAccelerationStructureBuildGeometryInfoKHR bottomASInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
 		bottomASInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		bottomASInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		bottomASInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
 		bottomASInfo.update = VK_FALSE; // we are building, not updating
 		bottomASInfo.srcAccelerationStructure = VK_NULL_HANDLE;
 		bottomASInfo.dstAccelerationStructure = blas.as.accelerationStructure;
@@ -217,10 +225,60 @@ void RayTracer::buildBottomLevelAS()
 		barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 		vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
 			VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+
+		vkCmdWriteAccelerationStructuresPropertiesKHR(cmdBuffer, 1, &blas.as.accelerationStructure,
+			VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, queryPool, queryCtr++);
+	}
+	submitAndWaitCommandBuffers(Device::get(), Device::getGraphicQueue(), Device::getGraphicCmdPool(), cmdBuffers);
+	cmdBuffers.clear();
+
+	//BLAS COMPACTION - phase
+	std::vector<AccelerationStructure> okBoomers(BLASs.size());
+	{
+		auto cmdBuff = beginSingleTimeCommandBuffer(Device::get(), Device::getGraphicCmdPool());		
+		cmdBuffers.push_back(cmdBuff);
+		// Get the size result back
+		std::vector<VkDeviceSize> compactSizes(BLASs.size());
+		vkGetQueryPoolResults(Device::get(), queryPool, 0, (uint32_t)compactSizes.size(), compactSizes.size() * sizeof(VkDeviceSize),
+			compactSizes.data(), sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
+
+		// Compacting
+		uint32_t totOriginalSize{ 0 }, totCompactSize{ 0 };
+		for (int i = 0; i < BLASs.size(); i++)
+		{
+			std::cout << "Compacting BLAS from " << originalSizes[i] << " to " << compactSizes[i] << " bytes" << std::endl;
+			totOriginalSize += (uint32_t)originalSizes[i];
+			totCompactSize += (uint32_t)compactSizes[i];
+
+			// Creating a compact version of the AS
+			VkAccelerationStructureCreateInfoKHR asCreateInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
+			asCreateInfo.compactedSize = compactSizes[i];
+			asCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+			asCreateInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;;
+			auto newBlas = createAcceleration(asCreateInfo);
+
+			// Copy the original BLAS to a compact version
+			VkCopyAccelerationStructureInfoKHR copyInfo{ VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR };
+			copyInfo.src = BLASs[i].as.accelerationStructure;
+			copyInfo.dst = newBlas.accelerationStructure;
+			copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
+			vkCmdCopyAccelerationStructureKHR(cmdBuff, &copyInfo);
+			okBoomers[i] = BLASs[i].as;
+			BLASs[i].as = newBlas;
+		}
+		std::cout << "BLASs total size went from " << totOriginalSize << " to " << totCompactSize << " bytes, saving "
+			<< (float)(totOriginalSize - totCompactSize) / totOriginalSize * 100 << "% of memory." << std::endl;
 	}
 
 	submitAndWaitCommandBuffers(Device::get(),Device::getGraphicQueue(),Device::getGraphicCmdPool(), cmdBuffers);
 
+	//Destroy the query for the blas size
+	vkDestroyQueryPool(Device::get(),queryPool, nullptr);
+	// Destroying previous BLAS versions
+	for (auto oldAS : okBoomers) {
+		vkDestroyAccelerationStructureKHR(Device::get(), oldAS.accelerationStructure, nullptr);
+		vkFreeMemory(Device::get(), oldAS.memory, nullptr);
+	}
 	// We can destroy our scratch buffer
 	vkDestroyBuffer(Device::get(), scratchBuffer.vkBuffer, nullptr);
 	vkFreeMemory(Device::get(), scratchBuffer.vkMemory, nullptr);
@@ -260,7 +318,7 @@ void RayTracer::buildTopLevelAS(Scene3D * scene, TopLevelAS* tlas)
 	tlas->as = createAcceleration(asCreateInfo);
 
 	// Compute the amount of scratch memory required by the acceleration structure builder
-	VkDeviceSize scratchSize = getScratchMemoryRequirements(tlas->as);
+	VkDeviceSize scratchSize = getAsBuildSize(tlas->as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
 
 	//SCRATCH BUFFER CREATION
 	tlas->scratchBuffer = createScratchBuffer(scratchSize);
@@ -394,7 +452,7 @@ void RayTracer::createSceneBuffer(vkengine::Scene3D* scene)
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		sceneBuffer.vkBuffer, sceneBuffer.vkMemory);
 
-	vkMapMemory(Device::get(), sceneBuffer.vkMemory, 0, allocation_size, 0, &mappedSceneBuffer);
+	vkMapMemory(Device::get(), sceneBuffer.vkMemory, 0, allocation_size, 0, &sceneBuffer.mappedMemory);
 }
 
 void RayTracer::updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::vector<FrameAttachment> &storageImages, unsigned frameIndex)
@@ -563,7 +621,6 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 {
 	auto bundle = PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].descriptors;
 	std::vector<VkWriteDescriptorSet> writes;
-	VkDescriptorBufferInfo sceneBuffInfo;
 	std::vector<VkDescriptorBufferInfo> vertexBuffersInfos{ 
 		SUPPORTED_MESH_COUNT,
 		{MeshManager::getMesh(0)->getVkVertexBuffer(), 0, VK_WHOLE_SIZE} };
@@ -619,6 +676,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 
 	std::vector<VkWriteDescriptorSetAccelerationStructureKHR> accStructureWrites(bundle.frame_dependent_sets[0].size());
 	std::vector<VkDescriptorImageInfo> imageDescriptors(bundle.frame_dependent_sets[0].size());
+	std::vector<VkDescriptorBufferInfo> sceneBuffInfo(bundle.frame_dependent_sets[0].size());
 	for (int i = 0; i < bundle.frame_dependent_sets[0].size(); i++)
 	{
 		VkWriteDescriptorSet accStructWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
@@ -652,8 +710,8 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		sceneDescWrite.dstBinding = 2;
 		sceneDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		sceneDescWrite.descriptorCount = 1;
-		sceneBuffInfo = { sceneBuffer.vkBuffer, i*(allocation_size + padding), allocation_size };
-		sceneDescWrite.pBufferInfo = &sceneBuffInfo;
+		sceneBuffInfo[i] = { sceneBuffer.vkBuffer, i*(allocation_size + padding), allocation_size };
+		sceneDescWrite.pBufferInfo = &sceneBuffInfo[i];
 		writes.push_back(sceneDescWrite);
 	}
 	std::vector<VkDescriptorBufferInfo> bufferDescriptors(bundle.frame_dependent_sets[1].size());
@@ -694,6 +752,7 @@ void RayTracer::prepare(Scene3D * scene) {
 
 void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 {
+	//vkQueueWaitIdle(Device::getGraphicQueue());
 	// Updating the storage buffer with objects setting taken from the scene
 	std::vector<SceneObjRtDescBlock> sceneDescription;
 	sceneDescription.reserve(scene->getCurrentObjectCapacity());
@@ -709,7 +768,7 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 	VkDeviceSize minAlignement =
 		PhysicalDevice::getProperties().properties.limits.minStorageBufferOffsetAlignment;
 	VkDeviceSize padding = minAlignement - (allocation_size % minAlignement);
-	memcpy((char*)mappedSceneBuffer + (allocation_size + padding)*imageIndex, sceneDescription.data(), allocation_size);
+	memcpy((char*)sceneBuffer.mappedMemory + (allocation_size + padding)*imageIndex, sceneDescription.data(), allocation_size);
 
 	// Update matrix data for each instance and retrieve Vulkan struct
 	std::vector<VkAccelerationStructureInstanceKHR> geometryInstances;
@@ -720,6 +779,7 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 	}
 	//Memcpy data to the stage buffer, ready for transfer
 	memcpy(TLASs[imageIndex].stagebuffer.mappedMemory, geometryInstances.data(), TLASs[imageIndex].bufferSize);
+	//vkQueueWaitIdle(Device::getGraphicQueue());
 }
 
 void RayTracer::destroySceneAcceleration()
@@ -747,7 +807,7 @@ void RayTracer::destroySceneAcceleration()
 	}
 	BLASs.clear();
 	// destroy the scene descriptor uniform buffer
-	if (mappedSceneBuffer != nullptr) {
+	if (sceneBuffer.mappedMemory != nullptr) {
 		vkUnmapMemory(Device::get(), sceneBuffer.vkMemory);
 	}
 	vkDestroyBuffer(Device::get(),sceneBuffer.vkBuffer, nullptr);

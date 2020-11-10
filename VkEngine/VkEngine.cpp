@@ -95,6 +95,16 @@ namespace vkengine
 		return TextureManager::listSceneTextures();
 	}
 
+	std::vector<const char*> list_scenes()
+	{
+		std::vector<const char*> scene_ids;
+		scene_ids.reserve(scenes.size());
+		for (auto& entry : scenes) {
+			scene_ids.push_back(entry.first.c_str());
+		}
+		return scene_ids;
+	}
+
 	void createScene(std::string scene_id, std::string name)
 	{
 		scenes.insert( { scene_id, Scene3D(scene_id, name) } );

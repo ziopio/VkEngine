@@ -64,6 +64,8 @@ namespace vkengine
 	std::vector<std::string> listLoadedTextures();
 
 
+
+	std::vector<const char*> list_scenes();
 	void createScene(std::string scene_id, std::string name );
 	Scene3D* getScene(std::string scene_id);
 	void removeScene(std::string scene_id);

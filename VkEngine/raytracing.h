@@ -5,7 +5,6 @@
 #include "Pipeline.h"
 #include "DescriptorSets.h"
 #include "Device.h"
-#include "commons.h"
 
 
 // Describes a Mesh inside a Bottom Level AS
@@ -119,7 +118,6 @@ private:
 
 	static VkPipeline rayTracingPipeline;
 	static Buffer shaderBindingTable;
-	static void* mappedSceneBuffer;
 	static Buffer sceneBuffer;
 
 	//

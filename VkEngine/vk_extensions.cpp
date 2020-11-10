@@ -15,6 +15,8 @@ static PFN_vkGetAccelerationStructureDeviceAddressKHR  pfn_vkGetAccelerationStru
 static PFN_vkCmdTraceRaysKHR  pfn_vkCmdTraceRaysKHR = 0;
 static PFN_vkGetRayTracingShaderGroupHandlesKHR  pfn_vkGetRayTracingShaderGroupHandlesKHR = 0;
 static PFN_vkCreateRayTracingPipelinesKHR  pfn_vkCreateRayTracingPipelinesKHR = 0;
+static PFN_vkCmdWriteAccelerationStructuresPropertiesKHR  pfn_vkCmdWriteAccelerationStructuresPropertiesKHR = 0;//vkCmdCopyAccelerationStructureKHR
+static PFN_vkCmdCopyAccelerationStructureKHR  pfn_vkCmdCopyAccelerationStructureKHR = 0;
 
 void LOAD_RAYTRACING_API_COMMANDS(VkDevice device) {
 	pfn_vkGetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vkGetDeviceProcAddr(device, "vkGetBufferDeviceAddressKHR"));
@@ -28,6 +30,22 @@ void LOAD_RAYTRACING_API_COMMANDS(VkDevice device) {
 	pfn_vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR"));
 	pfn_vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(device, "vkGetRayTracingShaderGroupHandlesKHR"));
 	pfn_vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR"));
+	pfn_vkCmdWriteAccelerationStructuresPropertiesKHR = reinterpret_cast<PFN_vkCmdWriteAccelerationStructuresPropertiesKHR>(vkGetDeviceProcAddr(device, "vkCmdWriteAccelerationStructuresPropertiesKHR"));
+	pfn_vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(vkGetDeviceProcAddr(device, "vkCmdCopyAccelerationStructureKHR"));
+}
+
+VKAPI_ATTR void VKAPI_CALL vkCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,	const VkCopyAccelerationStructureInfoKHR* pInfo)
+{
+	assert(pfn_vkCmdCopyAccelerationStructureKHR);
+	return pfn_vkCmdCopyAccelerationStructureKHR( commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, 
+	const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery)
+{
+	assert(pfn_vkCmdWriteAccelerationStructuresPropertiesKHR);
+	return pfn_vkCmdWriteAccelerationStructuresPropertiesKHR( commandBuffer, accelerationStructureCount,
+		 pAccelerationStructures, queryType, queryPool, firstQuery);
 }
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL vkGetBufferDeviceAddressKHR(

@@ -11,7 +11,6 @@ public:
 	Editor();
 	void execute();
 	void resizeSwapChain();
-	void spawnHell();
 	~Editor();
 	bool terminate;
 std::unique_ptr<Project> loadedProject;

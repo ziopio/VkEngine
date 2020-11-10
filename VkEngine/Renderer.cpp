@@ -580,9 +580,9 @@ void Renderer::findObjXthreadDivision(unsigned obj_num)
 	}
 	//Imposto il numero di thread che la libreria deve utilizzare
 	thread_pool.setThreadCount(numThreads);
-	std::cout << "\nRendering impostato su " << numThreads 
-		<<" threads, " << objXthread << " oggetti ciascuno. Totale: " 
-		<< obj_num << " oggetti." << std::endl;
+	//std::cout << "\nRendering impostato su " << numThreads 
+	//	<<" threads, " << objXthread << " oggetti ciascuno. Totale: " 
+	//	<< obj_num << " oggetti." << std::endl;
 }
 
 /*
