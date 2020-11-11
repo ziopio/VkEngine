@@ -28,7 +28,7 @@ void MainMenuBar::draw(int w_width, int w_height)
 	ImGui::SetNextItemWidth(120);
 	std::vector<const char*> scene_ids = vkengine::list_scenes(); scene_ids.push_back("+ ADD NEW");
 	static const char* item_current = scene_ids[0];            // Here our selection is a single pointer stored outside the object.
-	if (ImGui::BeginCombo("Selected Scene", vkengine::getActiveScene()->name.c_str(), 0)) // The second parameter is the label previewed before opening the combo.
+	if (ImGui::BeginCombo("Selected Scene", vkengine::getActiveScene()->name.c_str(), ImGuiComboFlags_NoArrowButton))
 	{
 		for (int n = 0; n < scene_ids.size(); n++)
 		{
@@ -51,6 +51,11 @@ void MainMenuBar::draw(int w_width, int w_height)
 		}
 		ImGui::EndCombo();
 	}
+	if (ImGui::Button("X"))
+	{
+		vkengine::removeScene(item_current);
+	}
+	
 	if (add_scene) {
 		ImGui::OpenPopup(scene_create_popup); add_scene = false;
 	}

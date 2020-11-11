@@ -15,6 +15,7 @@ static const ImGuiTreeNodeFlags base_flags =
 	ImGuiTreeNodeFlags_SpanAvailWidth;
 static const ImGuiTreeNodeFlags leaf_flags = base_flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
+void showName(vkengine::SceneElement* elem);
 void showSceneProperties(vkengine::Scene3D* scene);
 void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id);
 void showLightProperties(vkengine::Scene3D* scene, unsigned light_id);
@@ -64,10 +65,16 @@ void Outliner::draw(int w_width, int w_height)
 					selected_element = o;
 					selected_elem_type = NodeType::OBJECT;
 				}
+
 				context_menu_id = o;
 				ImGui::OpenPopupOnItemClick(std::to_string(context_menu_id).c_str(), ImGuiMouseButton_Right);
 				if (ImGui::BeginPopupContextItem())
 				{
+					//if (ImGui::Button("Rename")) {
+					//	if (selected_element == context_menu_id) selected_element = -1;
+					//	scene->removeObject(context_menu_id);
+					//	vkengine::reloadScene();
+					//}
 					if (ImGui::Button("Delete")) {
 						if (selected_element == context_menu_id) selected_element = -1;
 						scene->removeObject(context_menu_id);
@@ -132,6 +139,28 @@ void Outliner::draw(int w_width, int w_height)
 
 Outliner::~Outliner() = default;
 
+void showName(vkengine::SceneElement* elem) 
+{
+	static bool editing = false;
+	static char* rename;
+	rename = (char*)elem->name.c_str();
+	if (editing) {
+		if(ImGui::InputText("##rename", rename, 
+			(elem->name.capacity() > 20 ? 20 : elem->name.capacity()),
+			ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			editing = false;
+		}
+	}
+	else {
+		ImGui::Text(elem->name.c_str());	
+		if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered()) {
+			editing = true;
+		}
+	}
+
+}
+
 void showSceneProperties(vkengine::Scene3D* scene)
 {
 	ImGui::Text("Global Light");
@@ -144,7 +173,7 @@ void showSceneProperties(vkengine::Scene3D* scene)
 void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id)
 {
 	auto obj = scene->getObject(obj_id);
-	ImGui::Text(obj->name.c_str()); 
+	showName(obj);
 	ImGui::Text("Position");
 	showVectorControls("Position",  &obj->getObjTransform().position);
 	ImGui::Text("Rotation XYZ");

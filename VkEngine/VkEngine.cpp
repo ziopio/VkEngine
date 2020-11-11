@@ -123,6 +123,10 @@ namespace vkengine
 	void removeScene(std::string scene_id)
 	{
 		scenes.erase(scene_id);
+		if (scenes.size() == 0) {
+			createScene("scene","Scene");
+		}
+		loadScene((*scenes.begin()).first);
 	}
 
 	void loadFontAtlas(unsigned char * pixels, int * width, int * height)
