@@ -32,6 +32,7 @@ Project::Project(const char* project_dir) : data(new Project::_data())
 	std::ifstream i((std::string(project_dir) + "proj_config.json").c_str());
 	i >> project;
 	this->data->name = project["name"];
+	this->data->active_scene = project["active-scene"];
 	//std::cout << "Project JSON: \n" << this->data->project << std::endl;
 	for (auto scene_id : project["scenes"]) {
 		data->scenes.push_back(scene_id);
@@ -98,9 +99,8 @@ void Project::load()
 			obj_info.transformation = t;
 			s->addObject(obj_info);
 		}
-		this->data->active_scene = scene["id"];
-		vkengine::loadScene(scene["id"]);
 	}
+	vkengine::loadScene(data->active_scene);
 }
 
 //std::string Project::getActiveScene()

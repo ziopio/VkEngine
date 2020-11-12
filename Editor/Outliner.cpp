@@ -66,15 +66,30 @@ void Outliner::draw(int w_width, int w_height)
 					selected_elem_type = NodeType::OBJECT;
 				}
 
+				if (selected_element == o && ImGui::IsKeyDown(KeyType::KEY_DELETE)) 
+				{
+					selected_element = -1;
+					scene->removeObject(o);
+					vkengine::reloadScene();
+				}
+
 				context_menu_id = o;
 				ImGui::OpenPopupOnItemClick(std::to_string(context_menu_id).c_str(), ImGuiMouseButton_Right);
 				if (ImGui::BeginPopupContextItem())
 				{
-					//if (ImGui::Button("Rename")) {
-					//	if (selected_element == context_menu_id) selected_element = -1;
-					//	scene->removeObject(context_menu_id);
-					//	vkengine::reloadScene();
-					//}
+					selected_element = context_menu_id;
+					if (ImGui::Button("Copy")) {
+						auto obj = scene->getObject(context_menu_id);
+						vkengine::ObjectInitInfo info = {};
+						info.name = obj->name + "_cpy";
+						info.reflective = obj->reflective;
+						info.mesh_name = obj->getMeshName();
+						info.texture_name = obj->getTextureName();
+						info.transformation = obj->getObjTransform();
+						scene->addObject(info);
+						vkengine::reloadScene();
+						ImGui::CloseCurrentPopup();
+					}
 					if (ImGui::Button("Delete")) {
 						if (selected_element == context_menu_id) selected_element = -1;
 						scene->removeObject(context_menu_id);
