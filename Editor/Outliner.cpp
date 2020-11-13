@@ -66,7 +66,7 @@ void Outliner::draw(int w_width, int w_height)
 					selected_elem_type = NodeType::OBJECT;
 				}
 
-				if (selected_element == o && ImGui::IsKeyDown(KeyType::KEY_DELETE)) 
+				if (selected_element == o && ImGui::IsKeyDown(KeyType::KEY_DELETE) && ImGui::IsWindowFocused()) 
 				{
 					selected_element = -1;
 					scene->removeObject(o);
@@ -109,6 +109,29 @@ void Outliner::draw(int w_width, int w_height)
 				if (ImGui::IsItemClicked()) {
 					selected_element = l;
 					selected_elem_type = NodeType::LIGHT;
+				}				
+				ImGui::OpenPopupOnItemClick(std::to_string(l).c_str(), ImGuiMouseButton_Right);
+				if (ImGui::BeginPopupContextItem())
+				{
+					selected_element = l;
+					if (ImGui::Button("Copy")) {
+						auto lux = scene->getLight(l);
+						auto data = lux->getData();
+						vkengine::PointLightInfo info = {
+						lux->name + "_cpy",
+							{data.position.x,data.position.y,data.position.z},
+							{data.color.x,data.color.y,data.color.z},
+							data.power.w };
+						scene->addLight(info);
+						vkengine::reloadScene();
+						ImGui::CloseCurrentPopup();
+					}
+					if (ImGui::Button("Delete")) {
+						if (selected_element == l) selected_element = -1;
+						scene->removeLight(l);
+						vkengine::reloadScene();
+					}
+					ImGui::EndPopup();
 				}
 			}
 			ImGui::TreePop();
@@ -204,7 +227,7 @@ void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id)
 void showLightProperties(vkengine::Scene3D* scene, unsigned light_id)
 {
 	auto light = scene->getLight(light_id);
-	ImGui::Text(light->name.c_str());
+	showName(light);
 	ImGui::SetNextItemWidth(50);
 	ImGui::DragScalar("Power", ImGuiDataType_Float, &(light->getData().power.w), 0.01f, &l_min, &d_max, "%f", 1.0f);
 	showVectorControls("Position", (glm::vec3*)&light->getData().position);

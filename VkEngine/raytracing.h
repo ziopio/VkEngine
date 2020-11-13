@@ -101,7 +101,9 @@ private:
 	static void buildTopLevelAS(vkengine::Scene3D * scene, TopLevelAS* tlas);
 	static void recordCmdUpdateTopLevelAS(VkCommandBuffer& cmd_buf, TopLevelAS* tlas);
 	static void createSceneBuffer(vkengine::Scene3D* scene);
-	static void destroySceneAcceleration();
+	static void destroyTopLevelAcceleration(); 
+	static void destroyBottomAcceleration();
+	static bool blasNeedsRebuid();
 private:
 	// Accelleration structures
 	// one for each frame in flight
@@ -119,9 +121,4 @@ private:
 	static VkPipeline rayTracingPipeline;
 	static Buffer shaderBindingTable;
 	static Buffer sceneBuffer;
-
-	//
-	//static VkCommandPool cmdPool;
-	//static std::vector<VkCommandBuffer> commandBuffers;
-
 };

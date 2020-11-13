@@ -4,6 +4,7 @@
 #include "Project.h"
 
 constexpr const char* add_obj_modal = "Add new Object";
+constexpr const char* add_lux_modal = "Add new Light";
 constexpr const char* select_mesh_modal = "Choose Object Mesh";
 constexpr const char* select_texture_modal = "Choose Object Texture ";
 
@@ -73,7 +74,6 @@ void ToolsPanel::draw(int w_width, int w_height)
 			ImGui::EndPopup();
 		}
 
-		const char* title = "ID Error";
 		if (ImGui::Button("OK", ImVec2(120, 0))) 
 		{
 			auto scene = vkengine::getActiveScene();
@@ -91,14 +91,30 @@ void ToolsPanel::draw(int w_width, int w_height)
 
 			ImGui::CloseCurrentPopup();
 		}
-		if (ImGui::BeginPopupModal(title))
-		{
-			ImGui::Text("Object ID already in use!!");
-			if (ImGui::Button("Ok"))
-				ImGui::CloseCurrentPopup();
-			ImGui::EndPopup();
-		}
+
 		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::Button("+LUX", ImVec2(0, 0))) {
+		ImGui::OpenPopup(add_lux_modal);
+	}
+	if (ImGui::BeginPopupModal(add_lux_modal, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		static char light_name[20] = "point";
+		ImGui::InputText("Name", light_name, sizeof(light_name));
+		ImGui::Separator();
+		if (ImGui::Button("OK", ImVec2(120, 0))) 
+		{ 
+			auto scene = vkengine::getActiveScene();
+			vkengine::PointLightInfo l = {
+			light_name,{0,1,0},{1,1,1},1.f
+			};
+			scene->addLight(l);
+			ImGui::CloseCurrentPopup(); 
+		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 		ImGui::EndPopup();

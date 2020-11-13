@@ -750,8 +750,11 @@ void RayTracer::initialize()
 }
 
 void RayTracer::prepare(Scene3D * scene) {
-	destroySceneAcceleration();
-	buildBottomLevelAS();
+	destroyTopLevelAcceleration();
+	if (blasNeedsRebuid()) {
+		destroyBottomAcceleration();
+		buildBottomLevelAS();
+	}
 	TLASs.resize(SwapChainMng::get()->getImageCount());
 	for (int i = 0; i < TLASs.size(); i++) {
 		buildTopLevelAS(scene, &TLASs[i]);
@@ -791,8 +794,8 @@ void RayTracer::updateSceneData(vkengine::Scene3D* scene, unsigned imageIndex)
 		geometryInstances.size()*sizeof(VkAccelerationStructureInstanceKHR));
 }
 
-void RayTracer::destroySceneAcceleration()
-{	// Destroy TLAS resources
+void RayTracer::destroyTopLevelAcceleration()
+{
 	for (auto& tlas : TLASs) {
 		if (tlas.stagebuffer.mappedMemory != nullptr) {
 			vkUnmapMemory(Device::get(), tlas.stagebuffer.vkMemory);
@@ -806,11 +809,13 @@ void RayTracer::destroySceneAcceleration()
 		vkDestroyBuffer(Device::get(), tlas.instanceBuffer.vkBuffer, nullptr);
 		vkFreeMemory(Device::get(), tlas.instanceBuffer.vkMemory, nullptr);
 		tlas.instances.clear();
-
 	}
-	
+}
+
+void RayTracer::destroyBottomAcceleration()
+{
 	// Destroy BLAS resources
-	for (auto & blas : BLASs) {
+	for (auto& blas : BLASs) {
 		vkDestroyAccelerationStructureKHR(Device::get(), blas.as.accelerationStructure, nullptr);
 		vkFreeMemory(Device::get(), blas.as.memory, nullptr);
 	}
@@ -819,8 +824,13 @@ void RayTracer::destroySceneAcceleration()
 	if (sceneBuffer.mappedMemory != nullptr) {
 		vkUnmapMemory(Device::get(), sceneBuffer.vkMemory);
 	}
-	vkDestroyBuffer(Device::get(),sceneBuffer.vkBuffer, nullptr);
+	vkDestroyBuffer(Device::get(), sceneBuffer.vkBuffer, nullptr);
 	vkFreeMemory(Device::get(), sceneBuffer.vkMemory, nullptr);
+}
+
+bool RayTracer::blasNeedsRebuid()
+{
+	return BLASs.size() != MeshManager::countLoadedMeshes();
 }
 
 void RayTracer::cleanUP()
@@ -830,5 +840,6 @@ void RayTracer::cleanUP()
 	vkFreeMemory(Device::get(), shaderBindingTable.vkMemory, nullptr);
 	// Destroy Pipeline
 	vkDestroyPipeline(Device::get(), rayTracingPipeline, nullptr);
-	destroySceneAcceleration();
+	destroyTopLevelAcceleration(); 
+	destroyBottomAcceleration();
 }

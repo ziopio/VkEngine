@@ -53,7 +53,7 @@ void MainMenuBar::draw(int w_width, int w_height)
 	}
 	if (ImGui::Button("X"))
 	{
-		vkengine::removeScene(item_current);
+		vkengine::removeScene(vkengine::getActiveScene()->getId());
 	}
 	
 	if (add_scene) {
