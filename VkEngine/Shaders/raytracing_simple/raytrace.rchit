@@ -76,7 +76,7 @@ void main()
   {
       castShadowRay(L, sun_distance);
       if(shadow.shadow_alpha > 0)
-        color *= 1 - clamp(shadow.shadow_alpha,0,1);
+        color *= clamp((1 - clamp(shadow.shadow_alpha,0,1)), 0.3f, 1);
       else
         color += computeSpecular(uniforms.global_light, gl_WorldRayDirectionEXT, L, normal);
   }
@@ -92,7 +92,7 @@ void main()
     {
       castShadowRay(lDir, lightDistance);
       if(shadow.shadow_alpha > 0)
-        c *= 1 - clamp(shadow.shadow_alpha,0,1);
+        c *= clamp((1 - clamp(shadow.shadow_alpha,0,1)), 0.3f, 1);
       else
         c += computeSpecular(uniforms.lights[i], gl_WorldRayDirectionEXT, lDir, normal);
     }

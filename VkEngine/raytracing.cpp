@@ -809,7 +809,13 @@ void RayTracer::destroyTopLevelAcceleration()
 		vkDestroyBuffer(Device::get(), tlas.instanceBuffer.vkBuffer, nullptr);
 		vkFreeMemory(Device::get(), tlas.instanceBuffer.vkMemory, nullptr);
 		tlas.instances.clear();
+	}	
+	// destroy the scene descriptor uniform buffer
+	if (sceneBuffer.mappedMemory != nullptr) {
+		vkUnmapMemory(Device::get(), sceneBuffer.vkMemory);
 	}
+	vkDestroyBuffer(Device::get(), sceneBuffer.vkBuffer, nullptr);
+	vkFreeMemory(Device::get(), sceneBuffer.vkMemory, nullptr);
 }
 
 void RayTracer::destroyBottomAcceleration()
@@ -820,12 +826,7 @@ void RayTracer::destroyBottomAcceleration()
 		vkFreeMemory(Device::get(), blas.as.memory, nullptr);
 	}
 	BLASs.clear();
-	// destroy the scene descriptor uniform buffer
-	if (sceneBuffer.mappedMemory != nullptr) {
-		vkUnmapMemory(Device::get(), sceneBuffer.vkMemory);
-	}
-	vkDestroyBuffer(Device::get(), sceneBuffer.vkBuffer, nullptr);
-	vkFreeMemory(Device::get(), sceneBuffer.vkMemory, nullptr);
+
 }
 
 bool RayTracer::blasNeedsRebuid()
