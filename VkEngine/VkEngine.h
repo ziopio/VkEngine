@@ -62,7 +62,7 @@ namespace vkengine
 	std::vector<std::string> listLoadedMesh();
 	void loadTexture(std::string id, std::string texture_file);
 	std::vector<std::string> listLoadedTextures();
-
+	void loadCubeMap(std::string id, std::string texture_file);
 
 
 	std::vector<const char*> list_scenes();

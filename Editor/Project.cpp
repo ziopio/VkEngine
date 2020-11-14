@@ -41,10 +41,16 @@ Project::Project(const char* project_dir) : data(new Project::_data())
 
 void Project::load()
 {
-	for (const auto & entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + MESH_DIR))
+	for (const auto& entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + MESH_DIR))
 		vkengine::loadMesh(entry.path().filename().string(), entry.path().string());
-	for (const auto & entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + TEXTURE_DIR))
-		vkengine::loadTexture(entry.path().filename().string(), entry.path().string());
+	for (const auto& entry : fs::directory_iterator(this->data->project_dir + ASSETS_DIR + TEXTURE_DIR))
+	{
+		if (!entry.is_directory()) {
+			vkengine::loadTexture(entry.path().filename().string(), entry.path().string());
+		}
+	}
+	vkengine::loadCubeMap("test",this->data->project_dir + ASSETS_DIR + TEXTURE_DIR + "/skybox");
+
 
 	for (const auto & scene_id : this->data->scenes) {
 		json scene;

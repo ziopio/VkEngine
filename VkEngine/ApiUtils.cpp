@@ -86,15 +86,24 @@ void copyBufferToBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPoo
 
 void createImage(VkPhysicalDevice physicalDevice, VkDevice device, uint32_t width, uint32_t height,
 	VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-	VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+	VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,
+	VkImageCreateFlags flags) 
+{
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.flags = flags;
+	if (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
+	{
+		imageInfo.arrayLayers = 6;
+	}
+	else {
+		imageInfo.arrayLayers = 1;
+	}
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageInfo.extent.width = width;
 	imageInfo.extent.height = height;
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = 1;
-	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -146,7 +155,8 @@ bool hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void transitionImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+void transitionImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkFormat format, 
+	VkImageLayout oldLayout, VkImageLayout newLayout, unsigned layer_count) {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
@@ -158,7 +168,7 @@ void transitionImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkFormat fo
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = 1;
 	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.layerCount = layer_count;
 
 	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -242,7 +252,8 @@ void transitionImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkFormat fo
 	);
 }
 
-void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, 
+	VkImage image, uint32_t width, uint32_t height) {
 	VkBufferImageCopy region = {};
 	region.bufferOffset = 0;
 	region.bufferRowLength = 0;
@@ -269,7 +280,19 @@ void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage i
 		&region
 	);// nota si possoso accodare svariate operazioni di copiatura tra 1 buffer e 1 immagine
 
-	std::vector<VkCommandBuffer> _buffers(1, commandBuffer);
+}
+
+void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer,
+	VkImage image, std::vector<VkBufferImageCopy>* regions)
+{
+	vkCmdCopyBufferToImage(
+		commandBuffer,
+		buffer,
+		image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		regions->size(),
+		regions->data()
+	);
 }
 
 VkCommandBuffer beginSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool) {

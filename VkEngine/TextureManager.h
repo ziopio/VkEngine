@@ -11,6 +11,7 @@ public:
 	static void loadFontAtlasTexture(unsigned char * pixels, int* width, int* height);
 	static Texture* getImGuiTexture(int id);
 	static void addTexture(std::string id, std::string texture_path);
+	static void addCubeMap(std::string id, std::string texture_path);
 	static void addImGuiTexture(unsigned char * pixels, int* width, int* height);
 	// by string id
 	static inline Texture* getSceneTexture(std::string id) 
@@ -29,6 +30,7 @@ public:
 	static void cleanUp();
 private:
 	static std::vector<Texture*> scene_textures;
+	static std::vector<CubeMapTexture*> cubeMapTextures;
 	// This maps the texutres IDs with their position in the vector
 	static std::unordered_map<std::string, unsigned> scene_textures_indices;
 	static Texture* fontAtlas;

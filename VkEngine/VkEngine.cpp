@@ -95,6 +95,11 @@ namespace vkengine
 		return TextureManager::listSceneTextures();
 	}
 
+	void loadCubeMap(std::string id, std::string texture_file)
+	{
+		TextureManager::addCubeMap(id, texture_file);
+	}
+
 	std::vector<const char*> list_scenes()
 	{
 		std::vector<const char*> scene_ids;

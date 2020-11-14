@@ -2,6 +2,7 @@
 #include "TextureManager.h"
 
 
+std::vector<CubeMapTexture*> TextureManager::cubeMapTextures;
 std::vector<Texture*> TextureManager::scene_textures;
 std::unordered_map<std::string, unsigned> TextureManager::scene_textures_indices;
 std::vector<Texture*> TextureManager::imgui_textures;
@@ -30,6 +31,11 @@ void TextureManager::addTexture(std::string id, std::string texture_path)
 	scene_textures_indices[id] = scene_textures.size() - 1;
 }
 
+void TextureManager::addCubeMap(std::string id, std::string texture_path)
+{
+	cubeMapTextures.push_back(new CubeMapTexture(texture_path));
+}
+
 void TextureManager::addImGuiTexture(unsigned char * pixels, int* width, int* height)
 {
 	imgui_textures.push_back(new Texture(pixels, width, height));
@@ -46,6 +52,9 @@ std::vector<std::string> TextureManager::listSceneTextures()
 
 void TextureManager::cleanUp()
 {
+	for (auto text : cubeMapTextures) {
+		delete text;
+	}
 	for (auto text : scene_textures) {
 		delete text;
 	}
