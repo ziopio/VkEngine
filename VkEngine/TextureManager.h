@@ -10,6 +10,7 @@ public:
 	//User must free memory pointed by pixels
 	static void loadFontAtlasTexture(unsigned char * pixels, int* width, int* height);
 	static Texture* getImGuiTexture(int id);
+	static CubeMapTexture* getCubeMapTexture();
 	static void addTexture(std::string id, std::string texture_path);
 	static void addCubeMap(std::string id, std::string texture_path);
 	static void addImGuiTexture(unsigned char * pixels, int* width, int* height);

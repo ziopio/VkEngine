@@ -641,7 +641,9 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		{ TextureManager::getSceneTexture(0)->getTextureSampler(),
 		TextureManager::getSceneTexture(0)->getTextureImgView(),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
-
+	VkDescriptorImageInfo cubeMapInfo = { TextureManager::getCubeMapTexture()->getTextureSampler(),
+		TextureManager::getCubeMapTexture()->getTextureImgView(),
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
 	{
 		// Fill all vertex and all index buffers
@@ -680,6 +682,15 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 		texturesDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		texturesDescWrite.descriptorCount = textureSamplersInfos.size();
 		texturesDescWrite.pImageInfo = textureSamplersInfos.data();
+		writes.push_back(texturesDescWrite);
+
+
+		VkWriteDescriptorSet cubeMapDescWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		texturesDescWrite.dstSet = bundle.static_sets[0].set;
+		texturesDescWrite.dstBinding = 3;
+		texturesDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		texturesDescWrite.descriptorCount = 1;
+		texturesDescWrite.pImageInfo = &cubeMapInfo;
 		writes.push_back(texturesDescWrite);
 	}
 

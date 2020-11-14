@@ -43,8 +43,13 @@ void DescriptorSetsFactory::initLayouts() {
 		samplerArrayBinding.binding = 2;
 		samplerArrayBinding.descriptorCount = SUPPORTED_TEXTURE_COUNT; // TODO  make dynamic
 		samplerArrayBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerArrayBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-		layouts[DSL_RAY_TRACING_SCENE].bindings = { vertexStorageBinding, indexStorageBinding, samplerArrayBinding };
+		samplerArrayBinding.stageFlags = VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;	
+		VkDescriptorSetLayoutBinding cubeMapBinding = {};
+		cubeMapBinding.binding = 3;
+		cubeMapBinding.descriptorCount = 1; // TODO  make dynamic
+		cubeMapBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		cubeMapBinding.stageFlags = VK_SHADER_STAGE_MISS_BIT_KHR;
+		layouts[DSL_RAY_TRACING_SCENE].bindings = { vertexStorageBinding, indexStorageBinding, samplerArrayBinding, cubeMapBinding };
 		layouts[DSL_RAY_TRACING_SCENE].layout = createDStLayout(layouts[DSL_RAY_TRACING_SCENE].bindings);
 	}
 	// TEXTURE_ARRAY : 1 binding of 32 textures in fragment shader

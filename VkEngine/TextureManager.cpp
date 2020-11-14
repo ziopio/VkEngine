@@ -25,6 +25,11 @@ Texture * TextureManager::getImGuiTexture(int id)
 	return imgui_textures[id];
 }
 
+CubeMapTexture* TextureManager::getCubeMapTexture()
+{
+	return cubeMapTextures[0];
+}
+
 void TextureManager::addTexture(std::string id, std::string texture_path)
 {
 	scene_textures.push_back(new Texture(texture_path));

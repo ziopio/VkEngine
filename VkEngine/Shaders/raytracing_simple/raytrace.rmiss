@@ -5,11 +5,14 @@
 
 layout(location = 0) rayPayloadInEXT hitPayload prd;
 
+layout(set = 0, binding = 3) uniform samplerCube skybox;
+
 const vec3 clear_color = {0.0, 0.1, 0.3};
 
 void main()
 {
-    prd.hitValue.xyz = clear_color * (1.f - prd.hitValue.a)
+    vec4 sky = texture(skybox, prd.rayDir);
+    prd.hitValue.xyz = sky.xyz * (1.f - prd.hitValue.a)
                         + prd.hitValue.xyz * (prd.hitValue.a);
     prd.hitValue.a = 1.f;
 }
