@@ -23,6 +23,8 @@ class Outliner :
 public:
 	Outliner(EditorUI* UI);
 	virtual void draw(int w_width, int w_height) override;
+	virtual void resetForNewScene();
+	void resetSelection();
 	~Outliner();
 private:
 	//std::vector<SceneNode> scenes;

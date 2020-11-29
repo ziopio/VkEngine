@@ -63,6 +63,7 @@ namespace vkengine
 	void shutdown()
 	{
 		vkDeviceWaitIdle(Device::get());
+		scenes.clear();
 		RayTracer::cleanUP();
 		PipelineFactory::cleanUP();
 		DescriptorSetsFactory::cleanUp();

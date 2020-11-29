@@ -14,7 +14,7 @@ unsigned getNewUniversalID() {
 
 Scene3D::Scene3D(std::string id, std::string name) :
 	default_camera(getNewUniversalID(), "def_cam", 
-		{ {10.f,10.f,10.f}, {0.f, 0.f, 0.f}, {0.f, 1.f, 0.f} }, { 45.f, 16.f / 9.f, 1.f, 10000.f }),
+		{ {10.f,10.f,10.f}, {0.f, 0.f, 0.f}, {0.f, 1.f, 0.f} }, { 60.f, 16.f / 9.f, 1.f, 10000.f }),
 	globalLight{ {1,1,1,1},{1,1,1,1},{1,1,1,1} }
 {
 	this->object_capacity = INITIAL_CAPACITY;

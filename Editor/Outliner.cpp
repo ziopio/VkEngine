@@ -166,13 +166,20 @@ void Outliner::draw(int w_width, int w_height)
 		case NodeType::OBJECT: showOjectProperties(scene, selected_element); break;
 		case NodeType::LIGHT: showLightProperties(scene, selected_element); break;
 		case NodeType::CAMERA: showCameraProperties(scene, selected_element); break;
-		case NodeType::SCENE: showSceneProperties(scene); break;
 		default:
 			break;
 		}
 	}
+	else {
+		showSceneProperties(scene);
+	}
 
 	ImGui::End();
+}
+
+void Outliner::resetForNewScene()
+{
+	selected_element = -1;
 }
 
 Outliner::~Outliner() = default;

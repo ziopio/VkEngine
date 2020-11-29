@@ -41,7 +41,7 @@ void MainMenuBar::draw(int w_width, int w_height)
 			else {
 				if (ImGui::Selectable(vkengine::getScene(scene_ids[n])->name.c_str(), is_selected)) {
 					item_current = scene_ids[n];
-					vkengine::loadScene(item_current);
+					this->UI->showNewScene(item_current);
 				}
 			}
 
@@ -75,7 +75,7 @@ void MainMenuBar::draw(int w_width, int w_height)
 		if (ImGui::Button("OK", ImVec2(120, 0)))
 		{
 			vkengine::createScene(scene_name, scene_name);
-			vkengine::loadScene(scene_name);
+			this->UI->showNewScene(scene_name);
 			item_current = scene_name;
 			ImGui::CloseCurrentPopup();
 		}

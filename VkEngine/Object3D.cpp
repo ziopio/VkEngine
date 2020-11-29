@@ -17,7 +17,7 @@ Object3D::Object3D(unsigned id, std::string name, std::string mesh_id,
 glm::mat4 Object3D::getMatrix()
 {
 	return glm::translate(glm::mat4(1), transform.position) * 
-		glm::toMat4(glm::quat(transform.eulerAngles)) * 
+		glm::toMat4(glm::quat(transform.eulerAngles * glm::pi<float>() / 180.f)) * 
 		glm::scale(glm::mat4(1.f),glm::vec3(transform.scale_factor));
 }
 

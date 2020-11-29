@@ -15,4 +15,5 @@ public:
 	inline void hide() { visible = false; }
 	inline void show() { visible = true; }
 	virtual void draw(int w_width, int w_height) = 0;
+	inline virtual void resetForNewScene() { return; };
 };
