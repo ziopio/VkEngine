@@ -101,9 +101,8 @@ vkengine::UiDrawData EditorUI::drawUI()
 	return out_put_draw_data(draw_data);
 }
 
-void EditorUI::showNewScene(std::string scene_name)
+void EditorUI::showNewScene()
 {
-	vkengine::loadScene(scene_name);
 	for (auto comp : editorComponents)
 	{
 		comp->resetForNewScene();

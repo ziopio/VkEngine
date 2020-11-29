@@ -574,7 +574,7 @@ void Renderer::findObjXthreadDivision(unsigned obj_num)
 		objXthread = obj_num;
 	}
 	else {
-		Renderer::objXthread = obj_num / numThreads;
+		Renderer::objXthread = (obj_num + (obj_num % numThreads))/ numThreads;
 	}
 	//Imposto il numero di thread che la libreria deve utilizzare
 	thread_pool.setThreadCount(numThreads);

@@ -26,7 +26,7 @@ public:
 	FontAtlas getDefaultFontAtlas();
 	void setDeltaTime(double delta_time);
 	vkengine::UiDrawData drawUI();
-	void showNewScene(std::string scene_name);
+	void showNewScene();
 	~EditorUI();
 
 
