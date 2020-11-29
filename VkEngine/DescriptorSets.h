@@ -74,6 +74,9 @@ struct SceneObjRtDescBlock {
 	glm::mat4 transform;
 	uint32_t reflectiveness;
 };
+struct RayTracingPushConstantBlock {
+	uint32_t max_reflection_depth;
+};
 
 struct UniformBlock {
 	glm::mat4 P_matrix;

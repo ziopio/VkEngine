@@ -13,7 +13,7 @@
 
 using namespace vkengine;
 
-
+uint32_t RayTracer::max_reflections_depth;
 std::vector<BottomLevelAS> RayTracer::BLASs;
 std::vector<TopLevelAS> RayTracer::TLASs;
 VkPipeline RayTracer::rayTracingPipeline;
@@ -488,6 +488,10 @@ void RayTracer::updateCmdBuffer(std::vector<VkCommandBuffer> &cmdBuffers, std::v
 	vkCmdBindDescriptorSets(cmdBuffers[frameIndex], VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, Playout.layout,
 		 0, descrSets.size(), descrSets.data(), 0, nullptr);
 
+	RayTracingPushConstantBlock block = { RayTracer::max_reflections_depth };
+	vkCmdPushConstants(cmdBuffers[frameIndex], Playout.layout, VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+		0,sizeof(RayTracingPushConstantBlock), &block);
+
 	// Size of a program identifier
 	VkDeviceSize progSize = PhysicalDevice::getPhysicalDeviceRayTracingProperties().shaderGroupBaseAlignment;  
 	VkDeviceSize rayGenOffset = 0u * progSize;  // Start at the beginning of the shaderBindingTable
@@ -758,6 +762,7 @@ void RayTracer::updateRTPipelineResources(vkengine::Scene3D* scene)
 void RayTracer::initialize()
 {
 	LOAD_RAYTRACING_API_COMMANDS(Device::get());
+	RayTracer::max_reflections_depth = 5;
 }
 
 void RayTracer::prepare(Scene3D * scene) {

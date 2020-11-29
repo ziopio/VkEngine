@@ -177,6 +177,11 @@ namespace vkengine
 		return &Renderer::useRayTracing;
 	}
 
+	uint32_t* rayMaxDepth()
+	{
+		return &RayTracer::max_reflections_depth;
+	}
+
 	void renderFrame()
 	{
 		if (!Renderer::prepareFrame()) {

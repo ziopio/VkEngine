@@ -345,9 +345,14 @@ void PipelineFactory::createPipelineLayouts()
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_RAY_TRACING_SCENE)->layout); // ray-tracing only
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_RT_IMAGE_AND_OBJECTS)->layout); // shared output with rasterizer
 		layouts.push_back(DescriptorSetsFactory::getDescSetLayout(DSL_UNIFORM_BUFFER)->layout); // shared input with rasterizer
+		VkPushConstantRange pushRange = {};
+		pushRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+		pushRange.size = sizeof(RayTracingPushConstantBlock);
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 		pipelineLayoutInfo.setLayoutCount = layouts.size();
 		pipelineLayoutInfo.pSetLayouts = layouts.data();
+		pipelineLayoutInfo.pushConstantRangeCount = 1;
+		pipelineLayoutInfo.pPushConstantRanges = &pushRange;
 		if (vkCreatePipelineLayout(Device::get(),
 			&pipelineLayoutInfo, nullptr,
 			&PipelineFactory::pipeline_layouts[PIPELINE_LAYOUT_RAY_TRACING].layout)
@@ -359,8 +364,6 @@ void PipelineFactory::createPipelineLayouts()
 		DescSetBundle bundle = {};
 		bundle.static_sets.push_back(
 			{ DS_USAGE_UNDEFINED, DescriptorSetsFactory::getDescSetLayout(DSL_RAY_TRACING_SCENE),nullptr });
-		//bundle.static_sets.push_back(
-		//	{ DS_USAGE_ALBEDO_TEXTURE, DescriptorSetsFactory::getDescSetLayout(DSL_TEXTURE_ARRAY),nullptr });
 
 		bundle.frame_dependent_sets.push_back({});
 		for (int i = 0; i < SwapChainMng::get()->getImageCount(); i++) {

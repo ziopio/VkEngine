@@ -104,6 +104,8 @@ private:
 	static void destroyTopLevelAcceleration(); 
 	static void destroyBottomAcceleration();
 	static bool blasNeedsRebuid();
+public:
+	static uint32_t max_reflections_depth;
 private:
 	// Accelleration structures
 	// one for each frame in flight

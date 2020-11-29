@@ -206,6 +206,12 @@ void showSceneProperties(vkengine::Scene3D* scene)
 	ImGui::DragScalar("Power", ImGuiDataType_Float, &(scene->globalLight.power.w), 0.01f, &l_min, &d_max, "%f", 1.0f);
 	ImGui::Text("Direction");
 	showVectorControls("Direction", (glm::vec3* )&scene->globalLight.position);
+
+	if (vkengine::rayTracing()) {
+		static unsigned dmin = 1, dmax = 100;
+		ImGui::DragScalar("Ray Max Depth", ImGuiDataType_U32, vkengine::rayMaxDepth(), 1.f, &dmin, &dmax, "%u", 1.0f);
+	}
+	
 }
 
 void showOjectProperties(vkengine::Scene3D* scene, unsigned obj_id)

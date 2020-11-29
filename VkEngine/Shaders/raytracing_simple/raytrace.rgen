@@ -17,6 +17,11 @@ layout(set = 2, binding = 0)uniform uniBlock {
 	int light_count;
 } uniforms;
 
+layout(push_constant) uniform PushConsts // max 256 bytes
+{
+	uint max_reflections_depth;
+}pushConsts;
+
 void main() 
 {
     const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
@@ -80,7 +85,7 @@ void main()
         prd.hitValue = vec4(0);
 
         prd.depth++;
-        if(prd.stop == 1 || prd.depth >= 10)
+        if(prd.stop == 1 || prd.depth >= pushConsts.max_reflections_depth)
         break;
 
         origin.xyz    = prd.rayOrigin;
