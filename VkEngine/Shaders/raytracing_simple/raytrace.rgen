@@ -45,7 +45,7 @@ void main()
             rayFlags,       // rayFlags
             0xFF,           // cullMask
             0,              // sbtRecordOffset
-            0,              // sbtRecordStride
+            2,              // sbtRecordStride
             0,              // missIndex
             origin.xyz,     // ray origin
             tMin,           // ray min range
@@ -62,7 +62,7 @@ void main()
             rayFlags,       // rayFlags
             0xFF,           // cullMask
             0,              // sbtRecordOffset
-            0,              // sbtRecordStride
+            2,              // sbtRecordStride
             0,              // missIndex
             origin.xyz,     // ray origin
             tMin,           // ray min range

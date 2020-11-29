@@ -109,13 +109,8 @@ void Renderer::renderScene()
 {
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	// Indico quale semaforo attendere e in che stato la pipeline deve fermarsi
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &imageAvailableSemaphores[currentFrame]; // non server siccome offscreen
-	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.waitSemaphoreCount = 0;
 	submitInfo.commandBufferCount = 1;
-
 	// Indico quale è il semaforo che indica la fine dell'attesa
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &offScreenRenderReadySemaphores[currentFrame];
@@ -134,11 +129,14 @@ void Renderer::renderScene()
 
 	Renderer::updateFinalPassCommandBuffer(Renderer::last_imageIndex);
 
-	submitInfo.pWaitSemaphores = &offScreenRenderReadySemaphores[currentFrame];
+	std::array<VkSemaphore, 2> waited_semaphores = { offScreenRenderReadySemaphores[currentFrame],imageAvailableSemaphores[currentFrame] };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.pWaitSemaphores = waited_semaphores.data();
+	submitInfo.waitSemaphoreCount = waited_semaphores.size();
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
 	submitInfo.pCommandBuffers = &primaryCmdBuffers[Renderer::last_imageIndex];
 
-	//vkQueueWaitIdle(Device::getGraphicQueue()); //not optimal time usage!!!!
 	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}

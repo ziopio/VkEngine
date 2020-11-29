@@ -535,8 +535,8 @@ void RayTracer::createRayTracingPipeline()
 	Shader rayAnyHit_0("VkEngine/Shaders/raytracing_simple/0_rahit.spv", VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
 	Shader rayAnyHit_1("VkEngine/Shaders/raytracing_simple/1_rahit.spv", VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
 	Shader rayClosestHit("VkEngine/Shaders/raytracing_simple/rchit.spv", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-	std::array<VkPipelineShaderStageCreateInfo, 6> stages{ rayGen.getStage(), 
-		rayMiss.getStage(), rayShadowMiss.getStage(), 
+	std::array<VkPipelineShaderStageCreateInfo, 6> stages{ 
+		rayGen.getStage(), 	rayMiss.getStage(), rayShadowMiss.getStage(), 
 		rayClosestHit.getStage(), rayAnyHit_0.getStage(), rayAnyHit_1.getStage() };
 
 	/* Shaders are gathered in groups
@@ -597,7 +597,7 @@ void RayTracer::createRayTracingPipeline()
 
 void RayTracer::createShaderBindingTable()
 {
-	// 6 shader groups: rgen, rmiss, rmiss_shadow, (rchit & rahit_0), rahit_1
+	// 5 shader groups: rgen, rmiss, rmiss_shadow, (rchit & rahit_0), rahit_1
 	auto groupCount = 5;               
 	// Size of a program identifier
 	uint32_t groupHandleSize = PhysicalDevice::getPhysicalDeviceRayTracingProperties().shaderGroupHandleSize;

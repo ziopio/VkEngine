@@ -139,7 +139,7 @@ void castShadowRay(vec3 rayDir, float lightDistance){
             flags,       // rayFlags
             0xFF,        // cullMask
             1,           // sbtRecordOffset
-            0,           // sbtRecordStride
+            2,           // sbtRecordStride
             1,           // missIndex
             origin,      // ray origin
             tMin,        // ray min range

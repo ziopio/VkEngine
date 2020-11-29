@@ -1,5 +1,5 @@
 #pragma once
-#define VK_ENABLE_BETA_EXTENSIONS // Needed for Nvidia RTX
+#define VK_ENABLE_BETA_EXTENSIONS // Needed for  VK_KHR_RAY_TRACING
 #include <vulkan/vulkan.h>
 
 
