@@ -19,7 +19,7 @@ namespace vkengine
 	double unified_delta_time;
 	SurfaceOwner* surfaceOwner;
 	std::string active_scene;
-	std::unordered_map<std::string, Scene3D> scenes;
+	std::unordered_map<std::string, Scene3D>* scenes;
 
 	void buildBasicPipelines();
 	void recreateSwapChain();
@@ -53,6 +53,7 @@ namespace vkengine
 		MeshManager::init();
 		TextureManager::init();
 		Renderer::init();
+		scenes = new std::unordered_map<std::string, Scene3D>();
 	}
 
 	void resizeSwapchain()
@@ -63,7 +64,8 @@ namespace vkengine
 	void shutdown()
 	{
 		vkDeviceWaitIdle(Device::get());
-		scenes.clear();
+		scenes->clear();
+		delete scenes;
 		RayTracer::cleanUP();
 		PipelineFactory::cleanUP();
 		DescriptorSetsFactory::cleanUp();
@@ -104,8 +106,8 @@ namespace vkengine
 	std::vector<const char*> list_scenes()
 	{
 		std::vector<const char*> scene_ids;
-		scene_ids.reserve(scenes.size());
-		for (auto& entry : scenes) {
+		scene_ids.reserve(scenes->size());
+		for (auto& entry : *scenes) {
 			scene_ids.push_back(entry.first.c_str());
 		}
 		return scene_ids;
@@ -113,26 +115,26 @@ namespace vkengine
 
 	void createScene(std::string scene_id, std::string name)
 	{
-		scenes.insert({ scene_id, Scene3D(scene_id, name) });
+		scenes->insert({ scene_id, {scene_id, name} });
 	}
 
 	Scene3D* getActiveScene()
 	{
-		return &scenes.at(active_scene);
+		return &scenes->at(active_scene);
 	}
 
 	Scene3D* getScene(std::string scene_id)
 	{
-		return &scenes.at(scene_id);
+		return &scenes->at(scene_id);
 	}
 
 	void removeScene(std::string scene_id)
 	{
-		scenes.erase(scene_id);
-		if (scenes.size() == 0) {
+		scenes->erase(scene_id);
+		if (scenes->size() == 0) {
 			createScene("scene","Scene");
 		}
-		loadScene((*scenes.begin()).first);
+		loadScene((*scenes->begin()).first);
 	}
 
 	void loadFontAtlas(unsigned char * pixels, int * width, int * height)
@@ -155,11 +157,11 @@ namespace vkengine
 	void loadScene(std::string scene_id)
 	{
 		active_scene = scene_id;
-		Renderer::prepareScene(&scenes.at(active_scene));
+		Renderer::prepareScene(&scenes->at(active_scene));
 		// Just in case resources like Textures were added / updated
 		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_STANDARD);
 		if (hasRayTracing()) {
-			RayTracer::updateRTPipelineResources(&scenes.at(active_scene));
+			RayTracer::updateRTPipelineResources(&scenes->at(active_scene));
 		}
 	}
 
@@ -210,22 +212,22 @@ namespace vkengine
 		RenderPassCatalog::cleanUP();
 		SwapChainMng::cleanUP();
 
-		for (auto & s : scenes) {
-			scenes.at(s.first).getCamera(scenes.at(s.first).current_camera)->updateAspectRatio(width, height);
+		for (auto & s : *scenes) {
+			scenes->at(s.first).getCamera(scenes->at(s.first).current_camera)->updateAspectRatio(width, height);
 		}
 
 		SwapChainMng::init(surfaceOwner);
 		RenderPassCatalog::init();
 		PipelineFactory::updatePipelinesViewPorts();
 		Renderer::init();
-		Renderer::prepareScene(&scenes.at(active_scene));
+		Renderer::prepareScene(&scenes->at(active_scene));
 
 		// IMGUI pipeline layout uses an offscreen attachment 
 		// which is recreated by the Renderer to match the swapchain extent
 		// For this reason i have to update his descriptors
 		PipelineFactory::updatePipelineResources(PIPELINE_LAYOUT_IMGUI);		
 		if (hasRayTracing()) {
-			RayTracer::updateRTPipelineResources(&scenes.at(active_scene));
+			RayTracer::updateRTPipelineResources(&scenes->at(active_scene));
 		}
 	}
 

@@ -71,31 +71,33 @@ void main()
   //Global direcitonal light
   vec3 L = normalize(uniforms.global_light.position.xyz);
   float sun_distance = 1000000.0;
-  if(object.reflective==0) color = computeDiffuse(albedo.xyz, uniforms.global_light, L, normal);
-  if( facingLight(normal, L) )
-  {
+  if(object.reflective == 0) {
+    color = computeDiffuse(albedo.xyz, uniforms.global_light, L, normal);
+    if( facingLight(normal, L) )
+    {
       castShadowRay(L, sun_distance);
       if(shadow.shadow_alpha > 0)
         color *= 1 - clamp(shadow.shadow_alpha,0,1);
       else
         color += computeSpecular(uniforms.global_light, gl_WorldRayDirectionEXT, L, normal);
+    }
   }
+
   // Point lights
   for (int i = 0; i < uniforms.light_count ;i++)
   {
     vec3 lightVector = uniforms.lights[i].position.xyz - worldPos;
     vec3 lDir = normalize(lightVector);
     float lightDistance = length(lightVector); 
-    vec3 c= {0,0,0};    
-    if(object.reflective==0) c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
-    if( facingLight(normal, lDir) )
-    {
-      castShadowRay(lDir, lightDistance);
-      if(shadow.shadow_alpha > 0){
-        c *= 1 - clamp(shadow.shadow_alpha,0,1);
-      }
-      else{
-        c += computeSpecular(uniforms.lights[i], gl_WorldRayDirectionEXT, lDir, normal);
+    vec3 c= {0,0,0};        
+    if(object.reflective == 0) {
+      c = computeDiffuse(albedo.xyz, uniforms.lights[i], lDir, normal);
+      if( facingLight(normal, lDir) ){
+        castShadowRay(lDir, lightDistance);
+        if(shadow.shadow_alpha > 0)
+          c *= 1 - clamp(shadow.shadow_alpha,0,1);
+        else
+          c += computeSpecular(uniforms.lights[i], gl_WorldRayDirectionEXT, lDir, normal);
       }
     }
     c *= LIGTH_ATTENUATION(lightDistance);
