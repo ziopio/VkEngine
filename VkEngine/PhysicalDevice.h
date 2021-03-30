@@ -32,7 +32,7 @@ public:
 	static SwapChainSupportDetails getSwapChainSupport();
 	static VkPhysicalDeviceProperties2& getProperties();
 	static VkPhysicalDeviceFeatures2& getPhysicalDeviceFeatures();
-	static VkPhysicalDeviceRayTracingPropertiesKHR& getPhysicalDeviceRayTracingProperties();
+	static VkPhysicalDeviceRayTracingPipelinePropertiesKHR& getPhysicalDeviceRayTracingProperties();
 
 	inline static bool hasRaytracing() { return raytracing; };
 private:
@@ -61,9 +61,13 @@ private:
 	static VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures;
 	// Buffer Device Address
 	static VkPhysicalDeviceBufferDeviceAddressFeaturesKHR deviceAddrFeatures;
+	// Reset queries from host code
+	static VkPhysicalDeviceHostQueryResetFeatures hostQueryResetFeatures;
 	// Ray Tracing
-	static VkPhysicalDeviceRayTracingPropertiesKHR rayTracingProperties;
-	static VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures;
+	static VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties;
+	static VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures;
+	static VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties;
+	static VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures;
 	static bool raytracing;
 };
 

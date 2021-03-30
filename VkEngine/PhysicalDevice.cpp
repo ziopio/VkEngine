@@ -14,12 +14,16 @@ VkPhysicalDeviceFeatures PhysicalDevice::basicFeatures = {};
 VkPhysicalDeviceProperties2 PhysicalDevice::deviceProperties2 = {};
 VkPhysicalDeviceFeatures2 PhysicalDevice::deviceFeatures2 = {};
 
+VkPhysicalDeviceHostQueryResetFeatures PhysicalDevice::hostQueryResetFeatures = {};
 VkPhysicalDeviceScalarBlockLayoutFeatures PhysicalDevice::scalarBlockLayoutFeatures = {};
 VkPhysicalDeviceDescriptorIndexingFeaturesEXT PhysicalDevice::descriptorIndexingFeatures = {};
 VkPhysicalDeviceBufferDeviceAddressFeaturesKHR PhysicalDevice::deviceAddrFeatures = {};
 
-VkPhysicalDeviceRayTracingPropertiesKHR PhysicalDevice::rayTracingProperties = {};
-VkPhysicalDeviceRayTracingFeaturesKHR PhysicalDevice::rayTracingFeatures = {};
+VkPhysicalDeviceRayTracingPipelinePropertiesKHR PhysicalDevice::rayTracingPipelineProperties = {};
+VkPhysicalDeviceRayTracingPipelineFeaturesKHR PhysicalDevice::rayTracingPipelineFeatures = {};
+VkPhysicalDeviceAccelerationStructurePropertiesKHR PhysicalDevice::accelerationStructureProperties = {};
+VkPhysicalDeviceAccelerationStructureFeaturesKHR PhysicalDevice::accelerationStructureFeatures = {};
+
 
 bool PhysicalDevice::ready;
 bool PhysicalDevice::raytracing;
@@ -68,10 +72,10 @@ VkPhysicalDeviceFeatures2& PhysicalDevice::getPhysicalDeviceFeatures()
 	return PhysicalDevice::deviceFeatures2;
 }
 
-VkPhysicalDeviceRayTracingPropertiesKHR & PhysicalDevice::getPhysicalDeviceRayTracingProperties()
+VkPhysicalDeviceRayTracingPipelinePropertiesKHR & PhysicalDevice::getPhysicalDeviceRayTracingProperties()
 {
 	if (!ready) throw std::runtime_error("PhysicalDevice Not Ready!!");
-	return PhysicalDevice::rayTracingProperties;
+	return PhysicalDevice::rayTracingPipelineProperties;
 }
 
 void PhysicalDevice::pickPhysicalDevice()
@@ -103,28 +107,36 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device)
 	vkGetPhysicalDeviceProperties(device, &basicProperties);
 	vkGetPhysicalDeviceFeatures(device, &basicFeatures);
 	// PROPERTIES //
-	//RAY_TRACING properties:
-	rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
 	deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
 	deviceProperties2.properties = basicProperties;
-	deviceProperties2.pNext = &rayTracingProperties;
+	//RAY_TRACING Pipeline properties:
+	rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+	deviceProperties2.pNext = &rayTracingPipelineProperties;
+	// Acceleration Structure properties:
+	accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+	rayTracingPipelineProperties.pNext = &accelerationStructureProperties;
 	vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
 	// FEATURES //
+	hostQueryResetFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
 	// Scalar Block features
-	scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES_EXT;
+	scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
+	scalarBlockLayoutFeatures.pNext = &hostQueryResetFeatures;
 	// Runtime Descriptor Array
-	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+	descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 	descriptorIndexingFeatures.pNext = &scalarBlockLayoutFeatures;
 	//Buffer Device Address features
 	deviceAddrFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
 	deviceAddrFeatures.pNext = &descriptorIndexingFeatures;
 	//RAY_TRACING features:
-	rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
-	rayTracingFeatures.pNext = &deviceAddrFeatures; // feature chaining
+	rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+	rayTracingPipelineFeatures.pNext = &deviceAddrFeatures;
+	//Acceleration Struct features:
+	accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+	accelerationStructureFeatures.pNext = &rayTracingPipelineFeatures;
 	// feature final query
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
 	deviceFeatures2.features = basicFeatures;
-	deviceFeatures2.pNext = &rayTracingFeatures; // feature chaining
+	deviceFeatures2.pNext = &accelerationStructureFeatures; // feature chaining
 	vkGetPhysicalDeviceFeatures2(device, &deviceFeatures2);
 
 	// trovo una coda utilizzabile
@@ -160,7 +172,7 @@ QueueFamilyIndices PhysicalDevice::findQueueFamilies(VkPhysicalDevice device)
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
-		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+		if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))) {
 			indices.graphicsFamily = i;
 		}
 

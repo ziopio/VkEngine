@@ -1,5 +1,4 @@
 #pragma once
-#define VK_ENABLE_BETA_EXTENSIONS // Needed for Nvidia RTX
 #include <vulkan/vulkan.h>
 
 

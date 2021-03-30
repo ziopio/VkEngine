@@ -125,7 +125,10 @@ void Mesh3D::createVertexBuffer()
 	createBuffer(PhysicalDevice::get(), Device::get(),
 		bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | 
-		(PhysicalDevice::hasRaytracing() ? (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) : 0),
+		(PhysicalDevice::hasRaytracing() ? 
+			(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | 
+			VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+			VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) : 0),
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		vertexBuffer, vertexBufferMemory);
 	copyBufferToBuffer(Device::get(),Device::getGraphicQueue(),Device::getGraphicCmdPool(),stagingBuffer, vertexBuffer, bufferSize);
@@ -154,7 +157,10 @@ void Mesh3D::createIndexBuffer()
 	createBuffer(PhysicalDevice::get(), Device::get(),
 		bufferSize, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | 
-		(PhysicalDevice::hasRaytracing() ? (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) : 0),
+		(PhysicalDevice::hasRaytracing() ?
+			(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+				VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+				VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) : 0),
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		indexBuffer, indexBufferMemory);
 

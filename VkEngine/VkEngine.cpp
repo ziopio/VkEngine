@@ -44,7 +44,7 @@ namespace vkengine
 		Device::get();
 		if (hasRayTracing()) {
 			RayTracer::initialize();
-			Renderer::useRayTracing = true;
+			//Renderer::useRayTracing = true;
 		}
 		SwapChainMng::init(surfaceOwner);
 		RenderPassCatalog::init();

@@ -123,8 +123,9 @@ void Renderer::renderScene()
 		Renderer::updateOffScreenCommandBuffer(Renderer::last_imageIndex);
 	}
 
-	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
+	VkResult res = vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer! with code " + res);
 	}
 
 	Renderer::updateFinalPassCommandBuffer(Renderer::last_imageIndex);
@@ -137,8 +138,9 @@ void Renderer::renderScene()
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
 	submitInfo.pCommandBuffers = &primaryCmdBuffers[Renderer::last_imageIndex];
 
-	if (vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
+	res = vkQueueSubmit(Device::getGraphicQueue(), 1, &submitInfo, inFlightFences[currentFrame]);
+	if ( res != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer! with code " + res);
 	}
 }
 

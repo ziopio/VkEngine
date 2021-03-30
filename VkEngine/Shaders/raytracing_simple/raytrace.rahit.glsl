@@ -72,6 +72,6 @@ void main()
     return;
   }
   else {
-    ignoreIntersectionEXT();
+    ignoreIntersectionEXT;
   }
 }

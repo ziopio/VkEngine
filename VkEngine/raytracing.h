@@ -9,24 +9,25 @@
 
 // Describes a Mesh inside a Bottom Level AS
 struct AccelerationStructureGeometry {
-	VkAccelerationStructureCreateGeometryTypeInfoKHR info; // that defines how the AS will be constructed.
 	VkAccelerationStructureGeometryKHR geometry; // the geometry for build the AS, in this case, from triangles.
-	VkAccelerationStructureBuildOffsetInfoKHR offset; // the offset, which correspond to the actual wanted geometry when building.
+	VkAccelerationStructureBuildRangeInfoKHR offset; // the offset, which correspond to the actual wanted geometry when building.
 };
 
 // Ray tracing acceleration structure
 struct AccelerationStructure {
+	Buffer buffer;
 	VkAccelerationStructureKHR accelerationStructure;
 	uint64_t handle;
-	VkDeviceMemory memory = VK_NULL_HANDLE;
 };
 
 // One BLAS can hold multiple geometries
 struct BottomLevelAS {
 	AccelerationStructure as;
-	std::vector<VkAccelerationStructureCreateGeometryTypeInfoKHR> gCreateinfos; // that defines how the AS will be constructed.
-	std::vector<VkAccelerationStructureGeometryKHR> geometries; // the geometry for build the AS, in this case, from triangles.
-	std::vector<VkAccelerationStructureBuildOffsetInfoKHR> offsets; // the offset, which correspond to the actual wanted geometry when building.
+	// the geometry for build the AS, in this case, from triangles.
+	std::vector<VkAccelerationStructureGeometryKHR> geometries; 
+	// the offset, which correspond to the actual wanted geometry when building.
+	std::vector<VkAccelerationStructureBuildRangeInfoKHR> offsets;
+	VkAccelerationStructureBuildGeometryInfoKHR buildGeomInfo;
 };
 
 // A TLAS Instance points to a geometry inside one BLAS
@@ -103,7 +104,7 @@ private:
 	static void createSceneBuffer(vkengine::Scene3D* scene);
 	static void destroyTopLevelAcceleration(); 
 	static void destroyBottomAcceleration();
-	static bool blasNeedsRebuid();
+	static bool blasNeedsRebuild();
 public:
 	static uint32_t max_reflections_depth;
 private:
